@@ -108,7 +108,7 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="h-screen w-full flex items-center justify-center relative overflow-hidden bg-[#070707]">
+        <div className="h-screen w-full flex items-center justify-center relative overflow-hidden bg-gray-50">
             {/* Animated Background Elements */}
             <div className="absolute inset-0 z-0">
                 <motion.div
@@ -118,7 +118,7 @@ export default function LoginPage() {
                         y: [0, 30, 0],
                     }}
                     transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                    className="absolute -top-[15%] -left-[10%] w-[50%] h-[50%] bg-primary/15 rounded-full blur-[120px]"
+                    className="absolute -top-[15%] -left-[10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[120px]"
                 />
                 <motion.div
                     animate={{
@@ -127,7 +127,7 @@ export default function LoginPage() {
                         y: [0, -50, 0],
                     }}
                     transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-                    className="absolute -bottom-[15%] -right-[10%] w-[50%] h-[50%] bg-[#D4AF37]/10 rounded-full blur-[120px]"
+                    className="absolute -bottom-[15%] -right-[10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[120px]"
                 />
             </div>
 
@@ -138,17 +138,17 @@ export default function LoginPage() {
                 transition={{ duration: 0.6 }}
                 className="relative z-10 w-full max-w-[420px] px-6"
             >
-                <div className="bg-[#111111]/80 backdrop-blur-2xl border border-white/5 rounded-[2rem] p-7 md:p-9 shadow-[0_25px_80px_rgba(0,0,0,0.8)]">
+                <div className="bg-white/80 backdrop-blur-2xl border border-gray-200 rounded-[2rem] p-7 md:p-9 shadow-xl shadow-gray-200/50">
                     <div className="text-center space-y-5">
                         <Link href="/" className="inline-block hover:opacity-80 transition-opacity">
-                            <img src={logo} alt="Bibae Store" className="h-10 w-auto brightness-0 invert mx-auto" />
+                            <img src={logo} alt="Bibae Store" className="h-10 w-auto mx-auto" />
                         </Link>
 
                         <div className="space-y-1">
-                            <h1 className="text-xl font-heading font-medium text-white tracking-tight">
+                            <h1 className="text-xl font-heading font-medium text-gray-900 tracking-tight">
                                 {isSignUp ? 'Create Account' : 'Account Sign In'}
                             </h1>
-                            <p className="text-white/30 text-[10px] uppercase tracking-[0.2em]">
+                            <p className="text-gray-400 text-[10px] uppercase tracking-[0.2em]">
                                 Premium Boutique Experience
                             </p>
                         </div>
@@ -160,20 +160,20 @@ export default function LoginPage() {
                                     animate={{ opacity: 1, height: 'auto' }}
                                     className="space-y-1.5"
                                 >
-                                    <Label className="text-white/40 text-[9px] uppercase tracking-[0.2em] ml-1">Full Name</Label>
+                                    <Label className="text-gray-500 text-[9px] uppercase tracking-[0.2em] ml-1">Full Name</Label>
                                     <Input
                                         type="text"
                                         placeholder="John Doe"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        className="h-11 bg-white/[0.03] border-white/10 text-white px-4 rounded-xl focus:border-primary/60 focus:ring-0 focus:bg-white/[0.05] transition-all font-body text-sm placeholder:text-white/10"
+                                        className="h-11 bg-gray-50 border-gray-200 text-gray-900 px-4 rounded-xl focus:border-primary/60 focus:ring-0 focus:bg-white transition-all font-body text-sm placeholder:text-gray-400"
                                         required={isSignUp}
                                     />
                                 </motion.div>
                             )}
 
                             <div className="space-y-1.5">
-                                <Label className="text-white/40 text-[9px] uppercase tracking-[0.2em] ml-1">Email</Label>
+                                <Label className="text-gray-500 text-[9px] uppercase tracking-[0.2em] ml-1">Email</Label>
                                 <div className="relative group">
                                     <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-primary group-focus-within:text-primary transition-colors z-10" />
                                     <Input
@@ -181,7 +181,7 @@ export default function LoginPage() {
                                         placeholder="your@email.com"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        className="h-11 bg-white/[0.03] border-white/10 text-white pl-10 rounded-xl focus:border-primary/60 focus:ring-0 focus:bg-white/[0.05] transition-all font-body text-sm placeholder:text-white/10"
+                                        className="h-11 bg-gray-50 border-gray-200 text-gray-900 pl-10 rounded-xl focus:border-primary/60 focus:ring-0 focus:bg-white transition-all font-body text-sm placeholder:text-gray-400"
                                         required
                                     />
                                 </div>
@@ -189,9 +189,9 @@ export default function LoginPage() {
 
                             <div className="space-y-1.5">
                                 <div className="flex justify-between items-center px-1">
-                                    <Label className="text-white/40 text-[9px] uppercase tracking-[0.2em]">Password</Label>
+                                    <Label className="text-gray-500 text-[9px] uppercase tracking-[0.2em]">Password</Label>
                                     {!isSignUp && (
-                                        <Link href="#" className="text-[9px] text-primary/60 hover:text-primary uppercase tracking-[0.1em] transition-colors">Forgot?</Link>
+                                        <Link href="#" className="text-[9px] text-primary/80 hover:text-primary uppercase tracking-[0.1em] transition-colors">Forgot?</Link>
                                     )}
                                 </div>
                                 <div className="relative group">
@@ -201,15 +201,15 @@ export default function LoginPage() {
                                         placeholder="••••••••"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="h-11 bg-white/[0.03] border-white/10 text-white pl-10 pr-10 rounded-xl focus:border-primary/60 focus:ring-0 focus:bg-white/[0.05] transition-all font-body text-sm placeholder:text-white/10"
+                                        className="h-11 bg-gray-50 border-gray-200 text-gray-900 pl-10 pr-10 rounded-xl focus:border-primary/60 focus:ring-0 focus:bg-white transition-all font-body text-sm placeholder:text-gray-400"
                                         required
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white/20 hover:text-white/60 transition-colors z-10"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors z-10"
                                     >
-                                        {showPassword ? <EyeOff className="w-4 h-4 text-primary" /> : <Eye className="w-4 h-4 text-primary" />}
+                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                     </button>
                                 </div>
                             </div>
@@ -217,7 +217,7 @@ export default function LoginPage() {
                             <Button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl flex items-center justify-center gap-2 transition-all duration-300 shadow-lg shadow-primary/10"
+                                className="w-full h-11 bg-primary hover:bg-gold-dark text-primary-foreground font-semibold rounded-xl flex items-center justify-center gap-2 transition-all duration-300 shadow-lg shadow-primary/20"
                             >
                                 {isLoading ? (
                                     <motion.div
@@ -233,10 +233,10 @@ export default function LoginPage() {
 
                         <div className="relative py-2">
                             <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-white/5"></div>
+                                <div className="w-full border-t border-gray-200"></div>
                             </div>
                             <div className="relative flex justify-center text-[9px] uppercase">
-                                <span className="bg-[#111111] px-3 text-white/20 tracking-[0.3em]">Or continue with</span>
+                                <span className="bg-white px-3 text-gray-400 tracking-[0.3em]">Or continue with</span>
                             </div>
                         </div>
 
@@ -244,32 +244,32 @@ export default function LoginPage() {
                             onClick={handleGoogleLogin}
                             disabled={isGoogleLoading}
                             variant="outline"
-                            className="w-full h-11 bg-transparent hover:bg-white/[0.03] border-white/10 text-white/80 font-medium rounded-xl flex items-center justify-center gap-3 transition-all"
+                            className="w-full h-11 bg-transparent hover:bg-gray-50 border-gray-200 text-gray-600 font-medium rounded-xl flex items-center justify-center gap-3 transition-all"
                         >
                             {isGoogleLoading ? (
                                 <motion.div
                                     animate={{ rotate: 360 }}
                                     transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                                    className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full"
+                                    className="w-4 h-4 border-2 border-gray-300 border-t-gray-500 rounded-full"
                                 />
                             ) : (
                                 <>
                                     <GoogleIcon />
-                                    <span className="text-xs text-primary tracking-wide">Google Account</span>
+                                    <span className="text-xs text-gray-600 tracking-wide">Google Account</span>
                                 </>
                             )}
                         </Button>
 
                         <button
                             onClick={() => setIsSignUp(!isSignUp)}
-                            className="text-white/30 text-[10px] font-body pt-1 hover:text-primary transition-colors block w-full text-center"
+                            className="text-gray-400 text-[10px] font-body pt-1 hover:text-primary transition-colors block w-full text-center"
                         >
                             {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Join community"}
                         </button>
                     </div>
                 </div>
 
-                <div className="mt-6 text-center text-[8px] text-white/10 font-body tracking-[0.5em] uppercase">
+                <div className="mt-6 text-center text-[8px] text-gray-300 font-body tracking-[0.5em] uppercase">
                     Bibae Boutique Hub • Est 2026
                 </div>
             </motion.div>

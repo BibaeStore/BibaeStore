@@ -29,9 +29,8 @@ export default function Testimonials() {
     <section className="py-20 bg-muted/30">
       <div className="container mx-auto px-4">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          initial={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
           className="text-center mb-14"
         >
           <p className="text-primary font-body text-xs tracking-[0.3em] uppercase mb-2">What Our Customers Say</p>

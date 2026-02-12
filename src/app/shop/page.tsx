@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { products, categories, formatPrice } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
@@ -22,24 +22,33 @@ function ShopContent() {
     setSelectedCategory(categoryFilter);
   }, [categoryFilter]);
 
-  const filtered = useMemo(() => {
+  const [filtered, setFiltered] = useState(products);
+
+  useEffect(() => {
     setIsFiltering(true);
-    let result = products;
-    if (selectedCategory) result = result.filter((p) => p.category === selectedCategory);
-    if (search) result = result.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
-    if (sortBy === "price-asc") result = [...result].sort((a, b) => a.price - b.price);
-    if (sortBy === "price-desc") result = [...result].sort((a, b) => b.price - a.price);
-    if (sortBy === "newest") result = [...result].sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
-    if (sortBy === "rating") result = [...result].sort((a, b) => b.rating - a.rating);
-    setTimeout(() => setIsFiltering(false), 300);
-    return result;
+    
+    const timer = setTimeout(() => {
+      let result = products;
+      if (selectedCategory) result = result.filter((p) => p.category === selectedCategory);
+      if (search) result = result.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+      if (sortBy === "price-asc") result = [...result].sort((a, b) => a.price - b.price);
+      if (sortBy === "price-desc") result = [...result].sort((a, b) => b.price - a.price);
+      if (sortBy === "newest") result = [...result].sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
+      if (sortBy === "rating") result = [...result].sort((a, b) => b.rating - a.rating);
+      
+      setFiltered(result);
+      setIsFiltering(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [selectedCategory, search, sortBy]);
 
   return (
     <main className="min-h-screen">
       {/* Banner */}
-      <div className="bg-foreground text-background py-16 md:py-20 text-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-5">
+      {/* Banner */}
+      <div className="bg-gray-50 text-gray-900 py-16 md:py-20 text-center relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
             backgroundImage: "radial-gradient(circle at 30% 50%, hsl(var(--primary)) 0%, transparent 50%)"
           }} />
@@ -59,7 +68,7 @@ function ShopContent() {
           >
             {selectedCategory || "Shop All"}
           </motion.h1>
-          <p className="text-background/40 font-body text-sm tracking-wider">
+          <p className="text-gray-500 font-body text-sm tracking-wider">
             {filtered.length} {filtered.length === 1 ? "product" : "products"} available
           </p>
         </div>
@@ -71,7 +80,7 @@ function ShopContent() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 border px-4 py-2.5 text-sm font-body tracking-wider transition-colors ${showFilters ? "bg-foreground text-background border-foreground" : "border-border hover:border-primary"}`}
+              className={`flex items-center gap-2 border px-4 py-2.5 text-sm font-body tracking-wider transition-all shadow-sm ${showFilters ? "bg-primary text-primary-foreground border-primary shadow-md" : "border-gray-300 bg-white hover:border-gray-400 hover:shadow-md"}`}
             >
               <SlidersHorizontal className="w-4 h-4" />
               Filters
@@ -79,7 +88,7 @@ function ShopContent() {
             {selectedCategory && (
               <button
                 onClick={() => setSelectedCategory("")}
-                className="flex items-center gap-1.5 bg-primary/10 text-foreground px-3 py-2 text-xs font-body tracking-wider hover:bg-primary/20 transition-colors"
+                className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 text-foreground px-3 py-2 text-xs font-body tracking-wider hover:bg-primary/20 transition-all shadow-sm"
               >
                 {selectedCategory} <X className="w-3 h-3" />
               </button>
@@ -87,20 +96,20 @@ function ShopContent() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <div className="relative group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-primary transition-colors" />
               <input
                 type="text"
                 placeholder="Search..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="border border-border pl-9 pr-4 py-2.5 text-sm font-body bg-transparent focus:outline-none focus:border-primary transition-colors w-40 md:w-56"
+                className="border border-gray-300 bg-white pl-9 pr-4 py-2.5 text-sm font-body focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm w-40 md:w-64"
               />
             </div>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="border border-border px-4 py-2.5 text-sm font-body bg-transparent focus:outline-none focus:border-primary"
+              className="border border-gray-300 bg-white px-4 py-2.5 text-sm font-body focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm cursor-pointer hover:border-gray-400"
             >
               <option value="default">Sort by</option>
               <option value="price-asc">Price: Low to High</option>
@@ -138,7 +147,7 @@ function ShopContent() {
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setSelectedCategory("")}
-                  className={`px-5 py-2.5 text-xs font-body tracking-wider border transition-colors ${!selectedCategory ? "bg-foreground text-background border-foreground" : "border-border hover:border-primary"}`}
+                  className={`px-5 py-2.5 text-xs font-body tracking-wider border transition-colors ${!selectedCategory ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary"}`}
                 >
                   All
                 </button>
@@ -146,7 +155,7 @@ function ShopContent() {
                   <button
                     key={cat.name}
                     onClick={() => setSelectedCategory(cat.name)}
-                    className={`px-5 py-2.5 text-xs font-body tracking-wider border transition-colors ${selectedCategory === cat.name ? "bg-foreground text-background border-foreground" : "border-border hover:border-primary"}`}
+                    className={`px-5 py-2.5 text-xs font-body tracking-wider border transition-colors ${selectedCategory === cat.name ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary"}`}
                   >
                     {cat.name}
                     <span className="ml-1 text-muted-foreground">

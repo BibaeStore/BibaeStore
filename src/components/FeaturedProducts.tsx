@@ -13,9 +13,8 @@ export default function FeaturedProducts() {
     <section className="bg-muted/50 py-20">
       <div className="container mx-auto px-4">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          initial={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
           <div className="inline-flex items-center gap-2 mb-2">
@@ -42,7 +41,7 @@ export default function FeaturedProducts() {
         >
           <Link
             href="/shop"
-            className="inline-block border border-foreground text-foreground px-10 py-3.5 text-sm font-body font-medium tracking-widest uppercase hover:bg-foreground hover:text-background transition-colors duration-300"
+            className="inline-block border border-gray-900 bg-white text-gray-900 px-10 py-3.5 text-sm font-body font-medium tracking-widest uppercase hover:bg-gray-900 hover:text-white transition-all duration-300 shadow-button hover:shadow-button-hover hover:-translate-y-0.5"
           >
             View All Products
           </Link>

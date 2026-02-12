@@ -20,8 +20,8 @@ export default function Newsletter() {
 
   return (
     <section className="relative overflow-hidden">
-      <div className="bg-foreground text-background py-20">
-        <div className="absolute inset-0 opacity-5">
+      <div className="bg-primary/5 text-gray-900 py-20">
+        <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
             backgroundImage: "radial-gradient(circle at 25% 50%, hsl(var(--primary)) 0%, transparent 50%), radial-gradient(circle at 75% 50%, hsl(var(--primary)) 0%, transparent 50%)"
           }} />
@@ -29,16 +29,15 @@ export default function Newsletter() {
         
         <div className="container mx-auto px-4 relative z-10">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            initial={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1, y: 0 }}
             className="max-w-xl mx-auto text-center"
           >
             <p className="text-primary font-body text-xs tracking-[0.3em] uppercase mb-3">Stay Connected</p>
-            <h2 className="font-heading text-4xl md:text-5xl font-light mb-4">
+            <h2 className="font-heading text-4xl md:text-5xl font-light mb-4 text-gray-900">
               Join the <span className="text-primary italic">Bibae</span> Family
             </h2>
-            <p className="text-background/60 font-body text-sm mb-8">
+            <p className="text-gray-600 font-body text-sm mb-8">
               Subscribe to get early access to new collections, exclusive offers, and styling tips delivered to your inbox.
             </p>
 
@@ -48,13 +47,13 @@ export default function Newsletter() {
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 bg-background/10 border border-background/20 px-5 py-3.5 text-sm font-body text-background placeholder:text-background/40 focus:outline-none focus:border-primary transition-colors"
+                className="flex-1 bg-white border border-gray-300 px-5 py-3.5 text-sm font-body text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 shadow-sm transition-all"
                 required
               />
               <motion.button
                 type="submit"
                 whileTap={{ scale: 0.95 }}
-                className="bg-primary text-primary-foreground px-8 py-3.5 text-sm font-body font-medium tracking-widest uppercase flex items-center justify-center gap-2 hover:bg-gold-dark transition-colors"
+                className="bg-primary text-primary-foreground px-8 py-3.5 text-sm font-body font-medium tracking-widest uppercase flex items-center justify-center gap-2 hover:bg-gold-dark transition-all shadow-button hover:shadow-button-hover hover:-translate-y-0.5"
               >
                 {submitted ? (
                   <>
@@ -68,7 +67,7 @@ export default function Newsletter() {
               </motion.button>
             </form>
 
-            <p className="text-background/30 text-xs font-body mt-4">No spam, ever. Unsubscribe anytime.</p>
+            <p className="text-gray-400 text-xs font-body mt-4">No spam, ever. Unsubscribe anytime.</p>
           </motion.div>
         </div>
       </div>

@@ -15,8 +15,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 0%;
 
-    --primary: 43 76% 65%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 43 76% 45%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 43 50% 90%;
     --secondary-foreground: 0 0% 10%;
@@ -24,30 +24,30 @@
     --muted: 40 20% 96%;
     --muted-foreground: 0 0% 40%;
 
-    --accent: 43 76% 65%;
-    --accent-foreground: 0 0% 0%;
+    --accent: 43 76% 45%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 40 20% 90%;
     --input: 40 20% 90%;
-    --ring: 43 76% 65%;
+    --ring: 43 76% 45%;
 
     --radius: 0.25rem;
 
-    --gold: 43 76% 65%;
-    --gold-dark: 43 52% 54%;
-    --gold-light: 43 80% 75%;
+    --gold: 43 76% 45%;
+    --gold-dark: 43 76% 35%;
+    --gold-light: 43 76% 55%;
 
     --sidebar-background: 0 0% 4%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 43 76% 65%;
-    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-primary: 43 76% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 10%;
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 0 0% 15%;
-    --sidebar-ring: 43 76% 65%;
+    --sidebar-ring: 43 76% 45%;
 
     --font-heading: 'Cormorant Garamond', serif;
     --font-body: 'Jost', sans-serif;

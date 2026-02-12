@@ -18,9 +18,8 @@ export default function TrustBadges() {
           {badges.map((b, i) => (
             <motion.div
               key={b.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              initial={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
               className="text-center group"
             >

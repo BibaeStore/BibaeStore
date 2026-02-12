@@ -12,19 +12,19 @@ export default function Footer() {
   if (isAdminPath) return null;
 
   return (
-    <footer id="footer" className="bg-foreground text-background">
+    <footer id="footer" className="bg-gray-50 border-t border-gray-200 text-gray-900">
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div>
-            <img src={logo} alt="Bibae Store" className="h-12 w-auto mb-5 brightness-0 invert" />
-            <p className="text-background/60 text-sm leading-relaxed font-body mb-6">
+            <img src={logo} alt="Bibae Store" className="h-12 w-auto mb-5" />
+            <p className="text-gray-500 text-sm leading-relaxed font-body mb-6">
               Premium fashion & baby products. Elegance redefined for the modern family. Handcrafted with love in Pakistan.
             </p>
             <div className="flex gap-3">
-              <a href="#" className="p-2.5 border border-background/20 hover:border-primary hover:text-primary transition-colors">
+              <a href="#" className="p-2.5 border border-gray-200 bg-white hover:border-primary hover:text-primary hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
                 <Instagram className="w-4 h-4" />
               </a>
-              <a href="#" className="p-2.5 border border-background/20 hover:border-primary hover:text-primary transition-colors">
+              <a href="https://www.facebook.com/profile.php?id=61587742991679" target="_blank" rel="noopener noreferrer" className="p-2.5 border border-gray-200 bg-white hover:border-primary hover:text-primary hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
                 <Facebook className="w-4 h-4" />
               </a>
             </div>
@@ -40,7 +40,7 @@ export default function Footer() {
                 { label: "Sale", href: "/shop" },
               ].map((l) => (
                 <li key={l.label}>
-                  <Link href={l.href} className="text-background/60 hover:text-primary transition-colors inline-flex items-center gap-1">
+                  <Link href={l.href} className="text-gray-500 hover:text-primary transition-colors inline-flex items-center gap-1">
                     {l.label}
                   </Link>
                 </li>
@@ -57,7 +57,7 @@ export default function Footer() {
                 { label: "Baby Products", href: "/shop?category=Baby Products" },
               ].map((l) => (
                 <li key={l.label}>
-                  <Link href={l.href} className="text-background/60 hover:text-primary transition-colors">{l.label}</Link>
+                  <Link href={l.href} className="text-gray-500 hover:text-primary transition-colors">{l.label}</Link>
                 </li>
               ))}
             </ul>
@@ -65,7 +65,7 @@ export default function Footer() {
 
           <div>
             <h4 className="font-heading text-lg mb-5 text-primary">Contact Us</h4>
-            <ul className="space-y-3 text-sm font-body text-background/60">
+            <ul className="space-y-3 text-sm font-body text-gray-500">
               <li className="flex items-start gap-3">
                 <Mail className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
                 support@bibaestore.com
@@ -82,11 +82,11 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-14 pt-8 border-t border-background/10 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-background/40 text-xs font-body tracking-wider">
+        <div className="mt-14 pt-8 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-gray-400 text-xs font-body tracking-wider">
             © 2026 Bibae Store. All rights reserved.
           </p>
-          <div className="flex gap-6 text-xs font-body text-background/40">
+          <div className="flex gap-6 text-xs font-body text-gray-400">
             <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
             <a href="#" className="hover:text-primary transition-colors">Shipping Info</a>

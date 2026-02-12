@@ -16,8 +16,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark" style={{ colorScheme: 'dark' }}>
-      <body className="bg-[#070707] antialiased">
+    <html lang="en">
+      <body className="bg-background antialiased">
         <Providers>
           <TopLoadingBar />
           <ClientLayout>

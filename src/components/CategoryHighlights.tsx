@@ -16,9 +16,8 @@ export default function CategoryHighlights() {
   return (
     <section className="container mx-auto px-4 py-20">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
+        initial={{ opacity: 1, y: 0 }}
+        animate={{ opacity: 1, y: 0 }}
         className="text-center mb-12"
       >
         <p className="text-primary font-body text-xs tracking-[0.3em] uppercase mb-2">Collections</p>
@@ -34,7 +33,7 @@ export default function CategoryHighlights() {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: i * 0.15 }}
           >
-            <Link href={cat.href} className="group block relative overflow-hidden aspect-[3/4]">
+            <Link href={cat.href} className="group block relative overflow-hidden aspect-[3/4] shadow-card hover:shadow-card-hover border border-gray-200 hover:border-primary/50 transition-all duration-500 rounded-sm">
               <img
                 src={cat.image}
                 alt={cat.name}

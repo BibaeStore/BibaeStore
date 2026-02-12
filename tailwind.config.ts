@@ -17,6 +17,13 @@ export default {
         heading: ['Cormorant Garamond', 'serif'],
         body: ['Jost', 'sans-serif'],
       },
+      boxShadow: {
+        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+        'card': '0 0 0 1px rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.04)',
+        'card-hover': '0 0 0 1px rgba(0,0,0,0.03), 0 8px 16px -4px rgba(0,0,0,0.08)',
+        'button': '0 2px 4px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1)',
+        'button-hover': '0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.12)',
+      },
       colors: {
         border: "hsl(var(--border) / <alpha-value>)",
         input: "hsl(var(--input) / <alpha-value>)",
