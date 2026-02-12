@@ -23,8 +23,7 @@ function Skeleton({ className }: { className?: string }) {
   );
 }
 
-// Product card skeleton
-export function ProductCardSkeleton() {
+ export function ProductCardSkeleton() {
   return (
     <div className="space-y-4">
       <Skeleton className="aspect-[3/4] w-full" />
