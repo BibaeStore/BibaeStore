@@ -52,7 +52,7 @@ export default function CategoriesPage() {
             setCategories(data)
         } catch (error) {
             console.error(error)
-            // toast.error("Failed to load categories") // Suppress error on initial load if table is missing
+            // toast.error("Failed to load categories")
         } finally {
             setIsLoading(false)
         }
@@ -130,14 +130,14 @@ export default function CategoriesPage() {
         <div className="space-y-8 pb-10">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="space-y-1.5">
-                    <h1 className="text-3xl font-heading font-bold text-white tracking-tight">Categories</h1>
-                    <p className="text-white/40 font-body text-sm uppercase tracking-[0.1em]">Manage Store Hierarchy</p>
+                    <h1 className="text-3xl font-heading font-bold text-gray-900 tracking-tight">Categories</h1>
+                    <p className="text-gray-500 font-body text-sm uppercase tracking-[0.1em]">Manage Store Hierarchy</p>
                 </div>
                 <Button
                     onClick={handleCreate}
-                    className="h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-2xl px-6 text-xs uppercase tracking-widest shadow-xl shadow-primary/10 transition-all"
+                    className="h-11 bg-gray-900 hover:bg-gray-800 text-white border border-primary/50 hover:border-primary font-bold rounded-2xl px-6 text-xs uppercase tracking-widest shadow-sm hover:shadow-md transition-all"
                 >
-                    <Plus className="w-4 h-4 mr-2" /> Add Category
+                    <Plus className="w-4 h-4 mr-2 text-primary" /> Add Category
                 </Button>
             </div>
 
@@ -146,16 +146,16 @@ export default function CategoriesPage() {
                     <Loader2 className="w-8 h-8 text-primary animate-spin" />
                 </div>
             ) : categories.length === 0 ? (
-                <Card className="bg-white/[0.02] border-white/5 rounded-[2.5rem] p-12 text-center">
+                <Card className="bg-white border-gray-200 rounded-[2.5rem] p-12 text-center shadow-sm">
                     <div className="flex flex-col items-center gap-4">
-                        <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
-                            <FolderTree className="w-8 h-8 text-white/20" />
+                        <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center">
+                            <FolderTree className="w-8 h-8 text-gray-400" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold text-white">No categories found</h3>
-                            <p className="text-white/40 mt-2">Get started by creating your first category.</p>
+                            <h3 className="text-xl font-bold text-gray-900">No categories found</h3>
+                            <p className="text-gray-500 mt-2">Get started by creating your first category.</p>
                         </div>
-                        <Button onClick={handleCreate} variant="outline" className="mt-4 border-white/10 text-white hover:bg-white/5">
+                        <Button onClick={handleCreate} variant="outline" className="mt-4 border-gray-200 text-gray-600 hover:bg-gray-50">
                             Create Category
                         </Button>
                     </div>
@@ -163,35 +163,35 @@ export default function CategoriesPage() {
             ) : (
                 <div className="grid grid-cols-1 gap-6">
                     {/* Desktop View - Table */}
-                    <Card className="hidden md:block bg-white/[0.02] border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
+                    <Card className="hidden md:block bg-white border-gray-200 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                         <CardHeader className="px-8 pt-8 pb-4">
                             <div className="space-y-1.5">
-                                <CardTitle className="font-heading text-xl text-white">All Categories</CardTitle>
-                                <CardDescription className="text-white/30 text-xs uppercase tracking-widest font-bold">
+                                <CardTitle className="font-heading text-xl text-gray-900">All Categories</CardTitle>
+                                <CardDescription className="text-gray-500 text-xs uppercase tracking-widest font-bold">
                                     {categories.length} Total Categories
                                 </CardDescription>
                             </div>
                         </CardHeader>
                         <CardContent className="px-0 pb-0">
                             <Table>
-                                <TableHeader className="bg-white/[0.02] border-b border-white/5">
-                                    <TableRow className="hover:bg-transparent border-white/5">
-                                        <TableHead className="w-[100px] py-5 pl-8 text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold">Image</TableHead>
-                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold">Name</TableHead>
-                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold">Type</TableHead>
-                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold">Status</TableHead>
-                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold">Order</TableHead>
-                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold">Parent</TableHead>
-                                        <TableHead className="text-right py-5 pr-8 text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold">Actions</TableHead>
+                                <TableHeader className="bg-gray-50/50 border-b border-gray-200">
+                                    <TableRow className="hover:bg-transparent border-gray-200">
+                                        <TableHead className="w-[100px] py-5 pl-8 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Image</TableHead>
+                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Name</TableHead>
+                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Type</TableHead>
+                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Status</TableHead>
+                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Order</TableHead>
+                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Parent</TableHead>
+                                        <TableHead className="text-right py-5 pr-8 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {categories.map((category) => {
                                         const parent = categories.find(c => c.id === category.parent_id)
                                         return (
-                                            <TableRow key={category.id} className="border-b border-white/[0.02] hover:bg-white/[0.02] transition-colors group">
+                                            <TableRow key={category.id} className="border-b border-gray-200 hover:bg-gray-50/50 transition-colors group">
                                                 <TableCell className="py-4 pl-8">
-                                                    <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 overflow-hidden relative">
+                                                    <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-200 overflow-hidden relative">
                                                         {category.image_url ? (
                                                             <Image
                                                                 src={category.image_url}
@@ -200,29 +200,29 @@ export default function CategoriesPage() {
                                                                 className="object-cover"
                                                             />
                                                         ) : (
-                                                            <div className="w-full h-full flex items-center justify-center text-white/20">
+                                                            <div className="w-full h-full flex items-center justify-center text-gray-300">
                                                                 <ImageIcon className="w-5 h-5" />
                                                             </div>
                                                         )}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="py-4 font-medium text-white/90">
+                                                <TableCell className="py-4 font-medium text-gray-900">
                                                     {category.name}
                                                 </TableCell>
                                                 <TableCell className="py-4">
-                                                    <Badge variant="secondary" className={!category.parent_id ? "bg-primary/10 text-primary hover:bg-primary/20" : "bg-white/5 text-white/60 hover:bg-white/10"}>
+                                                    <Badge variant="secondary" className={!category.parent_id ? "bg-primary/10 text-primary hover:bg-primary/20" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}>
                                                         {!category.parent_id ? "Main Category" : "Subcategory"}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="py-4">
-                                                    <Badge variant="secondary" className={category.status === 'active' ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}>
+                                                    <Badge variant="secondary" className={category.status === 'active' ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-red-100 text-red-700 hover:bg-red-200"}>
                                                         {category.status || 'Active'}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="py-4 text-white/50 text-sm">
+                                                <TableCell className="py-4 text-gray-500 text-sm">
                                                     {category.sort_order || 0}
                                                 </TableCell>
-                                                <TableCell className="py-4 text-white/50 text-sm">
+                                                <TableCell className="py-4 text-gray-500 text-sm">
                                                     {parent ? parent.name : "-"}
                                                 </TableCell>
                                                 <TableCell className="text-right py-4 pr-8">
@@ -230,7 +230,7 @@ export default function CategoriesPage() {
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-8 w-8 text-white/40 hover:text-white hover:bg-white/10"
+                                                            className="h-8 w-8 text-gray-400 hover:text-gray-900 hover:bg-gray-100"
                                                             onClick={() => handleView(category)}
                                                         >
                                                             <Eye className="w-4 h-4" />
@@ -238,7 +238,7 @@ export default function CategoriesPage() {
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-8 w-8 text-white/40 hover:text-white hover:bg-white/10"
+                                                            className="h-8 w-8 text-gray-400 hover:text-gray-900 hover:bg-gray-100"
                                                             onClick={() => handleEdit(category)}
                                                         >
                                                             <Pencil className="w-4 h-4" />
@@ -246,7 +246,7 @@ export default function CategoriesPage() {
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-8 w-8 text-white/40 hover:text-destructive hover:bg-destructive/10"
+                                                            className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50"
                                                             onClick={() => handleDelete(category.id)}
                                                         >
                                                             <Trash2 className="w-4 h-4" />
@@ -268,10 +268,10 @@ export default function CategoriesPage() {
                 {categories.map((category) => {
                     const parent = categories.find(c => c.id === category.parent_id)
                     return (
-                        <Card key={category.id} className="bg-white/[0.02] border-white/5 overflow-hidden">
+                        <Card key={category.id} className="bg-white border-gray-200 overflow-hidden shadow-sm">
                             <CardContent className="p-4 space-y-4">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-16 h-16 rounded-xl bg-white/5 border border-white/10 overflow-hidden relative flex-shrink-0">
+                                    <div className="w-16 h-16 rounded-xl bg-gray-50 border border-gray-200 overflow-hidden relative flex-shrink-0">
                                         {category.image_url ? (
                                             <Image
                                                 src={category.image_url}
@@ -280,40 +280,40 @@ export default function CategoriesPage() {
                                                 className="object-cover"
                                             />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-white/20">
+                                            <div className="w-full h-full flex items-center justify-center text-gray-300">
                                                 <ImageIcon className="w-6 h-6" />
                                             </div>
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <h4 className="text-white font-medium truncate">{category.name}</h4>
+                                        <h4 className="text-gray-900 font-medium truncate">{category.name}</h4>
                                         <div className="flex flex-wrap gap-2 mt-2">
-                                            <Badge variant="secondary" className={!category.parent_id ? "bg-primary/10 text-primary" : "bg-white/5 text-white/60"}>
+                                            <Badge variant="secondary" className={!category.parent_id ? "bg-primary/10 text-primary" : "bg-gray-100 text-gray-600"}>
                                                 {!category.parent_id ? "Main" : "Sub"}
                                             </Badge>
-                                            <Badge variant="secondary" className={category.status === 'active' ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}>
+                                            <Badge variant="secondary" className={category.status === 'active' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
                                                 {category.status || 'Active'}
                                             </Badge>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4 text-sm border-t border-white/5 pt-4">
+                                <div className="grid grid-cols-2 gap-4 text-sm border-t border-gray-200 pt-4">
                                     <div>
-                                        <p className="text-white/40 text-xs uppercase tracking-wider font-bold mb-1">Order</p>
-                                        <p className="text-white/80">{category.sort_order || 0}</p>
+                                        <p className="text-gray-400 text-xs uppercase tracking-wider font-bold mb-1">Order</p>
+                                        <p className="text-gray-600">{category.sort_order || 0}</p>
                                     </div>
                                     <div>
-                                        <p className="text-white/40 text-xs uppercase tracking-wider font-bold mb-1">Parent</p>
-                                        <p className="text-white/80 truncate">{parent ? parent.name : "-"}</p>
+                                        <p className="text-gray-400 text-xs uppercase tracking-wider font-bold mb-1">Parent</p>
+                                        <p className="text-gray-600 truncate">{parent ? parent.name : "-"}</p>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-end gap-2 border-t border-white/5 pt-4">
+                                <div className="flex items-center justify-end gap-2 border-t border-gray-200 pt-4">
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="h-8 w-8 text-white/40 hover:text-white hover:bg-white/10"
+                                        className="h-8 w-8 text-gray-400 hover:text-gray-900 hover:bg-gray-100"
                                         onClick={() => handleView(category)}
                                     >
                                         <Eye className="w-4 h-4" />
@@ -321,7 +321,7 @@ export default function CategoriesPage() {
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="h-8 w-8 text-white/40 hover:text-white hover:bg-white/10"
+                                        className="h-8 w-8 text-gray-400 hover:text-gray-900 hover:bg-gray-100"
                                         onClick={() => handleEdit(category)}
                                     >
                                         <Pencil className="w-4 h-4" />
@@ -329,7 +329,7 @@ export default function CategoriesPage() {
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="h-8 w-8 text-white/40 hover:text-destructive hover:bg-destructive/10"
+                                        className="h-8 w-8 text-gray-400 hover:text-destructive hover:bg-destructive/10"
                                         onClick={() => handleDelete(category.id)}
                                     >
                                         <Trash2 className="w-4 h-4" />
@@ -350,32 +350,32 @@ export default function CategoriesPage() {
             />
 
             <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-                <AlertDialogContent className="bg-zinc-950 border-white/10">
+                <AlertDialogContent className="bg-white border-gray-200 shadow-xl rounded-2xl">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="text-white font-heading text-xl">Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-white/60 font-body">
+                        <AlertDialogTitle className="text-gray-900 font-heading text-xl">Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-500 font-body">
                             This action cannot be undone. This will permanently delete the category and remove its data from our servers.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-transparent border-white/10 text-white hover:bg-white/5 hover:text-white transition-colors">Cancel</AlertDialogCancel>
+                        <AlertDialogCancel className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 hover:border-gray-400 font-bold shadow-sm hover:shadow-md transition-all">Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-white hover:bg-destructive/90 transition-colors">Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
             <Dialog open={!!viewCategory} onOpenChange={(open) => !open && setViewCategory(null)}>
-                <DialogContent className="bg-zinc-950 border-white/10 sm:max-w-md">
+                <DialogContent className="bg-white border-gray-200 shadow-2xl rounded-2xl sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle className="text-white font-heading text-2xl">Category Details</DialogTitle>
-                        <DialogDescription className="text-white/40">
+                        <DialogTitle className="text-gray-900 font-heading text-2xl">Category Details</DialogTitle>
+                        <DialogDescription className="text-gray-500">
                             View complete category information
                         </DialogDescription>
                     </DialogHeader>
                     {viewCategory && (
                         <div className="space-y-6 pt-4">
                             <div className="flex justify-center">
-                                <div className="relative w-40 h-40 rounded-2xl overflow-hidden bg-white/5 border border-white/10 shadow-2xl">
+                                <div className="relative w-40 h-40 rounded-2xl overflow-hidden bg-gray-50 border border-gray-200 shadow-lg">
                                     {viewCategory.image_url ? (
                                         <Image
                                             src={viewCategory.image_url}
@@ -384,7 +384,7 @@ export default function CategoriesPage() {
                                             className="object-cover"
                                         />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-white/20">
+                                        <div className="w-full h-full flex items-center justify-center text-gray-300">
                                             <ImageIcon className="w-12 h-12" />
                                         </div>
                                     )}
@@ -393,45 +393,45 @@ export default function CategoriesPage() {
 
                             <div className="space-y-4">
                                 <div className="space-y-1">
-                                    <label className="text-xs uppercase tracking-widest text-white/40 font-bold">Category Name</label>
-                                    <p className="text-white text-lg font-medium">{viewCategory.name}</p>
+                                    <label className="text-xs uppercase tracking-widest text-gray-400 font-bold">Category Name</label>
+                                    <p className="text-gray-900 text-lg font-medium">{viewCategory.name}</p>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1">
-                                        <label className="text-xs uppercase tracking-widest text-white/40 font-bold">Type</label>
+                                        <label className="text-xs uppercase tracking-widest text-gray-400 font-bold">Type</label>
                                         <div className="pt-1">
-                                            <Badge variant="secondary" className={!viewCategory.parent_id ? "bg-primary/10 text-primary" : "bg-white/5 text-white/60"}>
+                                            <Badge variant="secondary" className={!viewCategory.parent_id ? "bg-primary/10 text-primary" : "bg-gray-100 text-gray-600"}>
                                                 {!viewCategory.parent_id ? "Main Category" : "Subcategory"}
                                             </Badge>
                                         </div>
                                     </div>
 
                                     <div className="space-y-1">
-                                        <label className="text-xs uppercase tracking-widest text-white/40 font-bold">Status</label>
+                                        <label className="text-xs uppercase tracking-widest text-gray-400 font-bold">Status</label>
                                         <div className="pt-1">
-                                            <Badge variant="secondary" className={viewCategory.status === 'active' ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}>
+                                            <Badge variant="secondary" className={viewCategory.status === 'active' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
                                                 {viewCategory.status || 'Active'}
                                             </Badge>
                                         </div>
                                     </div>
 
                                     <div className="space-y-1">
-                                        <label className="text-xs uppercase tracking-widest text-white/40 font-bold">Sort Order</label>
-                                        <p className="text-white font-medium pt-1">{viewCategory.sort_order || 0}</p>
+                                        <label className="text-xs uppercase tracking-widest text-gray-400 font-bold">Sort Order</label>
+                                        <p className="text-gray-900 font-medium pt-1">{viewCategory.sort_order || 0}</p>
                                     </div>
 
                                     <div className="space-y-1">
-                                        <label className="text-xs uppercase tracking-widest text-white/40 font-bold">Parent</label>
-                                        <p className="text-white font-medium pt-1">
+                                        <label className="text-xs uppercase tracking-widest text-gray-400 font-bold">Parent</label>
+                                        <p className="text-gray-900 font-medium pt-1">
                                             {categories.find(c => c.id === viewCategory.parent_id)?.name || "-"}
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="space-y-1 pt-2 border-t border-white/5">
-                                    <label className="text-xs uppercase tracking-widest text-white/40 font-bold">Category ID</label>
-                                    <p className="text-white/30 text-xs font-mono">{viewCategory.id}</p>
+                                <div className="space-y-1 pt-2 border-t border-gray-200">
+                                    <label className="text-xs uppercase tracking-widest text-gray-400 font-bold">Category ID</label>
+                                    <p className="text-gray-400 text-xs font-mono">{viewCategory.id}</p>
                                 </div>
                             </div>
                         </div>

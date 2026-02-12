@@ -147,10 +147,10 @@ export function ProductForm({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-gray-200 text-gray-900 shadow-2xl">
                 <DialogHeader>
-                    <DialogTitle>{initialData ? "Edit Product" : "Create Product"}</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-gray-900 font-heading">{initialData ? "Edit Product" : "Create Product"}</DialogTitle>
+                    <DialogDescription className="text-gray-500">
                         Fill in the details to {initialData ? "update" : "add"} a product.
                     </DialogDescription>
                 </DialogHeader>
@@ -165,9 +165,9 @@ export function ProductForm({
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Product Name</FormLabel>
+                                        <FormLabel className="text-gray-700">Product Name</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Classic T-Shirt" {...field} />
+                                            <Input placeholder="Classic T-Shirt" {...field} className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/20" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -179,9 +179,9 @@ export function ProductForm({
                                 name="sku"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>SKU</FormLabel>
+                                        <FormLabel className="text-gray-700">SKU</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="TSH-001" {...field} />
+                                            <Input placeholder="TSH-001" {...field} className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/20" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -196,18 +196,18 @@ export function ProductForm({
                                 name="category_id"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Category</FormLabel>
+                                        <FormLabel className="text-gray-700">Category</FormLabel>
                                         <Select
                                             onValueChange={field.onChange}
                                             defaultValue={field.value || "null"}
                                             value={field.value || "null"}
                                         >
                                             <FormControl>
-                                                <SelectTrigger>
+                                                <SelectTrigger className="bg-white border-gray-200 text-gray-900 focus:ring-primary/20">
                                                     <SelectValue placeholder="Select Category" />
                                                 </SelectTrigger>
                                             </FormControl>
-                                            <SelectContent>
+                                            <SelectContent className="bg-white border-gray-200 text-gray-900">
                                                 <SelectItem value="null">Uncategorized</SelectItem>
                                                 {categories.map((cat) => (
                                                     <SelectItem key={cat.id} value={cat.id}>
@@ -226,18 +226,18 @@ export function ProductForm({
                                 name="status"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Status</FormLabel>
+                                        <FormLabel className="text-gray-700">Status</FormLabel>
                                         <Select
                                             onValueChange={field.onChange}
                                             defaultValue={field.value}
                                             value={field.value}
                                         >
                                             <FormControl>
-                                                <SelectTrigger>
+                                                <SelectTrigger className="bg-white border-gray-200 text-gray-900 focus:ring-primary/20">
                                                     <SelectValue placeholder="Select Status" />
                                                 </SelectTrigger>
                                             </FormControl>
-                                            <SelectContent>
+                                            <SelectContent className="bg-white border-gray-200 text-gray-900">
                                                 <SelectItem value="draft">Draft</SelectItem>
                                                 <SelectItem value="active">Active</SelectItem>
                                                 <SelectItem value="inactive">Inactive</SelectItem>
@@ -251,10 +251,10 @@ export function ProductForm({
 
                         {/* Images */}
                         <div className="space-y-4">
-                            <FormLabel>Product Images</FormLabel>
+                            <FormLabel className="text-gray-700">Product Images</FormLabel>
                             <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
                                 {/* Upload Button */}
-                                <div className="relative aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center bg-muted/50 hover:bg-muted/80 transition-colors cursor-pointer overflow-hidden">
+                                <div className="relative aspect-square border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer overflow-hidden group">
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -262,13 +262,13 @@ export function ProductForm({
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                         onChange={handleFileChange}
                                     />
-                                    <Upload className="h-6 w-6 text-muted-foreground mb-2" />
-                                    <span className="text-xs text-muted-foreground text-center px-2">Add Images</span>
+                                    <Upload className="h-6 w-6 text-gray-400 group-hover:text-primary mb-2 transition-colors" />
+                                    <span className="text-xs text-gray-500 text-center px-2 group-hover:text-gray-700">Add Images</span>
                                 </div>
 
                                 {/* Existing Images */}
                                 {existingImages.map((src, index) => (
-                                    <div key={`existing-${index}`} className="relative aspect-square rounded-lg overflow-hidden border bg-background group">
+                                    <div key={`existing-${index}`} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 bg-white group shadow-sm">
                                         <Image
                                             src={src}
                                             alt={`Existing ${index}`}
@@ -280,7 +280,7 @@ export function ProductForm({
                                                 type="button"
                                                 variant="destructive"
                                                 size="icon"
-                                                className="h-6 w-6 rounded-full"
+                                                className="h-6 w-6 rounded-full shadow-md"
                                                 onClick={() => removeExistingImage(index)}
                                             >
                                                 <X className="h-3 w-3" />
@@ -291,7 +291,7 @@ export function ProductForm({
 
                                 {/* New Previews */}
                                 {previews.map((src, index) => (
-                                    <div key={`new-${index}`} className="relative aspect-square rounded-lg overflow-hidden border bg-background group">
+                                    <div key={`new-${index}`} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 bg-white group shadow-sm">
                                         <Image
                                             src={src}
                                             alt={`Preview ${index}`}
@@ -303,7 +303,7 @@ export function ProductForm({
                                                 type="button"
                                                 variant="destructive"
                                                 size="icon"
-                                                className="h-6 w-6 rounded-full"
+                                                className="h-6 w-6 rounded-full shadow-md"
                                                 onClick={() => removeFile(index)}
                                             >
                                                 <X className="h-3 w-3" />
@@ -321,9 +321,9 @@ export function ProductForm({
                                 name="price"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Price</FormLabel>
+                                        <FormLabel className="text-gray-700">Price</FormLabel>
                                         <FormControl>
-                                            <Input type="number" step="0.01" {...field} />
+                                            <Input type="number" step="0.01" {...field} className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/20" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -335,9 +335,9 @@ export function ProductForm({
                                 name="sale_price"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Sale Price (Optional)</FormLabel>
+                                        <FormLabel className="text-gray-700">Sale Price (Optional)</FormLabel>
                                         <FormControl>
-                                            <Input type="number" step="0.01" value={field.value || ""} onChange={field.onChange} />
+                                            <Input type="number" step="0.01" value={field.value || ""} onChange={field.onChange} className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/20" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -349,9 +349,9 @@ export function ProductForm({
                                 name="stock"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Stock Quantity</FormLabel>
+                                        <FormLabel className="text-gray-700">Stock Quantity</FormLabel>
                                         <FormControl>
-                                            <Input type="number" {...field} />
+                                            <Input type="number" {...field} className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/20" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -365,9 +365,9 @@ export function ProductForm({
                             name="short_description"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Short Description</FormLabel>
+                                    <FormLabel className="text-gray-700">Short Description</FormLabel>
                                     <FormControl>
-                                        <Textarea placeholder="Brief summary..." className="h-20" {...field} />
+                                        <Textarea placeholder="Brief summary..." className="h-20 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/20" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -379,9 +379,9 @@ export function ProductForm({
                             name="description"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Full Description</FormLabel>
+                                    <FormLabel className="text-gray-700">Full Description</FormLabel>
                                     <FormControl>
-                                        <Textarea placeholder="Detailed product information..." className="h-32" {...field} />
+                                        <Textarea placeholder="Detailed product information..." className="h-32 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/20" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -393,18 +393,19 @@ export function ProductForm({
                             control={form.control}
                             name="is_featured"
                             render={({ field }) => (
-                                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border border-gray-200 p-4 bg-gray-50/50">
                                     <FormControl>
                                         <Checkbox
                                             checked={field.value}
                                             onCheckedChange={field.onChange}
+                                            className="data-[state=checked]:bg-primary data-[state=checked]:border-primary border-gray-400"
                                         />
                                     </FormControl>
                                     <div className="space-y-1 leading-none">
-                                        <FormLabel>
+                                        <FormLabel className="text-gray-900">
                                             Featured Product
                                         </FormLabel>
-                                        <FormDescription>
+                                        <FormDescription className="text-gray-500">
                                             This product will appear in featured sections.
                                         </FormDescription>
                                     </div>
@@ -413,11 +414,11 @@ export function ProductForm({
                         />
 
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting} className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 hover:border-gray-400 font-bold shadow-sm hover:shadow-md transition-all">
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <Button type="submit" disabled={isSubmitting} className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/50 hover:border-primary shadow-sm hover:shadow-md transition-all font-bold">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" />}
                                 {initialData ? "Save Changes" : "Create Product"}
                             </Button>
                         </DialogFooter>

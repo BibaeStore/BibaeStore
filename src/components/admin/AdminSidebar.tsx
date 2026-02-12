@@ -45,21 +45,34 @@ export function AdminSidebar() {
     const [hoveredItem, setHoveredItem] = React.useState<string | null>(null)
 
     return (
-        <Sidebar collapsible="icon" className="border-r border-white/5 bg-[#050505] text-white">
+        <Sidebar 
+            collapsible="icon" 
+            className="border-r border-gray-300 bg-white text-gray-900 shadow-md z-30"
+            style={{
+                "--sidebar-background": "0 0% 100%",
+                "--sidebar-foreground": "0 0% 0%",
+                "--sidebar-primary": "43 76% 65%",
+                "--sidebar-primary-foreground": "0 0% 0%",
+                "--sidebar-accent": "40 20% 96%",
+                "--sidebar-accent-foreground": "0 0% 0%",
+                "--sidebar-border": "40 20% 90%",
+                "--sidebar-ring": "43 76% 65%",
+            } as React.CSSProperties}
+        >
             {/* Header - Brand Logo */}
-            <SidebarHeader className="py-8 flex items-center justify-between border-b border-white/5 px-8 relative overflow-hidden group-data-[collapsible=icon]:px-2 transition-all duration-300">
+            <SidebarHeader className="py-8 flex items-center justify-between border-b border-gray-100 px-8 relative overflow-hidden group-data-[collapsible=icon]:px-2 transition-all duration-300">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
                 <Link href="/admin" className="flex items-center gap-4 group relative z-10 w-full overflow-hidden">
-                    <div className="relative shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 flex items-center justify-center overflow-hidden transition-all border-primary/30 from-primary/10 shadow-lg shadow-black/20">
+                    <div className="relative shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 flex items-center justify-center overflow-hidden transition-all group-hover:border-primary/30 group-hover:from-primary/5 shadow-md shadow-gray-200/50">
                         <img
                             src={logo}
                             alt="Bibae"
-                            className="h-8 w-auto brightness-0 invert transition-transform group-hover:scale-110 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]"
+                            className="h-8 w-auto transition-transform group-hover:scale-110 drop-shadow-sm"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent opacity-100 transition-opacity" />
+                        <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                     <div className="flex flex-col group-data-[collapsible=icon]:hidden transition-opacity duration-200">
-                        <span className="text-2xl font-heading font-bold text-white tracking-wide leading-none">
+                        <span className="text-2xl font-heading font-bold text-gray-900 tracking-wide leading-none">
                             BibaeStore
                         </span>
                     </div>
@@ -81,9 +94,9 @@ export function AdminSidebar() {
                                     onMouseEnter={() => setHoveredItem(item.title)}
                                     onMouseLeave={() => setHoveredItem(null)}
                                     tooltip={item.title}
-                                    className={`relative h-12 px-4 rounded-2xl transition-all duration-300 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2 ${isActive
-                                        ? "bg-primary text-primary-foreground shadow-xl   font-bold "
-                                        : "text-white/50 hover:text-white hover:bg-primary/10 hover:bg-white/[0.04]"
+                                    className={`relative h-12 px-4 rounded-2xl transition-all duration-300 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2 overflow-hidden ${isActive
+                                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 font-bold ring-1 ring-primary/50"
+                                        : "bg-white text-gray-600 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 hover:text-gray-900 hover:bg-gray-50"
                                         }`}
                                 >
                                     <Link href={item.href} className="flex items-center w-full">
@@ -94,14 +107,14 @@ export function AdminSidebar() {
                                         </span>
 
                                         {item.badge && !isActive && (
-                                            <span className="ml-auto bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full border border-primary/20 group-data-[collapsible=icon]:hidden">
+                                            <span className="ml-auto bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-gray-200 group-data-[collapsible=icon]:hidden">
                                                 {item.badge}
                                             </span>
                                         )}
 
                                         {/* Active Indicator Glow */}
                                         {isActive && (
-                                            <div className="absolute right-2 w-1.5 h-1.5 bg-primary rounded-full group-data-[collapsible=icon]:hidden" />
+                                            <div className="absolute right-2 w-1.5 h-1.5 bg-white/40 rounded-full group-data-[collapsible=icon]:hidden" />
                                         )}
                                     </Link>
                                 </SidebarMenuButton>
@@ -112,30 +125,30 @@ export function AdminSidebar() {
             </SidebarContent>
 
             {/* Footer */}
-            <SidebarFooter className="p-3 border-t border-white/5 bg-[#030303]/50 backdrop-blur-md relative overflow-hidden font-body group-data-[collapsible=icon]:p-2">
+            <SidebarFooter className="p-3 border-t border-gray-100 bg-gray-50/50 backdrop-blur-md relative overflow-hidden font-body group-data-[collapsible=icon]:p-2">
                 <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent pointer-events-none" />
 
-                <div className="flex items-center gap-3 p-2 rounded-xl mb-2 relative z-10 transition-colors hover:bg-white/[0.03] group-data-[collapsible=icon]:justify-center">
+                <div className="flex items-center gap-3 p-2 rounded-xl mb-2 relative z-10 transition-colors hover:bg-white group-data-[collapsible=icon]:justify-center">
                     <div className="relative shrink-0">
-                        <Avatar className="w-9 h-9 border border-white/10 shadow-inner">
+                        <Avatar className="w-9 h-9 border border-white shadow-sm">
                             <AvatarImage src="/admin-avatar.jpg" />
-                            <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">DK</AvatarFallback>
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">DK</AvatarFallback>
                         </Avatar>
-                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#050505]" />
+                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" />
                     </div>
                     <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden transition-all duration-200">
-                        <p className="text-sm font-medium text-white truncate">Dilawar Khan</p>
-                        <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Super Admin</p>
+                        <p className="text-sm font-medium text-gray-900 truncate">Dilawar Khan</p>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Super Admin</p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 relative z-10 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:flex-col">
-                    <button className="flex items-center justify-center h-9 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all border border-white/5 hover:border-white/10" title="Settings">
+                    <button className="flex items-center justify-center h-9 rounded-lg bg-white border border-gray-200 text-gray-400 hover:text-gray-900 hover:bg-gray-50 transition-all shadow-sm" title="Settings">
                         <Settings className="w-4 h-4" />
                     </button>
                     <Link
                         href="/admin/login"
-                        className="flex items-center justify-center h-9 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all border border-red-500/20 hover:border-red-500/30"
+                        className="flex items-center justify-center h-9 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 transition-all border border-red-100 hover:border-red-200 shadow-sm"
                         title="Logout"
                     >
                         <LogOut className="w-4 h-4" />

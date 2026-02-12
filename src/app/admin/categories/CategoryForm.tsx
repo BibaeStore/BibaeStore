@@ -122,10 +122,10 @@ export function CategoryForm({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] bg-white border-gray-200 text-gray-900 shadow-2xl rounded-2xl">
                 <DialogHeader>
-                    <DialogTitle>{initialData ? "Edit Category" : "Create Category"}</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-gray-900 font-heading">{initialData ? "Edit Category" : "Create Category"}</DialogTitle>
+                    <DialogDescription className="text-gray-500">
                         {initialData
                             ? "Update category details."
                             : "Add a new category to your store."}
@@ -141,9 +141,9 @@ export function CategoryForm({
                             name="image_url"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Category Image</FormLabel>
+                                    <FormLabel className="text-gray-700">Category Image</FormLabel>
                                     <div className="flex flex-col items-center gap-4">
-                                        <div className="relative w-full h-40 border-2 border-dashed rounded-lg flex items-center justify-center bg-muted/50 overflow-hidden group hover:border-primary/50 transition-colors">
+                                        <div className="relative w-full h-40 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden group hover:border-primary/50 transition-colors">
                                             {preview ? (
                                                 <>
                                                     <Image
@@ -157,7 +157,7 @@ export function CategoryForm({
                                                     </div>
                                                 </>
                                             ) : (
-                                                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                                <div className="flex flex-col items-center gap-2 text-gray-400">
                                                     <Upload className="h-8 w-8" />
                                                     <span className="text-xs">Upload Image</span>
                                                 </div>
@@ -181,9 +181,9 @@ export function CategoryForm({
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Name</FormLabel>
+                                    <FormLabel className="text-gray-700">Name</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="e.g. Ladies, Summer Collection" {...field} />
+                                        <Input placeholder="e.g. Ladies, Summer Collection" {...field} className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/20" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -195,18 +195,18 @@ export function CategoryForm({
                             name="parent_id"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Parent Category (Optional)</FormLabel>
+                                    <FormLabel className="text-gray-700">Parent Category (Optional)</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
                                         defaultValue={field.value || "null"}
                                         value={field.value || "null"}
                                     >
                                         <FormControl>
-                                            <SelectTrigger>
+                                            <SelectTrigger className="bg-white border-gray-200 text-gray-900 focus:ring-primary/20">
                                                 <SelectValue placeholder="Select a parent category" />
                                             </SelectTrigger>
                                         </FormControl>
-                                        <SelectContent>
+                                        <SelectContent className="bg-white border-gray-200 text-gray-900">
                                             <SelectItem value="null">None (Root Category)</SelectItem>
                                             {availableParents.map((category) => (
                                                 <SelectItem key={category.id} value={category.id}>
@@ -226,17 +226,17 @@ export function CategoryForm({
                                 name="status"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Status</FormLabel>
+                                        <FormLabel className="text-gray-700">Status</FormLabel>
                                         <Select
                                             onValueChange={field.onChange}
                                             defaultValue={field.value}
                                         >
                                             <FormControl>
-                                                <SelectTrigger>
+                                                <SelectTrigger className="bg-white border-gray-200 text-gray-900 focus:ring-primary/20">
                                                     <SelectValue placeholder="Select status" />
                                                 </SelectTrigger>
                                             </FormControl>
-                                            <SelectContent>
+                                            <SelectContent className="bg-white border-gray-200 text-gray-900">
                                                 <SelectItem value="active">Active</SelectItem>
                                                 <SelectItem value="inactive">Inactive</SelectItem>
                                             </SelectContent>
@@ -251,9 +251,9 @@ export function CategoryForm({
                                 name="sort_order"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Sort Order</FormLabel>
+                                        <FormLabel className="text-gray-700">Sort Order</FormLabel>
                                         <FormControl>
-                                            <Input type="number" {...field} />
+                                            <Input type="number" {...field} className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/20" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -262,11 +262,11 @@ export function CategoryForm({
                         </div>
 
                         <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting} className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 hover:border-gray-400 font-bold shadow-sm hover:shadow-md transition-all">
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <Button type="submit" disabled={isSubmitting} className="bg-gray-900 hover:bg-gray-800 text-white border border-primary/50 hover:border-primary shadow-sm hover:shadow-md transition-all font-bold">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" />}
                                 {initialData ? "Save Changes" : "Create Category"}
                             </Button>
                         </DialogFooter>
