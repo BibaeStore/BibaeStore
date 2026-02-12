@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -28,19 +28,18 @@ interface AuthPageProps {
 
 export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
     const router = useRouter()
-    const searchParams = useSearchParams()
-    
+
     // State
     const [isSignUp, setIsSignUp] = useState(initialMode === 'signup')
     const [isLoading, setIsLoading] = useState(false)
     const [isGoogleLoading, setIsGoogleLoading] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
-    
+
     // Form State
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [name, setName] = useState('')
-    
+
     const supabase = createClient()
 
     // Sync state if initialMode prop changes (though we handle internal toggle mostly)
@@ -136,7 +135,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
               Background Animation Layer 
               We keep this static behind everything or animate it subtly
             */}
-             <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+            <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
 
 
             {/* 
@@ -157,8 +156,8 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                 transition={{ type: "spring", stiffness: 200, damping: 25, mass: 0.8 }}
                 className="hidden md:flex absolute top-0 bottom-0 w-1/2 bg-yellow-50/50 backdrop-blur-sm z-20 items-center justify-center p-12 overflow-hidden shadow-2xl border-r border-yellow-100/50"
             >
-                 {/* Decorative Background Elements inside Branding Panel */}
-                 <div className="absolute inset-0 z-0 overflow-hidden">
+                {/* Decorative Background Elements inside Branding Panel */}
+                <div className="absolute inset-0 z-0 overflow-hidden">
                     <motion.div
                         animate={{
                             scale: [1, 1.15, 1],
@@ -167,20 +166,20 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                         transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                         className="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[100px]"
                     />
-                     <motion.div
+                    <motion.div
                         animate={{
                             scale: [1, 1.25, 1],
                         }}
                         transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
                         className="absolute bottom-[10%] right-[10%] w-[50%] h-[50%] bg-gold/10 rounded-full blur-[80px]"
                     />
-                 </div>
+                </div>
 
-                 <div className="relative z-10 text-center max-w-md space-y-6">
+                <div className="relative z-10 text-center max-w-md space-y-6">
                     <Link href="/" className="inline-block mb-8">
                         <img src={logo} alt="Bibae Store" className="h-16 w-auto mx-auto drop-shadow-sm" />
                     </Link>
-                    
+
                     <AnimatePresence mode='wait'>
                         <motion.div
                             key={isSignUp ? "signup-text" : "login-text"}
@@ -193,57 +192,57 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                                 {isSignUp ? "Already One of Us?" : "New Here?"}
                             </h2>
                             <p className="text-gray-600 font-body leading-relaxed mb-8">
-                                {isSignUp 
-                                    ? "Access your dashboard, manage orders, and checkout your favorite items effortlessly." 
+                                {isSignUp
+                                    ? "Access your dashboard, manage orders, and checkout your favorite items effortlessly."
                                     : "Join our premium boutique community for exclusive offers, early access, and a personalized shopping experience."}
                             </p>
-                            <Button 
+                            <Button
                                 type="button"
                                 onClick={toggleMode}
-                                variant="outline" 
+                                variant="outline"
                                 className="border-2 border-primary text-primary hover:bg-primary hover:text-white rounded-full px-8 py-6 text-sm font-bold tracking-widest uppercase transition-all"
                             >
                                 {isSignUp ? "Login to Account" : "Create Account"}
                             </Button>
                         </motion.div>
                     </AnimatePresence>
-                 </div>
+                </div>
             </motion.div>
 
             {/* FORM PANEL LAYER */}
 
             {/* Left Form (Login) - Visible when isSignUp is FALSE. Positioned on RIGHT side for Desktop. */}
-            <motion.div 
+            <motion.div
                 className={`absolute top-0 bottom-0 right-0 w-full md:w-1/2 bg-white flex items-center justify-center p-8 z-10 transition-all duration-300 ${isSignUp ? 'md:opacity-0 md:pointer-events-none' : 'opacity-100'}`}
             >
-               {!isSignUp && (
-                   <div className="w-full max-w-[400px] space-y-8">
+                {!isSignUp && (
+                    <div className="w-full max-w-[400px] space-y-8">
                         <div className="text-center md:text-left">
                             <h1 className="text-3xl font-heading font-medium text-gray-900">Account Login</h1>
                             <p className="text-gray-500 text-sm mt-2">Please enter your details to login.</p>
                         </div>
-                        
+
                         <form onSubmit={handleEmailAuth} className="space-y-5">
-                             <div className="space-y-2">
+                            <div className="space-y-2">
                                 <Label>Email Address</Label>
-                                <Input 
-                                    type="email" 
-                                    placeholder="your@email.com" 
+                                <Input
+                                    type="email"
+                                    placeholder="your@email.com"
                                     className="h-12 bg-gray-50 border-gray-200 rounded-xl focus:ring-primary/20"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
                                 />
-                             </div>
-                             <div className="space-y-2">
+                            </div>
+                            <div className="space-y-2">
                                 <div className="flex justify-between items-center">
                                     <Label>Password</Label>
                                     <Link href="#" className="text-xs text-primary font-semibold hover:underline">Forgot?</Link>
                                 </div>
                                 <div className="relative">
-                                    <Input 
-                                        type={showPassword ? "text" : "password"} 
-                                        placeholder="••••••••" 
+                                    <Input
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="••••••••"
                                         className="h-12 bg-gray-50 border-gray-200 rounded-xl focus:ring-primary/20 pr-10"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
@@ -257,11 +256,11 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                     </button>
                                 </div>
-                             </div>
-                             
-                             <Button type="submit" disabled={isLoading} className="w-full h-12 bg-primary hover:bg-primary/90 rounded-xl font-bold tracking-wide shadow-lg shadow-primary/20">
+                            </div>
+
+                            <Button type="submit" disabled={isLoading} className="w-full h-12 bg-primary hover:bg-primary/90 rounded-xl font-bold tracking-wide shadow-lg shadow-primary/20">
                                 {isLoading ? "Logging In..." : "Login"}
-                             </Button>
+                            </Button>
                         </form>
 
                         <div className="relative">
@@ -269,62 +268,62 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                             <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-muted-foreground">Or continue with</span></div>
                         </div>
 
-                         <Button onClick={handleGoogleLogin} disabled={isGoogleLoading} variant="outline" className="w-full h-12 rounded-xl border-gray-200 hover:bg-gray-50 gap-3">
-                             <GoogleIcon />
-                             <span className="font-semibold text-gray-700">Google Account</span>
-                         </Button>
+                        <Button onClick={handleGoogleLogin} disabled={isGoogleLoading} variant="outline" className="w-full h-12 rounded-xl border-gray-200 hover:bg-gray-50 gap-3">
+                            <GoogleIcon />
+                            <span className="font-semibold text-gray-700">Google Account</span>
+                        </Button>
 
-                         {/* Mobile Only Switch */}
-                         <div className="md:hidden text-center mt-6">
+                        {/* Mobile Only Switch */}
+                        <div className="md:hidden text-center mt-6">
                             <p className="text-sm text-gray-600">
                                 Don't have an account? {' '}
                                 <button type="button" onClick={toggleMode} className="text-primary font-bold hover:underline">Sign Up</button>
                             </p>
-                         </div>
-                   </div>
-               )}
+                        </div>
+                    </div>
+                )}
             </motion.div>
 
             {/* Right Form (Signup) - Visible when isSignUp is TRUE. Positioned on LEFT side for Desktop. */}
-             <motion.div 
+            <motion.div
                 className={`absolute top-0 bottom-0 left-0 w-full md:w-1/2 bg-white flex items-center justify-center p-8 z-10 transition-all duration-300 ${!isSignUp ? 'md:opacity-0 md:pointer-events-none' : 'opacity-100'}`}
             >
-               {isSignUp && (
-                   <div className="w-full max-w-[400px] space-y-8">
+                {isSignUp && (
+                    <div className="w-full max-w-[400px] space-y-8">
                         <div className="text-center md:text-left">
                             <h1 className="text-3xl font-heading font-medium text-gray-900">Create Account</h1>
                             <p className="text-gray-500 text-sm mt-2">Join us for a premium shopping experience.</p>
                         </div>
-                        
+
                         <form onSubmit={handleEmailAuth} className="space-y-5">
-                             <div className="space-y-2">
+                            <div className="space-y-2">
                                 <Label>Full Name</Label>
-                                <Input 
-                                    type="text" 
-                                    placeholder="John Doe" 
+                                <Input
+                                    type="text"
+                                    placeholder="John Doe"
                                     className="h-12 bg-gray-50 border-gray-200 rounded-xl focus:ring-primary/20"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     required
                                 />
-                             </div>
-                             <div className="space-y-2">
+                            </div>
+                            <div className="space-y-2">
                                 <Label>Email Address</Label>
-                                <Input 
-                                    type="email" 
-                                    placeholder="your@email.com" 
+                                <Input
+                                    type="email"
+                                    placeholder="your@email.com"
                                     className="h-12 bg-gray-50 border-gray-200 rounded-xl focus:ring-primary/20"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
                                 />
-                             </div>
-                             <div className="space-y-2">
+                            </div>
+                            <div className="space-y-2">
                                 <Label>Password</Label>
                                 <div className="relative">
-                                    <Input 
-                                        type={showPassword ? "text" : "password"} 
-                                        placeholder="••••••••" 
+                                    <Input
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="••••••••"
                                         className="h-12 bg-gray-50 border-gray-200 rounded-xl focus:ring-primary/20 pr-10"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
@@ -338,11 +337,11 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                     </button>
                                 </div>
-                             </div>
-                             
-                             <Button type="submit" disabled={isLoading} className="w-full h-12 bg-primary hover:bg-primary/90 rounded-xl font-bold tracking-wide shadow-lg shadow-primary/20">
+                            </div>
+
+                            <Button type="submit" disabled={isLoading} className="w-full h-12 bg-primary hover:bg-primary/90 rounded-xl font-bold tracking-wide shadow-lg shadow-primary/20">
                                 {isLoading ? "Creating Account..." : "Sign Up"}
-                             </Button>
+                            </Button>
                         </form>
 
                         <div className="relative">
@@ -350,20 +349,20 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                             <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-muted-foreground">Or continue with</span></div>
                         </div>
 
-                         <Button onClick={handleGoogleLogin} disabled={isGoogleLoading} variant="outline" className="w-full h-12 rounded-xl border-gray-200 hover:bg-gray-50 gap-3">
-                             <GoogleIcon />
-                             <span className="font-semibold text-gray-700">Google Account</span>
-                         </Button>
+                        <Button onClick={handleGoogleLogin} disabled={isGoogleLoading} variant="outline" className="w-full h-12 rounded-xl border-gray-200 hover:bg-gray-50 gap-3">
+                            <GoogleIcon />
+                            <span className="font-semibold text-gray-700">Google Account</span>
+                        </Button>
 
-                          {/* Mobile Only Switch */}
-                         <div className="md:hidden text-center mt-6">
+                        {/* Mobile Only Switch */}
+                        <div className="md:hidden text-center mt-6">
                             <p className="text-sm text-gray-600">
                                 Already have an account? {' '}
                                 <button type="button" onClick={toggleMode} className="text-primary font-bold hover:underline">Login</button>
                             </p>
-                         </div>
-                   </div>
-               )}
+                        </div>
+                    </div>
+                )}
             </motion.div>
         </div>
     )
