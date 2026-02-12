@@ -12,6 +12,8 @@ export interface Product {
     status: 'active' | 'inactive' | 'draft';
     is_featured: boolean;
     variants?: any; // strict type later if needed
+    sizes?: string[];
+    colors?: string[];
     created_at?: string;
     updated_at?: string;
     category?: {

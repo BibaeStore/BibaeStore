@@ -1,13 +1,35 @@
 'use client'
 
-import { products } from "@/lib/products";
+import { useState, useEffect } from "react";
 import ProductCard from "./ProductCard";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Award } from "lucide-react";
+import { ProductService } from "@/services/product.service";
 
 export default function FeaturedProducts() {
-  const featured = products.filter((p) => p.isFeatured).slice(0, 8);
+  const [featured, setFeatured] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadFeatured() {
+      try {
+        const data = await ProductService.getProducts();
+        // Filter for featured products and limit to 8
+        const featuredProducts = data.filter((p: any) => p.is_featured).slice(0, 8);
+        setFeatured(featuredProducts);
+      } catch (error) {
+        console.error("Failed to load featured products:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadFeatured();
+  }, []);
+
+  if (loading) {
+    return <div className="py-20 text-center">Loading Featured Products...</div>; // Skeleton could be better here
+  }
 
   return (
     <section className="bg-muted/50 py-20">
@@ -29,7 +51,18 @@ export default function FeaturedProducts() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {featured.map((product, i) => (
-            <ProductCard key={product.id} product={product} index={i} />
+             <ProductCard 
+                key={product.id} 
+                product={{
+                  ...product,
+                  price: product.sale_price || product.price,
+                  originalPrice: product.sale_price ? product.price : null,
+                  image: product.images?.[0] || '/assets/placeholder.jpg',
+                  category: product.category?.name || 'Uncategorized',
+                  isNew: product.created_at && (new Date().getTime() - new Date(product.created_at).getTime()) < 30 * 24 * 60 * 60 * 1000 // New if < 30 days
+                }} 
+                index={i} 
+              />
           ))}
         </div>
 

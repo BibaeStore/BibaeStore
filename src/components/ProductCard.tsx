@@ -1,12 +1,24 @@
 'use client'
 
 import Link from "next/link";
-import { Heart, Eye } from "lucide-react";
-import { Product, formatPrice } from "@/lib/products";
+import { Heart } from "lucide-react";
+import { formatPrice } from "@/lib/products";
 import { motion } from "framer-motion";
+import { useWishlist } from "@/lib/wishlist";
+
+export interface ProductCardItem {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice?: number | null;
+  image: string;
+  category: string;
+  isNew?: boolean;
+  [key: string]: any;
+}
 
 interface Props {
-  product: Product;
+  product: ProductCardItem;
   index?: number;
 }
 
@@ -14,6 +26,10 @@ export default function ProductCard({ product, index = 0 }: Props) {
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
+
+
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const isWishlisted = isInWishlist(product.id);
 
   return (
     <motion.div
@@ -47,18 +63,18 @@ export default function ProductCard({ product, index = 0 }: Props) {
           {/* Actions */}
           <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
             <button
-              onClick={(e) => { e.preventDefault(); }}
-              className="p-2.5 bg-background/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground transition-colors duration-200"
-              aria-label="Add to wishlist"
+              onClick={(e) => { 
+                e.preventDefault(); 
+                toggleWishlist(product);
+              }}
+              className={`p-2.5 backdrop-blur-sm transition-colors duration-200 ${
+                isWishlisted 
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                  : 'bg-background/90 hover:bg-primary hover:text-primary-foreground'
+              }`}
+              aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
             >
-              <Heart className="w-4 h-4" />
-            </button>
-            <button
-              onClick={(e) => { e.preventDefault(); }}
-              className="p-2.5 bg-background/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground transition-colors duration-200"
-              aria-label="Quick view"
-            >
-              <Eye className="w-4 h-4" />
+              <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-current' : ''}`} />
             </button>
           </div>
 

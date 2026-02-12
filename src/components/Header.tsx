@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { ShoppingBag, Heart, Search, Menu, X, User } from "lucide-react";
 import { useCart } from "@/lib/cart";
+import { useWishlist } from "@/lib/wishlist";
 import { motion, AnimatePresence } from "framer-motion";
 const logo = '/assets/logo.png';
 
@@ -18,6 +19,7 @@ const navLinks = [
 
 export default function Header() {
   const { totalItems } = useCart();
+  const { items: wishlistItems } = useWishlist();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
@@ -89,9 +91,14 @@ export default function Header() {
             <Link href="/shop" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm">
               <Search className="w-5 h-5" />
             </Link>
-            <button className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block">
+            <Link href="/wishlist" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block relative">
               <Heart className="w-5 h-5" />
-            </button>
+              {wishlistItems.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
+                  {wishlistItems.length}
+                </span>
+              )}
+            </Link>
             <Link href="/login" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block">
               <User className="w-5 h-5" />
             </Link>

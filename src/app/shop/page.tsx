@@ -2,8 +2,9 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { products, categories, formatPrice } from "@/lib/products";
+import { categories, formatPrice } from "@/lib/products"; // Keeping categories for now if needed for filter list, or we fetch them too
 import ProductCard from "@/components/ProductCard";
+import { ProductService } from "@/services/product.service";
 import { ProductGridSkeleton } from "@/components/SkeletonLoader";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlidersHorizontal, X, Search, Grid3X3, LayoutGrid } from "lucide-react";
@@ -22,26 +23,45 @@ function ShopContent() {
     setSelectedCategory(categoryFilter);
   }, [categoryFilter]);
 
-  const [filtered, setFiltered] = useState(products);
+  const [products, setProducts] = useState<any[]>([]);
+  const [filtered, setFiltered] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch products from Supabase
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        setLoading(true);
+        const data = await ProductService.getProducts();
+        setProducts(data);
+        setFiltered(data);
+      } catch (error) {
+        console.error("Failed to load products:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadProducts();
+  }, []);
 
   useEffect(() => {
     setIsFiltering(true);
     
     const timer = setTimeout(() => {
       let result = products;
-      if (selectedCategory) result = result.filter((p) => p.category === selectedCategory);
+      if (selectedCategory) result = result.filter((p) => p.category?.name === selectedCategory);
       if (search) result = result.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
       if (sortBy === "price-asc") result = [...result].sort((a, b) => a.price - b.price);
       if (sortBy === "price-desc") result = [...result].sort((a, b) => b.price - a.price);
-      if (sortBy === "newest") result = [...result].sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
-      if (sortBy === "rating") result = [...result].sort((a, b) => b.rating - a.rating);
+      if (sortBy === "newest") result = [...result].sort((a, b) => (new Date(b.created_at).getTime()) - (new Date(a.created_at).getTime()));
+      // if (sortBy === "rating") result = [...result].sort((a, b) => b.rating - a.rating); // Rating not yet in DB
       
       setFiltered(result);
       setIsFiltering(false);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [selectedCategory, search, sortBy]);
+  }, [selectedCategory, search, sortBy, products]);
 
   return (
     <main className="min-h-screen">
@@ -169,7 +189,7 @@ function ShopContent() {
         </AnimatePresence>
 
         {/* Products grid */}
-        {isFiltering ? (
+        {loading || isFiltering ? (
           <ProductGridSkeleton count={8} />
         ) : filtered.length > 0 ? (
           <motion.div
@@ -177,7 +197,18 @@ function ShopContent() {
             className={`grid grid-cols-2 ${gridCols === 3 ? "md:grid-cols-3" : "md:grid-cols-3 lg:grid-cols-4"} gap-4 md:gap-6`}
           >
             {filtered.map((product, i) => (
-              <ProductCard key={product.id} product={product} index={i} />
+              <ProductCard 
+                key={product.id} 
+                product={{
+                  ...product,
+                  price: product.sale_price || product.price,
+                  originalPrice: product.sale_price ? product.price : null,
+                  image: product.images?.[0] || '/assets/placeholder.jpg', // Map first image
+                  category: product.category?.name || 'Uncategorized',
+                  isNew: product.created_at && (new Date().getTime() - new Date(product.created_at).getTime()) < 30 * 24 * 60 * 60 * 1000
+                }} 
+                index={i} 
+              />
             ))}
           </motion.div>
         ) : (
