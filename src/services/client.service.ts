@@ -19,6 +19,19 @@ export class ClientService {
         return data;
     }
 
+    static async getAllClients(): Promise<ClientType[]> {
+        const { data, error } = await this.supabase
+            .from('clients')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching all clients:', error);
+            return [];
+        }
+        return data || [];
+    }
+
     static async updateProfile(id: string, updates: Partial<ClientType>, profileImage?: File): Promise<ClientType> {
         let profile_image_url = updates.profile_image_url;
 
