@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 import {
     LayoutDashboard,
     ShoppingBag,
@@ -42,11 +43,24 @@ const mainMenuItems = [
 
 export function AdminSidebar() {
     const pathname = usePathname()
+    const router = useRouter()
+    const supabase = createClient()
     const [hoveredItem, setHoveredItem] = React.useState<string | null>(null)
 
+    const handleLogout = async () => {
+        try {
+            const { error } = await supabase.auth.signOut()
+            if (error) throw error
+            router.push('/admin/login')
+            router.refresh()
+        } catch (error) {
+            console.error('Error logging out:', error)
+        }
+    }
+
     return (
-        <Sidebar 
-            collapsible="icon" 
+        <Sidebar
+            collapsible="icon"
             className="border-r border-gray-300 bg-white text-gray-900 shadow-md z-30"
             style={{
                 "--sidebar-background": "0 0% 100%",
@@ -146,13 +160,13 @@ export function AdminSidebar() {
                     <button className="flex items-center justify-center h-9 rounded-lg bg-white border border-gray-200 text-gray-400 hover:text-gray-900 hover:bg-gray-50 transition-all shadow-sm" title="Settings">
                         <Settings className="w-4 h-4" />
                     </button>
-                    <Link
-                        href="/admin/login"
+                    <button
+                        onClick={handleLogout}
                         className="flex items-center justify-center h-9 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 transition-all border border-red-100 hover:border-red-200 shadow-sm"
                         title="Logout"
                     >
                         <LogOut className="w-4 h-4" />
-                    </Link>
+                    </button>
                 </div>
             </SidebarFooter>
         </Sidebar>

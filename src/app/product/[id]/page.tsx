@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Heart, ShoppingBag, Star, Truck, Shield, RotateCcw, Check, Minus, Plus, User, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -43,6 +43,7 @@ function ProductDetailSkeleton() {
 
 export default function ProductPage() {
   const params = useParams();
+  const router = useRouter();
   const { addItem } = useCart();
   const [product, setProduct] = useState<any>(null);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
@@ -102,6 +103,12 @@ export default function ProductPage() {
   }, [params?.id]);
 
   const handleAddToCart = () => {
+    if (!userSession) {
+      toast.error("Please login to add items to your cart");
+      router.push("/login?redirectedFrom=" + window.location.pathname);
+      return;
+    }
+
     if (product.sizes && product.sizes.length > 0 && !selectedSize) {
       toast.error("Please select a size");
       return;
@@ -111,7 +118,7 @@ export default function ProductPage() {
       addItem({
         ...product,
         image: product.images?.[0] || '/assets/placeholder.jpg',
-        originalPrice: product.sale_price
+        originalPrice: product.sale_price || product.price
       }, selectedSize, selectedColor || "Default");
     }
     setAddedToCart(true);

@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { OrderService } from "@/services/order.service";
+import { ClientService } from "@/services/client.service";
 import { createClient } from "@/lib/supabase/client";
 import {
   contactSchema,
@@ -54,12 +55,30 @@ export default function CheckoutPage() {
 
   const supabase = createClient();
   const [session, setSession] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setIsLoadingProfile(false);
+      }
     });
   }, [supabase]);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const data = await ClientService.getProfile(userId);
+      setProfile(data);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
 
   // Redirect if cart is empty
   useEffect(() => {
@@ -183,24 +202,48 @@ export default function CheckoutPage() {
           {/* Form Section */}
           <div className="lg:col-span-2">
             <AnimatePresence mode="wait">
-              {currentStep === "contact" && (
-                <ContactForm key="contact" onComplete={(data) => handleStepComplete("contact", data)} />
-              )}
-              {currentStep === "shipping" && (
-                <ShippingForm key="shipping" onComplete={(data) => handleStepComplete("shipping", data)} />
-              )}
-              {currentStep === "payment" && (
-                <PaymentForm key="payment" onComplete={(data) => handleStepComplete("payment", data)} />
-              )}
-              {currentStep === "review" && (
-                <ReviewStep
-                  key="review"
-                  contactData={contactData!}
-                  shippingData={shippingData!}
-                  paymentData={paymentData!}
-                  onSubmit={handleFinalSubmit}
-                  isSubmitting={isSubmitting}
-                />
+              {isLoadingProfile ? (
+                <div className="flex flex-col items-center justify-center py-20 bg-background border border-border">
+                  <LoadingSpinner />
+                  <p className="text-sm font-body text-muted-foreground mt-4">Loading your information...</p>
+                </div>
+              ) : (
+                <>
+                  {currentStep === "contact" && (
+                    <ContactForm
+                      key="contact"
+                      initialData={profile ? { email: profile.email, phone: profile.phone_number || "" } : null}
+                      onComplete={(data) => handleStepComplete("contact", data)}
+                    />
+                  )}
+                  {currentStep === "shipping" && (
+                    <ShippingForm
+                      key="shipping"
+                      initialData={profile ? {
+                        firstName: profile.full_name?.split(' ')[0] || "",
+                        lastName: profile.full_name?.split(' ').slice(1).join(' ') || ""
+                      } : null}
+                      onComplete={(data) => handleStepComplete("shipping", data)}
+                    />
+                  )}
+                  {currentStep === "payment" && (
+                    <PaymentForm
+                      key="payment"
+                      initialData={profile ? { cardName: profile.full_name || "" } : null}
+                      onComplete={(data) => handleStepComplete("payment", data)}
+                    />
+                  )}
+                  {currentStep === "review" && (
+                    <ReviewStep
+                      key="review"
+                      contactData={contactData!}
+                      shippingData={shippingData!}
+                      paymentData={paymentData!}
+                      onSubmit={handleFinalSubmit}
+                      isSubmitting={isSubmitting}
+                    />
+                  )}
+                </>
               )}
             </AnimatePresence>
           </div>
@@ -254,9 +297,16 @@ export default function CheckoutPage() {
 }
 
 // Contact Form Component
-function ContactForm({ onComplete }: { onComplete: (data: ContactFormData) => void }) {
+function ContactForm({
+  onComplete,
+  initialData
+}: {
+  onComplete: (data: ContactFormData) => void,
+  initialData: Partial<ContactFormData> | null
+}) {
   const { register, handleSubmit, formState: { errors } } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
+    defaultValues: initialData || {}
   });
 
   const onSubmit = (data: ContactFormData) => {
@@ -323,9 +373,16 @@ function ContactForm({ onComplete }: { onComplete: (data: ContactFormData) => vo
 }
 
 // Shipping Form Component
-function ShippingForm({ onComplete }: { onComplete: (data: ShippingFormData) => void }) {
+function ShippingForm({
+  onComplete,
+  initialData
+}: {
+  onComplete: (data: ShippingFormData) => void,
+  initialData: Partial<ShippingFormData> | null
+}) {
   const { register, handleSubmit, formState: { errors } } = useForm<ShippingFormData>({
     resolver: zodResolver(shippingSchema),
+    defaultValues: initialData || {}
   });
 
   const onSubmit = (data: ShippingFormData) => {
@@ -452,9 +509,16 @@ function ShippingForm({ onComplete }: { onComplete: (data: ShippingFormData) => 
 }
 
 // Payment Form Component
-function PaymentForm({ onComplete }: { onComplete: (data: PaymentFormData) => void }) {
+function PaymentForm({
+  onComplete,
+  initialData
+}: {
+  onComplete: (data: PaymentFormData) => void,
+  initialData: Partial<PaymentFormData> | null
+}) {
   const { register, handleSubmit, formState: { errors } } = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
+    defaultValues: initialData || {}
   });
 
   const onSubmit = (data: PaymentFormData) => {

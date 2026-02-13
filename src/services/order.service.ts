@@ -61,4 +61,26 @@ export class OrderService {
         if (error) throw error;
         return data;
     }
+
+    static async getAllOrders(): Promise<Order[]> {
+        const { data, error } = await this.supabase
+            .from('orders')
+            .select('*, client:clients(full_name, email, phone_number), items:order_items(*, product:products(name, images))')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return data || [];
+    }
+
+    static async updateOrderStatus(orderId: string, status: string): Promise<void> {
+        const { error } = await this.supabase
+            .from('orders')
+            .update({
+                status,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', orderId);
+
+        if (error) throw error;
+    }
 }
