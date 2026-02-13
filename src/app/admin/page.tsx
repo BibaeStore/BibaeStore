@@ -16,11 +16,18 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
+import { useEffect, useState } from 'react'
+import { OrderService } from '@/services/order.service'
+import { formatDistanceToNow } from 'date-fns'
+import { useRouter } from 'next/navigation'
+import { formatPrice } from '@/lib/products'
+import LoadingSpinner from '@/components/LoadingSpinner'
+
 const stats = [
     {
         title: "Total Revenue",
-        value: "Rs. 1.28M",
-        change: "+12.5%",
+        value: "Rs. 0.00",
+        change: "0%",
         trend: "up",
         icon: DollarSign,
         color: "text-emerald-600",
@@ -28,8 +35,8 @@ const stats = [
     },
     {
         title: "Active Orders",
-        value: "156",
-        change: "+8.2%",
+        value: "0",
+        change: "0%",
         trend: "up",
         icon: ShoppingBag,
         color: "text-primary",
@@ -37,8 +44,8 @@ const stats = [
     },
     {
         title: "Total Customers",
-        value: "2,420",
-        change: "+18.7%",
+        value: "0",
+        change: "0%",
         trend: "up",
         icon: Users,
         color: "text-blue-600",
@@ -46,8 +53,8 @@ const stats = [
     },
     {
         title: "Avg. Order",
-        value: "Rs. 8.5K",
-        change: "-2.4%",
+        value: "Rs. 0.00",
+        change: "0%",
         trend: "down",
         icon: TrendingUp,
         color: "text-amber-600",
@@ -55,14 +62,24 @@ const stats = [
     },
 ]
 
-const recentOrders = [
-    { id: "#ORD-7421", customer: "Amna Khan", date: "2 mins ago", amount: "Rs. 12,500", status: "Processing" },
-    { id: "#ORD-7420", customer: "Zoya Ahmed", date: "15 mins ago", amount: "Rs. 8,200", status: "Shipped" },
-    { id: "#ORD-7419", customer: "Sana Malik", date: "1 hour ago", amount: "Rs. 15,000", status: "Delivered" },
-    { id: "#ORD-7418", customer: "Hiba Ali", date: "3 hours ago", amount: "Rs. 5,400", status: "Pending" },
-]
-
 export default function AdminDashboard() {
+    const router = useRouter()
+    const [orders, setOrders] = useState<any[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchRecentOrders = async () => {
+            try {
+                const data = await OrderService.getAllOrders()
+                setOrders(data.slice(0, 5)) // Get last 5
+            } catch (error) {
+                console.error('Error fetching recent orders:', error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        fetchRecentOrders()
+    }, [])
     return (
         <div className="space-y-10 pb-10">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -130,27 +147,44 @@ export default function AdminDashboard() {
                                     </tr>
                                 </thead>
                                 <tbody className="text-sm">
-                                    {recentOrders.map((order) => (
-                                        <tr key={order.id} className="border-b border-gray-200 hover:bg-gray-50/50 transition-colors group cursor-pointer">
-                                            <td className="py-5 font-mono text-gray-500 group-hover:text-primary transition-colors">{order.id}</td>
-                                            <td className="py-5">
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium text-gray-900">{order.customer}</span>
-                                                    <span className="text-[10px] text-gray-400 flex items-center gap-1.5 mt-1 font-bold"><Clock className="w-3 h-3" /> {order.date}</span>
-                                                </div>
-                                            </td>
-                                            <td className="py-5 font-bold text-gray-900">{order.amount}</td>
-                                            <td className="py-5 text-right">
-                                                <span className={`inline-flex px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-[0.1em] ${order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-700' :
-                                                    order.status === 'Processing' ? 'bg-primary/10 text-primary' :
-                                                        order.status === 'Shipped' ? 'bg-blue-100 text-blue-700' :
-                                                            'bg-gray-100 text-gray-500'
-                                                    }`}>
-                                                    {order.status}
-                                                </span>
+                                    {isLoading ? (
+                                        <tr>
+                                            <td colSpan={4} className="py-10 text-center">
+                                                <LoadingSpinner size="sm" />
                                             </td>
                                         </tr>
-                                    ))}
+                                    ) : orders.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} className="py-10 text-center text-gray-400">
+                                                No transactions found
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        orders.map((order) => (
+                                            <tr key={order.id} className="border-b border-gray-200 hover:bg-gray-50/50 transition-colors group cursor-pointer" onClick={() => router.push('/admin/orders')}>
+                                                <td className="py-5 font-mono text-gray-500 group-hover:text-primary transition-colors">#{order.id.slice(0, 8).toUpperCase()}</td>
+                                                <td className="py-5">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-gray-900">{order.client?.full_name || 'Guest'}</span>
+                                                        <span className="text-[10px] text-gray-400 flex items-center gap-1.5 mt-1 font-bold">
+                                                            <Clock className="w-3 h-3" /> {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="py-5 font-bold text-gray-900">{formatPrice(order.total_amount)}</td>
+                                                <td className="py-5 text-right">
+                                                    <span className={`inline-flex px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-[0.1em] ${order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
+                                                            order.status === 'processing' ? 'bg-primary/10 text-primary' :
+                                                                order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                                                                    order.status === 'pending' ? 'bg-amber-100 text-amber-600' :
+                                                                        'bg-gray-100 text-gray-500'
+                                                        }`}>
+                                                        {order.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
