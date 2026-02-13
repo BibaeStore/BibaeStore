@@ -233,7 +233,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
 
             {/* Login Form */}
             <motion.div
-                className={`absolute top-0 bottom-0 right-0 w-full md:w-1/2 bg-white flex items-center justify-center p-8 z-10 transition-all duration-300 ${isSignUp ? 'md:opacity-0 md:pointer-events-none' : 'opacity-100'}`}
+                className={`absolute top-0 bottom-0 right-0 w-full md:w-1/2 bg-white flex items-center justify-center p-8 z-10 transition-all duration-500 ease-in-out ${isSignUp ? 'opacity-0 pointer-events-none md:pointer-events-none' : 'opacity-100 pointer-events-auto z-20'}`}
             >
                 {!isSignUp && (
                     <div className="w-full max-w-[400px] space-y-8">
@@ -305,7 +305,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
 
             {/* Signup Form */}
             <motion.div
-                className={`absolute top-0 bottom-0 left-0 w-full md:w-1/2 bg-white flex items-center justify-center p-8 z-10 transition-all duration-300 ${!isSignUp ? 'md:opacity-0 md:pointer-events-none' : 'opacity-100'}`}
+                className={`absolute top-0 bottom-0 left-0 w-full md:w-1/2 bg-white flex items-center justify-center p-8 z-10 transition-all duration-500 ease-in-out ${!isSignUp ? 'opacity-0 pointer-events-none md:pointer-events-none' : 'opacity-100 pointer-events-auto z-20'}`}
             >
                 {isSignUp && (
                     <div className="w-full max-w-[400px] space-y-6 max-h-screen overflow-y-auto no-scrollbar py-8">
