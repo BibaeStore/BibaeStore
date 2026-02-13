@@ -7,6 +7,7 @@ import { ShoppingBag, Heart, Search, Menu, X, User } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { motion, AnimatePresence } from "framer-motion";
+import { createClient } from "@/lib/supabase/client";
 const logo = '/assets/logo.png';
 
 const navLinks = [
@@ -26,6 +27,8 @@ export default function Header() {
   const searchParams = useSearchParams();
   const routeKey = pathname + "?" + searchParams.toString();
   const isAdminPath = pathname.startsWith('/admin');
+  const [session, setSession] = useState<any>(null);
+  const supabase = createClient();
 
   if (isAdminPath) return null;
 
@@ -41,13 +44,25 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  useEffect(() => {
     setMobileOpen(false);
   }, [routeKey]);
 
   // Always dark text for light theme
   const textColorClass = "text-foreground";
   const hoverColorClass = "hover:text-primary";
-  const logoClass = "h-10 md:h-14 w-auto"; 
+  const logoClass = "h-10 md:h-14 w-auto";
 
   const headerBgClass = scrolled
     ? "bg-white/80 backdrop-blur-md shadow-soft border-b border-border transition-all duration-300"
@@ -99,8 +114,8 @@ export default function Header() {
                 </span>
               )}
             </Link>
-            <Link href="/login" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block">
-              <User className="w-5 h-5" />
+            <Link href={session ? "/profile" : "/login"} className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block">
+              <User className={`w-5 h-5 ${session ? "text-primary" : ""}`} />
             </Link>
             <Link href="/cart" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm relative">
               <ShoppingBag className="w-5 h-5" />

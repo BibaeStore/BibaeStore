@@ -1,29 +1,31 @@
 'use client'
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { 
-  contactSchema, 
-  shippingSchema, 
+import { OrderService } from "@/services/order.service";
+import { createClient } from "@/lib/supabase/client";
+import {
+  contactSchema,
+  shippingSchema,
   paymentSchema,
   type ContactFormData,
   type ShippingFormData,
-  type PaymentFormData 
+  type PaymentFormData
 } from "@/lib/validations/checkout";
-import { 
-  Check, 
-  ChevronRight, 
-  CreditCard, 
-  Mail, 
-  MapPin, 
-  Phone, 
+import {
+  Check,
+  ChevronRight,
+  CreditCard,
+  Mail,
+  MapPin,
+  Phone,
   Truck,
-  ArrowLeft 
+  ArrowLeft
 } from "lucide-react";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -44,17 +46,27 @@ export default function CheckoutPage() {
   const [currentStep, setCurrentStep] = useState<Step>("contact");
   const [completedSteps, setCompletedSteps] = useState<Step[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Form data storage
   const [contactData, setContactData] = useState<ContactFormData | null>(null);
   const [shippingData, setShippingData] = useState<ShippingFormData | null>(null);
   const [paymentData, setPaymentData] = useState<PaymentFormData | null>(null);
 
+  const supabase = createClient();
+  const [session, setSession] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+  }, [supabase]);
+
   // Redirect if cart is empty
-  if (items.length === 0 && typeof window !== 'undefined') {
-    router.push("/cart");
-    return null;
-  }
+  useEffect(() => {
+    if (items.length === 0 && !isSubmitting) {
+      router.push("/cart");
+    }
+  }, [items.length, isSubmitting, router]);
 
   const currentStepIndex = steps.findIndex(s => s.id === currentStep);
   const shippingCost = totalPrice >= 5000 ? 0 : 200;
@@ -64,9 +76,9 @@ export default function CheckoutPage() {
     if (step === "contact") setContactData(data);
     if (step === "shipping") setShippingData(data);
     if (step === "payment") setPaymentData(data);
-    
+
     setCompletedSteps(prev => [...prev, step]);
-    
+
     const nextStepIndex = currentStepIndex + 1;
     if (nextStepIndex < steps.length) {
       setCurrentStep(steps[nextStepIndex].id);
@@ -75,18 +87,41 @@ export default function CheckoutPage() {
 
   const handleFinalSubmit = async () => {
     setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Generate order number
-    const orderNumber = `BIB-${Date.now().toString().slice(-8)}`;
-    
-    // Clear cart
-    clearCart();
-    
-    // Redirect to success page
-    router.push(`/checkout/success?order=${orderNumber}`);
+
+    let orderNumber = `BIB-${Date.now().toString().slice(-8)}`;
+
+    try {
+      if (session?.user?.id && shippingData) {
+        const addressString = `${shippingData.address}, ${shippingData.city}, ${shippingData.state}, ${shippingData.zipCode}, ${shippingData.country}`;
+        const orderItems = items.map(item => ({
+          product_id: item.product.id,
+          quantity: item.quantity,
+          price: item.product.price
+        }));
+
+        const order = await OrderService.placeOrder(
+          session.user.id,
+          finalTotal,
+          orderItems,
+          addressString
+        );
+        orderNumber = order.id.slice(0, 8).toUpperCase();
+      } else {
+        // Guest order logic or just simulate
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+
+      // Clear cart (locally and in DB is handled by clearCart if logic added to library)
+      clearCart();
+
+      // Redirect to success page
+      router.push(`/checkout/success?order=${orderNumber}`);
+    } catch (error) {
+      console.error("Order placement failed:", error);
+      toast.error("Failed to place order. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -113,18 +148,17 @@ export default function CheckoutPage() {
               const Icon = step.icon;
               const isActive = step.id === currentStep;
               const isCompleted = completedSteps.includes(step.id);
-              
+
               return (
                 <div key={step.id} className="flex items-center flex-1">
                   <div className="flex flex-col items-center flex-1">
                     <motion.div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
-                        isCompleted
-                          ? "bg-primary border-primary text-primary-foreground"
-                          : isActive
+                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${isCompleted
+                        ? "bg-primary border-primary text-primary-foreground"
+                        : isActive
                           ? "border-primary text-primary"
                           : "border-border text-muted-foreground"
-                      }`}
+                        }`}
                       animate={isActive ? { scale: [1, 1.1, 1] } : {}}
                       transition={{ duration: 0.3 }}
                     >
@@ -242,7 +276,7 @@ function ContactForm({ onComplete }: { onComplete: (data: ContactFormData) => vo
         <h2 className="font-heading text-2xl mb-2">Contact Information</h2>
         <p className="text-sm text-muted-foreground">We'll use this to send order updates</p>
       </div>
-      
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div>
           <label className="block text-sm font-body font-medium mb-2">
@@ -311,7 +345,7 @@ function ShippingForm({ onComplete }: { onComplete: (data: ShippingFormData) => 
         <h2 className="font-heading text-2xl mb-2">Shipping Address</h2>
         <p className="text-sm text-muted-foreground">Where should we deliver your order?</p>
       </div>
-      
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -440,7 +474,7 @@ function PaymentForm({ onComplete }: { onComplete: (data: PaymentFormData) => vo
         <h2 className="font-heading text-2xl mb-2">Payment Details</h2>
         <p className="text-sm text-muted-foreground">This is a demo - no real payment will be processed</p>
       </div>
-      
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div>
           <label className="block text-sm font-body font-medium mb-2">
@@ -511,13 +545,13 @@ function PaymentForm({ onComplete }: { onComplete: (data: PaymentFormData) => vo
 }
 
 // Review Step Component
-function ReviewStep({ 
-  contactData, 
-  shippingData, 
-  paymentData, 
-  onSubmit, 
-  isSubmitting 
-}: { 
+function ReviewStep({
+  contactData,
+  shippingData,
+  paymentData,
+  onSubmit,
+  isSubmitting
+}: {
   contactData: ContactFormData;
   shippingData: ShippingFormData;
   paymentData: PaymentFormData;

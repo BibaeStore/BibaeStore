@@ -3,12 +3,15 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
-import { Heart, ShoppingBag, Star, Truck, Shield, RotateCcw, Check, Minus, Plus } from "lucide-react";
+import { Heart, ShoppingBag, Star, Truck, Shield, RotateCcw, Check, Minus, Plus, User, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
 import { ProductService } from "@/services/product.service";
+import { ClientService } from "@/services/client.service";
+import { createClient } from "@/lib/supabase/client";
 import { useCart } from "@/lib/cart";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -50,6 +53,13 @@ export default function ProductPage() {
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
   const [imageZoom, setImageZoom] = useState(false);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [userRating, setUserRating] = useState(0);
+  const [userComment, setUserComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [userSession, setUserSession] = useState<any>(null);
+
+  const supabase = createClient();
 
   useEffect(() => {
     async function loadProduct() {
@@ -60,19 +70,27 @@ export default function ProductPage() {
         if (data) {
           setProduct(data);
           setActiveImage(data.images?.[0] || '/assets/placeholder.jpg');
-          
+
           // Initialize defaults if available
-          if (data.sizes && data.sizes.length > 0) setSelectedSize(""); 
+          if (data.sizes && data.sizes.length > 0) setSelectedSize("");
           if (data.colors && data.colors.length > 0) setSelectedColor(data.colors[0]);
 
           // Fetch related products (same category)
           if (data.category_id) {
-             const allProducts = await ProductService.getProducts();
-             const related = allProducts
-                .filter((p: any) => p.category_id === data.category_id && p.id !== data.id)
-                .slice(0, 4);
-             setRelatedProducts(related);
+            const allProducts = await ProductService.getProducts();
+            const related = allProducts
+              .filter((p: any) => p.category_id === data.category_id && p.id !== data.id)
+              .slice(0, 4);
+            setRelatedProducts(related);
           }
+
+          // Fetch reviews
+          const reviewsData = await ClientService.getRatings(params.id as string);
+          setReviews(reviewsData);
+
+          // Get session
+          const { data: { session } } = await supabase.auth.getSession();
+          setUserSession(session);
         }
       } catch (error) {
         console.error("Failed to load product:", error);
@@ -93,7 +111,7 @@ export default function ProductPage() {
       addItem({
         ...product,
         image: product.images?.[0] || '/assets/placeholder.jpg',
-        originalPrice: product.sale_price 
+        originalPrice: product.sale_price
       }, selectedSize, selectedColor || "Default");
     }
     setAddedToCart(true);
@@ -104,16 +122,44 @@ export default function ProductPage() {
     }, 2000);
   };
 
+  const handleSubmitReview = async () => {
+    if (!userSession) return;
+    if (userRating === 0) {
+      toast.error("Please select a rating");
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      await ClientService.submitRating({
+        product_id: product.id,
+        client_id: userSession.user.id,
+        rating: userRating,
+        comment: userComment
+      });
+      toast.success("Thank you for your review!");
+      setUserComment("");
+      setUserRating(0);
+      // Refresh reviews
+      const reviewsData = await ClientService.getRatings(params.id as string);
+      setReviews(reviewsData);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to submit review. You might have already rated this product.");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   if (loading) return <ProductDetailSkeleton />;
   if (!product) return <div className="min-h-screen flex items-center justify-center">Product not found</div>;
 
   const discount = product.sale_price
     ? Math.round(((product.price - product.sale_price) / product.price) * 100)
     : 0;
-  
+
   // Safe defaults for arrays
   const sizes = product.sizes || ['S', 'M', 'L', 'XL']; // Fallback if not in DB yet
-  const colors = product.colors || ['Standard']; 
+  const colors = product.colors || ['Standard'];
 
   return (
     <main className="min-h-screen">
@@ -160,24 +206,23 @@ export default function ProductPage() {
                 )}
               </div>
             </motion.div>
-             <div className="flex gap-4 overflow-x-auto pb-2 mt-4">
-                {[activeImage, ...(product.images || []).filter((img: string) => img !== activeImage)].map((img, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveImage(img)}
-                    className={`relative w-20 h-24 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${
-                      activeImage === img ? "border-primary shadow-sm" : "border-transparent hover:border-gray-300"
+            <div className="flex gap-4 overflow-x-auto pb-2 mt-4">
+              {[activeImage, ...(product.images || []).filter((img: string) => img !== activeImage)].map((img, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveImage(img)}
+                  className={`relative w-20 h-24 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${activeImage === img ? "border-primary shadow-sm" : "border-transparent hover:border-gray-300"
                     }`}
-                  >
-                    <Image
-                      src={img}
-                      alt={`${product.name} view ${i + 1}`}
-                      fill
-                      className="object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
+                >
+                  <Image
+                    src={img}
+                    alt={`${product.name} view ${i + 1}`}
+                    fill
+                    className="object-cover"
+                  />
+                </button>
+              ))}
+            </div>
           </motion.div>
 
           {/* Info */}
@@ -188,12 +233,12 @@ export default function ProductPage() {
             className="flex flex-col"
           >
             <div className="flex items-center gap-2 mb-3">
-                 <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
-                  {product.category?.name || 'Collection'}
-                </Badge>
-                <p className="text-xs font-body text-muted-foreground tracking-[0.1em] uppercase">SKU: {product.sku}</p>
+              <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                {product.category?.name || 'Collection'}
+              </Badge>
+              <p className="text-xs font-body text-muted-foreground tracking-[0.1em] uppercase">SKU: {product.sku}</p>
             </div>
-            
+
             <h1 className="font-heading text-3xl md:text-5xl font-light mb-4 leading-tight text-gray-900">{product.name}</h1>
 
             {/* Rating */}
@@ -226,48 +271,48 @@ export default function ProductPage() {
             <div className="w-full h-[1px] bg-border mb-8" />
 
             <div className="prose prose-sm text-gray-600 mb-8">
-                <p>{product.description}</p>
+              <p>{product.description}</p>
             </div>
 
             {/* Size */}
             {sizes.length > 0 && (
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-body font-medium tracking-wider uppercase">Size</p>
-                <button className="text-xs font-body text-primary hover:underline">Size Guide</button>
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-body font-medium tracking-wider uppercase">Size</p>
+                  <button className="text-xs font-body text-primary hover:underline">Size Guide</button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {sizes.map((size: string) => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`min-w-[50px] px-4 py-2.5 text-sm font-body border transition-all duration-200 ${selectedSize === size ? "bg-foreground text-background border-foreground" : "border-border hover:border-foreground"}`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {sizes.map((size: string) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`min-w-[50px] px-4 py-2.5 text-sm font-body border transition-all duration-200 ${selectedSize === size ? "bg-foreground text-background border-foreground" : "border-border hover:border-foreground"}`}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-            </div>
             )}
 
             {/* Color */}
             {colors.length > 0 && (
-            <div className="mb-8">
-              <p className="text-sm font-body font-medium mb-3 tracking-wider uppercase">
-                Color{selectedColor && <span className="font-normal text-muted-foreground ml-2">— {selectedColor}</span>}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {colors.map((color: string) => (
-                  <button
-                    key={color}
-                    onClick={() => setSelectedColor(color)}
-                    className={`px-4 py-2.5 text-sm font-body border transition-all duration-200 ${selectedColor === color ? "bg-foreground text-background border-foreground" : "border-border hover:border-foreground"}`}
-                  >
-                    {color}
-                  </button>
-                ))}
+              <div className="mb-8">
+                <p className="text-sm font-body font-medium mb-3 tracking-wider uppercase">
+                  Color{selectedColor && <span className="font-normal text-muted-foreground ml-2">— {selectedColor}</span>}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {colors.map((color: string) => (
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColor(color)}
+                      className={`px-4 py-2.5 text-sm font-body border transition-all duration-200 ${selectedColor === color ? "bg-foreground text-background border-foreground" : "border-border hover:border-foreground"}`}
+                    >
+                      {color}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
             )}
 
             {/* Quantity */}
@@ -333,6 +378,99 @@ export default function ProductPage() {
           </motion.div>
         </div>
 
+        {/* Ratings & Reviews Section */}
+        <section className="mt-20 border-t pt-12">
+          <div className="flex flex-col md:flex-row gap-12">
+            {/* Summary */}
+            <div className="md:w-1/3">
+              <h3 className="font-heading text-2xl mb-6">Customer Reviews</h3>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="text-5xl font-heading font-light">
+                  {reviews.length > 0
+                    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+                    : "0.0"}
+                </div>
+                <div>
+                  <div className="flex mb-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={`w-4 h-4 ${i < Math.round(reviews.reduce((acc, r) => acc + r.rating, 0) / (reviews.length || 1)) ? "fill-primary text-primary" : "text-border"}`} />
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Based on {reviews.length} reviews</p>
+                </div>
+              </div>
+
+              {/* Write a Review */}
+              <div className="mt-8 p-6 bg-muted/30 rounded-2xl border border-border">
+                <h4 className="font-heading text-lg mb-2">Share your thoughts</h4>
+                <p className="text-sm text-muted-foreground mb-4">How was your experience with this product?</p>
+                {userSession ? (
+                  <div className="space-y-4">
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <button key={s} onClick={() => setUserRating(s)} className="focus:outline-none group">
+                          <Star className={`w-6 h-6 transition-all ${s <= userRating ? "fill-primary text-primary" : "text-gray-300 hover:text-primary/50"}`} />
+                        </button>
+                      ))}
+                    </div>
+                    <textarea
+                      className="w-full bg-white border border-border rounded-lg p-3 text-sm focus:ring-1 focus:ring-primary outline-none transition-all"
+                      placeholder="Write your review here..."
+                      rows={3}
+                      value={userComment}
+                      onChange={(e) => setUserComment(e.target.value)}
+                    />
+                    <Button
+                      onClick={handleSubmitReview}
+                      disabled={submittingReview || userRating === 0}
+                      className="w-full bg-primary hover:bg-primary/90 text-white rounded-lg h-10 text-xs font-bold uppercase tracking-widest"
+                    >
+                      {submittingReview ? "Submitting..." : "Submit Review"}
+                    </Button>
+                  </div>
+                ) : (
+                  <Link href="/login" className="inline-block text-primary text-sm font-bold hover:underline">Login to write a review</Link>
+                )}
+              </div>
+            </div>
+
+            {/* Reviews List */}
+            <div className="md:w-2/3 space-y-8">
+              {reviews.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                  <p className="text-muted-foreground">No reviews yet. Be the first to review this product!</p>
+                </div>
+              ) : (
+                reviews.map((review: any) => (
+                  <div key={review.id} className="pb-8 border-b border-border last:border-0">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center relative overflow-hidden">
+                        {review.client?.profile_image_url ? (
+                          <Image src={review.client.profile_image_url} alt={review.client.full_name} fill className="object-cover" />
+                        ) : (
+                          <User className="w-5 h-5 text-primary" />
+                        )}
+                      </div>
+                      <div>
+                        <h5 className="text-sm font-bold text-gray-900">{review.client?.full_name || "Anonymous"}</h5>
+                        <div className="flex items-center gap-2">
+                          <div className="flex">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} className={`w-3 h-3 ${i < review.rating ? "fill-primary text-primary" : "text-border"}`} />
+                            ))}
+                          </div>
+                          <span className="text-[10px] text-muted-foreground">{new Date(review.created_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 leading-relaxed">{review.comment}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </section>
+
         {/* Related */}
         {relatedProducts.length > 0 && (
           <section className="mt-20 mb-10">
@@ -342,16 +480,16 @@ export default function ProductPage() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {relatedProducts.map((p, i) => (
-                <ProductCard 
-                    key={p.id} 
-                    product={{
-                      ...p,
-                      image: p.images?.[0] || '/assets/placeholder.jpg',
-                      category: p.category?.name || 'Uncategorized',
-                      originalPrice: p.sale_price,
-                      isNew: p.created_at && (new Date().getTime() - new Date(p.created_at).getTime()) < 30 * 24 * 60 * 60 * 1000 
-                    }} 
-                    index={i} 
+                <ProductCard
+                  key={p.id}
+                  product={{
+                    ...p,
+                    image: p.images?.[0] || '/assets/placeholder.jpg',
+                    category: p.category?.name || 'Uncategorized',
+                    originalPrice: p.sale_price,
+                    isNew: p.created_at && (new Date().getTime() - new Date(p.created_at).getTime()) < 30 * 24 * 60 * 60 * 1000
+                  }}
+                  index={i}
                 />
               ))}
             </div>

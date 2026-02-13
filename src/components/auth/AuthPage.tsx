@@ -18,7 +18,7 @@ const GoogleIcon = () => (
         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
         <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
         <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
-        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335" />
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1c-2.97 0-5.46.98-7.28 2.66l-2.54 3.41C3.99 3.47 7.7 1 12 1z" fill="#EA4335" />
     </svg>
 )
 
@@ -38,7 +38,11 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
     // Form State
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
     const [name, setName] = useState('')
+    const [phone, setPhone] = useState('')
+    const [profileImage, setProfileImage] = useState<File | null>(null)
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
     const supabase = createClient()
 
@@ -47,8 +51,29 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
         setIsSignUp(initialMode === 'signup')
     }, [initialMode])
 
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            setProfileImage(file)
+            setPreviewUrl(URL.createObjectURL(file))
+        }
+    }
+
     const handleEmailAuth = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        if (isSignUp) {
+            // Validations
+            if (password !== confirmPassword) {
+                toast.error('Passwords do not match')
+                return
+            }
+            if (!phone) {
+                toast.error('Phone number is required')
+                return
+            }
+        }
+
         setIsLoading(true)
         try {
             if (isSignUp) {
@@ -58,6 +83,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                     options: {
                         data: {
                             full_name: name,
+                            phone_number: phone,
                         },
                         emailRedirectTo: `${window.location.origin}/auth/callback`,
                     },
@@ -70,9 +96,17 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                 }
 
                 if (data.user) {
-                    toast.success('Registration successful! Please check your email.')
-                    // Don't switch mode immediately, let user check email
+                    toast.success('Congratulations! Your account has been created successfully.', {
+                        description: 'Now you can login with your credentials.',
+                        duration: 5000,
+                    })
+
                     setIsLoading(false)
+                    // Redirect to login after a short delay so they see the popup
+                    setTimeout(() => {
+                        setIsSignUp(false)
+                        router.push('/login')
+                    }, 2000)
                 }
             } else {
                 const { data, error } = await supabase.auth.signInWithPassword({
@@ -124,24 +158,11 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
     const toggleMode = () => {
         const nextState = !isSignUp
         setIsSignUp(nextState)
-        // Removed manual history manipulation to prevent layout instability and "double click" issues
-        // const newPath = nextState ? '/signup' : '/login'
-        // window.history.pushState({}, '', newPath)
     }
 
     return (
         <div className="relative min-h-screen w-full flex overflow-hidden bg-gray-50">
-            {/* 
-              Background Animation Layer 
-              We keep this static behind everything or animate it subtly
-            */}
             <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
-
-
-            {/* 
-              Desktop: Split Screen Container
-              Mobile: Stacked (We'll handle via CSS media queries, but primarily focusing on the split animation logic here)
-            */}
 
             {/* BRANDING PANEL */}
             <motion.div
@@ -156,7 +177,6 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                 transition={{ type: "spring", stiffness: 200, damping: 25, mass: 0.8 }}
                 className="hidden md:flex absolute top-0 bottom-0 w-1/2 bg-yellow-50/50 backdrop-blur-sm z-20 items-center justify-center p-12 overflow-hidden shadow-2xl border-r border-yellow-100/50"
             >
-                {/* Decorative Background Elements inside Branding Panel */}
                 <div className="absolute inset-0 z-0 overflow-hidden">
                     <motion.div
                         animate={{
@@ -211,7 +231,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
 
             {/* FORM PANEL LAYER */}
 
-            {/* Left Form (Login) - Visible when isSignUp is FALSE. Positioned on RIGHT side for Desktop. */}
+            {/* Login Form */}
             <motion.div
                 className={`absolute top-0 bottom-0 right-0 w-full md:w-1/2 bg-white flex items-center justify-center p-8 z-10 transition-all duration-300 ${isSignUp ? 'md:opacity-0 md:pointer-events-none' : 'opacity-100'}`}
             >
@@ -273,7 +293,6 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                             <span className="font-semibold text-gray-700">Google Account</span>
                         </Button>
 
-                        {/* Mobile Only Switch */}
                         <div className="md:hidden text-center mt-6">
                             <p className="text-sm text-gray-600">
                                 Don't have an account? {' '}
@@ -284,58 +303,76 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                 )}
             </motion.div>
 
-            {/* Right Form (Signup) - Visible when isSignUp is TRUE. Positioned on LEFT side for Desktop. */}
+            {/* Signup Form */}
             <motion.div
                 className={`absolute top-0 bottom-0 left-0 w-full md:w-1/2 bg-white flex items-center justify-center p-8 z-10 transition-all duration-300 ${!isSignUp ? 'md:opacity-0 md:pointer-events-none' : 'opacity-100'}`}
             >
                 {isSignUp && (
-                    <div className="w-full max-w-[400px] space-y-8">
+                    <div className="w-full max-w-[400px] space-y-6 max-h-screen overflow-y-auto no-scrollbar py-8">
                         <div className="text-center md:text-left">
                             <h1 className="text-3xl font-heading font-medium text-gray-900">Create Account</h1>
                             <p className="text-gray-500 text-sm mt-2">Join us for a premium shopping experience.</p>
                         </div>
 
-                        <form onSubmit={handleEmailAuth} className="space-y-5">
+                        <form onSubmit={handleEmailAuth} className="space-y-4">
                             <div className="space-y-2">
                                 <Label>Full Name</Label>
                                 <Input
                                     type="text"
                                     placeholder="John Doe"
-                                    className="h-12 bg-gray-50 border-gray-200 rounded-xl focus:ring-primary/20"
+                                    className="h-11 bg-gray-50 border-gray-200 rounded-xl"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     required
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label>Email Address</Label>
-                                <Input
-                                    type="email"
-                                    placeholder="your@email.com"
-                                    className="h-12 bg-gray-50 border-gray-200 rounded-xl focus:ring-primary/20"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Password</Label>
-                                <div className="relative">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Email Address</Label>
                                     <Input
-                                        type={showPassword ? "text" : "password"}
+                                        type="email"
+                                        placeholder="your@email.com"
+                                        className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Phone Number</Label>
+                                    <Input
+                                        type="tel"
+                                        placeholder="+92 300 0000000"
+                                        className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Password</Label>
+                                    <Input
+                                        type="password"
                                         placeholder="••••••••"
-                                        className="h-12 bg-gray-50 border-gray-200 rounded-xl focus:ring-primary/20 pr-10"
+                                        className="h-11 bg-gray-50 border-gray-200 rounded-xl"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                    >
-                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                    </button>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Confirm Password</Label>
+                                    <Input
+                                        type="password"
+                                        placeholder="••••••••"
+                                        className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        required
+                                    />
                                 </div>
                             </div>
 
@@ -354,8 +391,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                             <span className="font-semibold text-gray-700">Google Account</span>
                         </Button>
 
-                        {/* Mobile Only Switch */}
-                        <div className="md:hidden text-center mt-6">
+                        <div className="md:hidden text-center mt-6 pb-4">
                             <p className="text-sm text-gray-600">
                                 Already have an account? {' '}
                                 <button type="button" onClick={toggleMode} className="text-primary font-bold hover:underline">Login</button>

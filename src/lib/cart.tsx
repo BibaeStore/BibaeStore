@@ -1,6 +1,9 @@
 'use client'
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { createClient } from "./supabase/client";
+import { CartService } from "@/services/cart.service";
+import { toast } from "sonner";
 
 export interface CartProduct {
   id: string;
@@ -26,46 +29,165 @@ interface CartContextType {
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
+  isLoading: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const supabase = createClient();
 
-  const addItem = (product: CartProduct, size: string, color: string) => {
+  // 1. Initial Load and Auth Watch
+  useEffect(() => {
+    const initCart = async () => {
+      // Check auth
+      const { data: { session } } = await supabase.auth.getSession();
+      setUserId(session?.user?.id || null);
+
+      if (session?.user?.id) {
+        // Fetch from DB
+        try {
+          const dbItems = await CartService.getCart(session.user.id);
+          const mappedItems: CartItem[] = dbItems.map(item => ({
+            product: {
+              ...item.product,
+              image: item.product.images?.[0] || '/assets/placeholder.jpg'
+            },
+            quantity: item.quantity,
+            size: "Standard", // Logic for size/color storage needs expansion in schema if needed
+            color: "Default"
+          }));
+          setItems(mappedItems);
+        } catch (error) {
+          console.error("Error loading cart from DB:", error);
+        }
+      } else {
+        // Fetch from LocalStorage
+        const localData = localStorage.getItem('bibae_cart');
+        if (localData) {
+          try {
+            setItems(JSON.parse(localData));
+          } catch (e) {
+            console.error("Error parsing local cart:", e);
+          }
+        }
+      }
+      setIsLoading(false);
+    };
+
+    initCart();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setUserId(session?.user?.id || null);
+      if (event === 'SIGNED_IN' && session?.user?.id) {
+        // Sync local to DB? Or just overwrite? 
+        // Best practice: Merge local to DB if DB is empty, or just load DB. 
+        // For simplicity: load DB.
+        const dbItems = await CartService.getCart(session.user.id);
+        const mappedItems: CartItem[] = dbItems.map(item => ({
+          product: {
+            ...item.product,
+            image: item.product.images?.[0] || '/assets/placeholder.jpg'
+          },
+          quantity: item.quantity,
+          size: "Standard",
+          color: "Default"
+        }));
+        setItems(mappedItems);
+      } else if (event === 'SIGNED_OUT') {
+        setItems([]);
+        localStorage.removeItem('bibae_cart');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  // 2. Persist to LocalStorage whenever items change (if not logged in)
+  useEffect(() => {
+    if (!userId && !isLoading) {
+      localStorage.setItem('bibae_cart', JSON.stringify(items));
+    }
+  }, [items, userId, isLoading]);
+
+  const addItem = async (product: CartProduct, size: string, color: string) => {
+    const existing = items.find((i) => i.product.id === product.id && i.size === size && i.color === color);
+    const newQuantity = existing ? existing.quantity + 1 : 1;
+
+    // Update Local State
     setItems((prev) => {
-      const existing = prev.find((i) => i.product.id === product.id && i.size === size && i.color === color);
       if (existing) {
         return prev.map((i) =>
           i.product.id === product.id && i.size === size && i.color === color
-            ? { ...i, quantity: i.quantity + 1 }
+            ? { ...i, quantity: newQuantity }
             : i
         );
       }
       return [...prev, { product, quantity: 1, size, color }];
     });
+
+    // Update DB if logged in
+    if (userId) {
+      try {
+        await CartService.addToCart(userId, product.id, newQuantity);
+      } catch (error) {
+        console.error("Failed to sync cart to DB:", error);
+        toast.error("Cloud sync failed. Cart saved locally.");
+      }
+    }
   };
 
-  const removeItem = (productId: string) => {
+  const removeItem = async (productId: string) => {
     setItems((prev) => prev.filter((i) => i.product.id !== productId));
+
+    if (userId) {
+      try {
+        await CartService.removeFromCart(userId, productId);
+      } catch (error) {
+        console.error("Failed to sync removal to DB:", error);
+      }
+    }
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = async (productId: string, quantity: number) => {
     if (quantity <= 0) {
       removeItem(productId);
       return;
     }
+
     setItems((prev) => prev.map((i) => (i.product.id === productId ? { ...i, quantity } : i)));
+
+    if (userId) {
+      try {
+        await CartService.updateQuantity(userId, productId, quantity);
+      } catch (error) {
+        console.error("Failed to sync quantity to DB:", error);
+      }
+    }
   };
 
-  const clearCart = () => setItems([]);
+  const clearCart = async () => {
+    setItems([]);
+    if (userId) {
+      try {
+        await CartService.clearCart(userId);
+      } catch (error) {
+        console.error("Failed to clear DB cart:", error);
+      }
+    } else {
+      localStorage.removeItem('bibae_cart');
+    }
+  };
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice }}>
+    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, isLoading }}>
       {children}
     </CartContext.Provider>
   );
