@@ -59,22 +59,45 @@ export default function CheckoutPage() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Safety timeout to prevent infinite loading
+    const timer = setTimeout(() => {
+        if (isLoadingProfile) {
+            console.warn("Checkout initialization timed out, forcing load.");
+            setIsLoadingProfile(false);
+            toast.error("Slow network detected. Some data may not be pre-filled.");
+        }
+    }, 8000); // 8 seconds timeout
+
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error("Session fetch error:", error);
+        setIsLoadingProfile(false);
+        return;
+      }
+      
       setSession(session);
       if (session?.user) {
         fetchUserProfile(session.user.id);
       } else {
         setIsLoadingProfile(false);
       }
+    }).catch(err => {
+        console.error("Unexpected session error:", err);
+        setIsLoadingProfile(false);
     });
+
+    return () => clearTimeout(timer);
   }, [supabase]);
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log("Fetching user profile for:", userId);
       const data = await ClientService.getProfile(userId);
+      console.log("Profile fetched:", data ? "Found" : "Not Found");
       setProfile(data);
     } catch (error) {
       console.error("Error fetching profile:", error);
+      toast.error("Failed to load profile data");
     } finally {
       setIsLoadingProfile(false);
     }
@@ -107,10 +130,8 @@ export default function CheckoutPage() {
   const handleFinalSubmit = async () => {
     setIsSubmitting(true);
 
-    let orderNumber = `BIB-${Date.now().toString().slice(-8)}`;
-
     try {
-      if (session?.user?.id && shippingData) {
+      if (session?.user?.id && shippingData && paymentData) {
         const addressString = `${shippingData.address}, ${shippingData.city}, ${shippingData.state}, ${shippingData.zipCode}, ${shippingData.country}`;
         const orderItems = items.map(item => ({
           product_id: item.product.id,
@@ -118,26 +139,48 @@ export default function CheckoutPage() {
           price: item.product.price
         }));
 
-        const order = await OrderService.placeOrder(
+        const promise = OrderService.placeOrder(
           session.user.id,
           finalTotal,
           orderItems,
-          addressString
+          addressString,
+          paymentData.method,
+          paymentData.proofFile // Will be undefined if COD
         );
-        orderNumber = order.id.slice(0, 8).toUpperCase();
+
+        toast.promise(promise, {
+            loading: 'Creating your order...',
+            success: (order) => {
+                // Clear cart
+                clearCart();
+                // Redirect
+                router.push(`/checkout/success?order=${order.id.slice(0, 8).toUpperCase()}`);
+                return `Order placed successfully! Order #${order.id.slice(0, 8).toUpperCase()}`;
+            },
+            error: (err) => `Order failed: ${err.message}`
+        });
+
+        await promise; // Wait for it to complete to handle local state (redirect happens in success callback but we wait here to ensure no race conditions if needed, though with promise toast it handles it)
+
       } else {
-        // Guest order logic or just simulate
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Guest order logic simulation (fallback)
+         await new Promise(resolve => setTimeout(resolve, 1500));
+         clearCart();
+         router.push(`/checkout/success?order=GUEST-${Date.now().toString().slice(-6)}`);
+         toast.success("Guest order placed successfully!");
       }
 
-      // Clear cart (locally and in DB is handled by clearCart if logic added to library)
-      clearCart();
-
-      // Redirect to success page
-      router.push(`/checkout/success?order=${orderNumber}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Order placement failed:", error);
-      toast.error("Failed to place order. Please try again.");
+      console.error("Error details:", {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint
+      });
+      // Toasts handled above, but if it was a synchronous error before the promise, we need a toast
+      if (!isSubmitting) toast.error(`Failed to place order: ${error?.message || "Unknown error"}`);
+      // Toasts handled above
     } finally {
       setIsSubmitting(false);
     }
@@ -516,14 +559,35 @@ function PaymentForm({
   onComplete: (data: PaymentFormData) => void,
   initialData: Partial<PaymentFormData> | null
 }) {
-  const { register, handleSubmit, formState: { errors } } = useForm<PaymentFormData>({
+  const { register, watch, setValue, handleSubmit, formState: { errors } } = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
-    defaultValues: initialData || {}
+    defaultValues: {
+      method: "cod",
+      ...initialData
+    }
   });
+
+  const method = watch("method");
+  const onlineMethod = watch("onlineMethod");
+  const [dragActive, setDragActive] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(initialData?.proofFile?.name || null);
 
   const onSubmit = (data: PaymentFormData) => {
     onComplete(data);
     toast.success("Payment details saved!");
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            toast.error("File size must be less than 5MB");
+            e.target.value = ""; // Clear input
+            return;
+        }
+        setFileName(file.name);
+        setValue("proofFile", file);
+    }
   };
 
   return (
@@ -535,66 +599,124 @@ function PaymentForm({
       className="bg-background border border-border p-6 md:p-8"
     >
       <div className="mb-6">
-        <h2 className="font-heading text-2xl mb-2">Payment Details</h2>
-        <p className="text-sm text-muted-foreground">This is a demo - no real payment will be processed</p>
+        <h2 className="font-heading text-2xl mb-2">Payment Method</h2>
+        <p className="text-sm text-muted-foreground">Select how you want to pay</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div>
-          <label className="block text-sm font-body font-medium mb-2">
-            Card Number <span className="text-destructive">*</span>
-          </label>
-          <div className="relative">
-            <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              {...register("cardNumber")}
-              placeholder="1234 5678 9012 3456"
-              maxLength={19}
-              className="w-full pl-10 pr-4 py-3 border border-border bg-transparent focus:outline-none focus:border-primary transition-colors"
-            />
-          </div>
-          {errors.cardNumber && <p className="text-xs text-destructive mt-1">{errors.cardNumber.message}</p>}
-        </div>
-
-        <div>
-          <label className="block text-sm font-body font-medium mb-2">
-            Name on Card <span className="text-destructive">*</span>
-          </label>
-          <input
-            {...register("cardName")}
-            placeholder="John Doe"
-            className="w-full px-4 py-3 border border-border bg-transparent focus:outline-none focus:border-primary transition-colors"
-          />
-          {errors.cardName && <p className="text-xs text-destructive mt-1">{errors.cardName.message}</p>}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-body font-medium mb-2">
-              Expiry Date <span className="text-destructive">*</span>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        
+        {/* Payment Method Selection */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col gap-3 transition-all ${method === 'cod' ? 'border-primary bg-primary/5' : 'border-border hover:border-gray-300'}`}>
+                <div className="flex justify-between items-start">
+                    <Truck className={`w-6 h-6 ${method === 'cod' ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <input type="radio" value="cod" {...register("method")} className="accent-primary w-4 h-4" />
+                </div>
+                <div>
+                    <span className={`block font-body font-medium ${method === 'cod' ? 'text-primary' : 'text-foreground'}`}>Cash on Delivery</span>
+                    <span className="text-xs text-muted-foreground">Pay with cash upon arrival</span>
+                </div>
             </label>
-            <input
-              {...register("expiryDate")}
-              placeholder="MM/YY"
-              maxLength={5}
-              className="w-full px-4 py-3 border border-border bg-transparent focus:outline-none focus:border-primary transition-colors"
-            />
-            {errors.expiryDate && <p className="text-xs text-destructive mt-1">{errors.expiryDate.message}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-body font-medium mb-2">
-              CVV <span className="text-destructive">*</span>
+
+            <label className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col gap-3 transition-all ${method === 'online' ? 'border-primary bg-primary/5' : 'border-border hover:border-gray-300'}`}>
+                <div className="flex justify-between items-start">
+                    <CreditCard className={`w-6 h-6 ${method === 'online' ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <input type="radio" value="online" {...register("method")} className="accent-primary w-4 h-4" />
+                </div>
+                <div>
+                    <span className={`block font-body font-medium ${method === 'online' ? 'text-primary' : 'text-foreground'}`}>Online Transfer</span>
+                    <span className="text-xs text-muted-foreground">Sadapay / JazzCash</span>
+                </div>
             </label>
-            <input
-              {...register("cvv")}
-              placeholder="123"
-              maxLength={4}
-              type="password"
-              className="w-full px-4 py-3 border border-border bg-transparent focus:outline-none focus:border-primary transition-colors"
-            />
-            {errors.cvv && <p className="text-xs text-destructive mt-1">{errors.cvv.message}</p>}
-          </div>
         </div>
+        {errors.method && <p className="text-sm text-destructive">{errors.method.message}</p>}
+
+        {/* Online Payment Details */}
+        <AnimatePresence>
+            {method === 'online' && (
+                <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-6 overflow-hidden"
+                >
+                    <div className="bg-muted p-4 rounded-lg space-y-4">
+                        <h3 className="font-medium text-sm">Select Account to Transfer:</h3>
+                        
+                        <label className={`flex items-center gap-4 p-3 rounded border bg-background cursor-pointer transition-colors ${onlineMethod === 'sadapay' ? 'border-primary ring-1 ring-primary' : 'border-border'}`}>
+                            <input type="radio" value="sadapay" {...register("onlineMethod")} className="accent-primary" />
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-bold text-[#1c1c1c]">Sadapay</span>
+                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Active</span>
+                                </div>
+                                <p className="text-sm font-medium mt-1">Hunain Ahmed</p>
+                                <p className="text-sm text-muted-foreground font-mono">0310 5589055</p>
+                            </div>
+                        </label>
+
+                        <label className={`flex items-center gap-4 p-3 rounded border bg-background cursor-pointer transition-colors ${onlineMethod === 'jazzcash' ? 'border-primary ring-1 ring-primary' : 'border-border'}`}>
+                            <input type="radio" value="jazzcash" {...register("onlineMethod")} className="accent-primary" />
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-bold text-[#bf202f]">JazzCash</span>
+                                </div>
+                                <p className="text-sm font-medium mt-1">Hunain Ahmed</p>
+                                <p className="text-sm text-muted-foreground font-mono">0315 6383689</p>
+                            </div>
+                        </label>
+                        {errors.onlineMethod && <p className="text-sm text-destructive">{errors.onlineMethod.message}</p>}
+                    </div>
+
+                    {/* File Upload */}
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium">Upload Transaction Slip</label>
+                        <div 
+                            className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragActive ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
+                            onDragEnter={() => setDragActive(true)}
+                            onDragLeave={() => setDragActive(false)}
+                            onDrop={(e) => {
+                                e.preventDefault();
+                                setDragActive(false);
+                                const file = e.dataTransfer.files?.[0];
+                                if (file) {
+                                    if (file.size > 5 * 1024 * 1024) {
+                                        toast.error("File size must be less than 5MB");
+                                        return;
+                                    }
+                                    setFileName(file.name);
+                                    setValue("proofFile", file);
+                                }
+                            }}
+                        >
+                            <input 
+                                type="file" 
+                                id="proof-upload" 
+                                className="hidden" 
+                                accept="image/*"
+                                onChange={handleFileChange}
+                            />
+                            <label htmlFor="proof-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                                <div className="bg-muted p-3 rounded-full">
+                                    <Check className={`w-6 h-6 ${fileName ? 'text-green-500' : 'text-muted-foreground'}`} />
+                                </div>
+                                {fileName ? (
+                                    <>
+                                        <p className="text-sm font-medium text-green-600">{fileName}</p>
+                                        <p className="text-xs text-muted-foreground">Click to change</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-sm font-medium">Click to upload or drag & drop</p>
+                                        <p className="text-xs text-muted-foreground">JPG, PNG up to 5MB</p>
+                                    </>
+                                )}
+                            </label>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
 
         <motion.button
           {...buttonPress}
@@ -669,8 +791,29 @@ function ReviewStep({
             Payment Method
           </h3>
           <div className="text-sm text-muted-foreground">
-            <p>Card ending in {paymentData.cardNumber.slice(-4)}</p>
-            <p className="text-xs mt-1">Demo mode - no actual charge will be made</p>
+            {paymentData.method === 'cod' ? (
+                <div className="flex items-center gap-2">
+                    <Truck className="w-4 h-4" />
+                    <span>Cash on Delivery</span>
+                </div>
+            ) : (
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                        <CreditCard className="w-4 h-4" />
+                        <span className="capitalize">Online Transfer - {paymentData.onlineMethod}</span>
+                    </div>
+                    {paymentData.proofFile && (
+                         <div className="flex items-center gap-2 text-green-600 bg-green-50 p-2 rounded text-xs">
+                            <Check className="w-3 h-3" />
+                            <span>Slip Uploaded: {paymentData.proofFile.name}</span>
+                        </div>
+                    )}
+                </div>
+            )}
+             {/* Fallback for legacy/card */}
+            {paymentData.cardNumber && (
+                <p>Card ending in {paymentData.cardNumber.slice(-4)}</p>
+            )}
           </div>
         </div>
       </div>

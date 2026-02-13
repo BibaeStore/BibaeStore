@@ -55,7 +55,10 @@ export default function Header() {
     return () => subscription.unsubscribe();
   }, [supabase]);
 
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
+    setIsMounted(true);
     setMobileOpen(false);
   }, [routeKey]);
 
@@ -108,7 +111,7 @@ export default function Header() {
             </Link>
             <Link href="/wishlist" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block relative">
               <Heart className="w-5 h-5" />
-              {wishlistItems.length > 0 && (
+              {isMounted && wishlistItems.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
                   {wishlistItems.length}
                 </span>
@@ -119,7 +122,7 @@ export default function Header() {
             </Link>
             <Link href="/cart" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm relative">
               <ShoppingBag className="w-5 h-5" />
-              {totalItems > 0 && (
+              {isMounted && totalItems > 0 && (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}

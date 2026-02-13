@@ -93,8 +93,15 @@ export default function ProductPage() {
           const { data: { session } } = await supabase.auth.getSession();
           setUserSession(session);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to load product:", error);
+        console.error("Product load error details:", {
+          message: error?.message,
+          code: error?.code,
+          hint: error?.hint,
+          details: error?.details
+        });
+        toast.error(`Failed to load product: ${error?.message || "Unknown error"}`);
       } finally {
         setLoading(false);
       }
@@ -114,13 +121,11 @@ export default function ProductPage() {
       return;
     }
     // Add items based on quantity
-    for (let i = 0; i < quantity; i++) {
-      addItem({
-        ...product,
-        image: product.images?.[0] || '/assets/placeholder.jpg',
-        originalPrice: product.sale_price || product.price
-      }, selectedSize, selectedColor || "Default");
-    }
+    addItem({
+      ...product,
+      image: product.images?.[0] || '/assets/placeholder.jpg',
+      originalPrice: product.sale_price || product.price
+    }, selectedSize, selectedColor || "Default", quantity);
     setAddedToCart(true);
     toast.success(`Added ${quantity} ${quantity === 1 ? 'item' : 'items'} to cart!`);
     setTimeout(() => {

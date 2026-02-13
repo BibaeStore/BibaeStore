@@ -83,7 +83,7 @@ export default function Cart() {
             </div>
             {items.map((item, i) => (
               <motion.div
-                key={`${item.product.id}-${item.size}-${item.color}`}
+                key={`${item.product.id}-${item.size}-${item.color}-${i}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}

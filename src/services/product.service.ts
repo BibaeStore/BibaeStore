@@ -32,7 +32,13 @@ export class ProductService {
             .eq('id', id)
             .single();
 
-        if (error) throw error;
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return null; // Product not found
+            }
+            console.error(`Error fetching product ${id}:`, error);
+            throw error;
+        }
         return data;
     }
 

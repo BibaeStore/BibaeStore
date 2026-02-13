@@ -23,7 +23,7 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (product: CartProduct, size: string, color: string) => void;
+  addItem: (product: CartProduct, size: string, color: string, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -57,10 +57,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
               image: item.product.images?.[0] || '/assets/placeholder.jpg'
             },
             quantity: item.quantity,
-            size: "Standard", // Logic for size/color storage needs expansion in schema if needed
+            size: "Standard",
             color: "Default"
           }));
-          setItems(mappedItems);
+
+          // Deduplicate items based on product_id to prevent key collisions
+          const uniqueItems = mappedItems.reduce((acc: CartItem[], current) => {
+            const existing = acc.find(item => item.product.id === current.product.id);
+            if (existing) {
+              existing.quantity += current.quantity;
+            } else {
+              acc.push(current);
+            }
+            return acc;
+          }, []);
+
+          setItems(uniqueItems);
         } catch (error) {
           console.error("Error loading cart from DB:", error);
         }
@@ -114,9 +126,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [items, userId, isLoading]);
 
-  const addItem = async (product: CartProduct, size: string, color: string) => {
+  const addItem = async (product: CartProduct, size: string, color: string, quantity: number = 1) => {
     const existing = items.find((i) => i.product.id === product.id && i.size === size && i.color === color);
-    const newQuantity = existing ? existing.quantity + 1 : 1;
+    const newQuantity = existing ? existing.quantity + quantity : quantity;
 
     // Update Local State
     setItems((prev) => {
@@ -127,7 +139,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             : i
         );
       }
-      return [...prev, { product, quantity: 1, size, color }];
+      return [...prev, { product, quantity, size, color }];
     });
 
     // Update DB if logged in

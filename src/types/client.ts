@@ -22,6 +22,8 @@ export interface Order {
     client_id: string;
     total_amount: number;
     status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+    payment_method?: 'cod' | 'online';
+    payment_proof_url?: string;
     shipping_address?: string;
     created_at?: string;
     updated_at?: string;

@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { categories, formatPrice } from "@/lib/products"; // Keeping categories for now if needed for filter list, or we fetch them too
 import ProductCard from "@/components/ProductCard";
 import { ProductService } from "@/services/product.service";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 import { ProductGridSkeleton } from "@/components/SkeletonLoader";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlidersHorizontal, X, Search, Grid3X3, LayoutGrid } from "lucide-react";
@@ -27,7 +29,7 @@ function ShopContent() {
   const [filtered, setFiltered] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch products from Supabase
+  // Fetch products from Supabase and subscribe to changes
   useEffect(() => {
     async function loadProducts() {
       try {
@@ -42,6 +44,25 @@ function ShopContent() {
       }
     }
     loadProducts();
+
+    // Realtime subscription
+    const supabase = createClient();
+    const channel = supabase
+      .channel('shop-updates')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        () => {
+          // Re-fetch on any change
+          loadProducts();
+          toast.info("Product list updated");
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {

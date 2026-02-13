@@ -18,15 +18,32 @@ export const shippingSchema = z.object({
 });
 
 // Payment schema (UI only, no real processing)
+// Payment schema
 export const paymentSchema = z.object({
-    cardNumber: z.string().min(13, "Card number must be at least 13 digits").max(19, "Card number is too long"),
-    cardName: z.string().min(3, "Please enter the name on card"),
-    expiryDate: z.string().regex(/^(0[1-9]|1[0-2])\/([0-9]{2})$/, "Please enter expiry date as MM/YY"),
-    cvv: z.string().min(3, "CVV must be 3 or 4 digits").max(4, "CVV must be 3 or 4 digits"),
+    method: z.enum(["cod", "online"], {
+        required_error: "Please select a payment method",
+    }),
+    // Online payment fields (optional but validated if method is online)
+    onlineMethod: z.enum(["sadapay", "jazzcash"]).optional(),
+    proofFile: z.any().optional(), // File validation handled in component
+
+    // Card fields (keeping for backward compatibility or if we add card later, but making optional for now)
+    cardNumber: z.string().optional(),
+    cardName: z.string().optional(),
+    expiryDate: z.string().optional(),
+    cvv: z.string().optional(),
+}).refine((data) => {
+    if (data.method === "online") {
+        return !!data.onlineMethod;
+    }
+    return true;
+}, {
+    message: "Please select an account (Sadapay or JazzCash)",
+    path: ["onlineMethod"],
 });
 
 // Complete checkout schema
-export const checkoutSchema = contactSchema.merge(shippingSchema).merge(paymentSchema);
+export const checkoutSchema = z.intersection(contactSchema.merge(shippingSchema), paymentSchema);
 
 export type ContactFormData = z.infer<typeof contactSchema>;
 export type ShippingFormData = z.infer<typeof shippingSchema>;
