@@ -4,28 +4,46 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Check, Package, ArrowRight, Home } from "lucide-react";
+import { Check, Package, ArrowRight, Home, Copy, MessageCircle, Clock } from "lucide-react";
 import { scaleVariants, fadeVariants, staggerContainer, staggerItem } from "@/lib/animations";
 import confetti from "canvas-confetti";
+import { OrderService } from "@/services/order.service";
+import { Order } from "@/types/client";
+import { toast } from "sonner";
+import { formatPrice } from "@/lib/products";
 
 function CheckoutSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const orderNumber = searchParams.get("order");
+  const orderId = searchParams.get("id");
+  const paymentMethod = searchParams.get("method") || "cod";
   const [showConfetti, setShowConfetti] = useState(false);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!orderNumber) {
+    if (!orderId) {
       router.push("/");
       return;
     }
 
-    // Trigger confetti animation
+    const fetchOrder = async () => {
+      try {
+        const data = await OrderService.getOrderDetails(orderId);
+        setOrder(data);
+      } catch (error) {
+        console.error("Failed to fetch order:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrder();
+
+    // Trigger confetti
     if (!showConfetti) {
       setShowConfetti(true);
       const duration = 3000;
       const end = Date.now() + duration;
-
       const frame = () => {
         confetti({
           particleCount: 2,
@@ -41,16 +59,25 @@ function CheckoutSuccessContent() {
           origin: { x: 1 },
           colors: ['#D4AF37', '#FFD700', '#FFA500'],
         });
-
         if (Date.now() < end) {
           requestAnimationFrame(frame);
         }
       };
       frame();
     }
-  }, [orderNumber, router, showConfetti]);
+  }, [orderId, router, showConfetti]);
 
-  if (!orderNumber) return null;
+  if (!orderId) return null;
+
+  const trackingNumber = order?.tracking_number || '';
+  const isBankTransfer = paymentMethod === 'online';
+
+  const copyTracking = () => {
+    if (trackingNumber) {
+      navigator.clipboard.writeText(trackingNumber);
+      toast.success("Tracking number copied!");
+    }
+  };
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-12 bg-muted/30">
@@ -64,19 +91,26 @@ function CheckoutSuccessContent() {
         <motion.div variants={staggerItem} className="flex justify-center mb-8">
           <motion.div
             variants={scaleVariants}
-            className="w-20 h-20 rounded-full bg-green-500 flex items-center justify-center"
+            className={`w-20 h-20 rounded-full flex items-center justify-center ${isBankTransfer ? 'bg-amber-500' : 'bg-green-500'}`}
           >
-            <Check className="w-10 h-10 text-white" strokeWidth={3} />
+            {isBankTransfer ? (
+              <Clock className="w-10 h-10 text-white" strokeWidth={3} />
+            ) : (
+              <Check className="w-10 h-10 text-white" strokeWidth={3} />
+            )}
           </motion.div>
         </motion.div>
 
         {/* Success Message */}
         <motion.div variants={staggerItem} className="text-center mb-8">
           <h1 className="font-heading text-4xl md:text-5xl font-light mb-3">
-            Order Confirmed!
+            {isBankTransfer ? 'Order Under Review' : 'Order Confirmed!'}
           </h1>
           <p className="text-muted-foreground font-body text-lg">
-            Thank you for your purchase
+            {isBankTransfer
+              ? 'Your payment proof is being verified'
+              : 'Thank you for your purchase'
+            }
           </p>
         </motion.div>
 
@@ -85,48 +119,98 @@ function CheckoutSuccessContent() {
           variants={staggerItem}
           className="bg-background border border-border p-8 mb-6"
         >
-          <div className="flex items-center gap-3 mb-6 pb-6 border-b border-border">
-            <Package className="w-5 h-5 text-primary" />
-            <div>
-              <p className="text-sm text-muted-foreground">Order Number</p>
-              <p className="font-heading text-xl">{orderNumber}</p>
+          {/* Tracking Number */}
+          {trackingNumber && (
+            <div className="flex items-center justify-between gap-3 mb-6 pb-6 border-b border-border">
+              <div className="flex items-center gap-3">
+                <Package className="w-5 h-5 text-primary" />
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Tracking Number</p>
+                  <p className="font-heading text-2xl font-bold text-primary">{trackingNumber}</p>
+                </div>
+              </div>
+              <button onClick={copyTracking} className="p-2 hover:bg-muted rounded-lg transition-colors" title="Copy tracking number">
+                <Copy className="w-4 h-4 text-muted-foreground" />
+              </button>
             </div>
-          </div>
+          )}
 
+          {/* Order Amount */}
+          {order && (
+            <div className="flex items-center justify-between mb-6 pb-6 border-b border-border">
+              <span className="text-sm text-muted-foreground">Order Total</span>
+              <span className="font-heading text-xl font-bold">{formatPrice(order.total_amount)}</span>
+            </div>
+          )}
+
+          {/* Status Message */}
           <div className="space-y-4 text-sm font-body">
-            <div className="flex items-start gap-3">
-              <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium">Order Confirmed</p>
-                <p className="text-muted-foreground text-xs">We've received your order and will begin processing it shortly</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full border-2 border-border flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-muted-foreground">Processing</p>
-                <p className="text-muted-foreground text-xs">Your order is being prepared for shipment</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full border-2 border-border flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-muted-foreground">Shipped</p>
-                <p className="text-muted-foreground text-xs">You'll receive tracking information via email</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full border-2 border-border flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-muted-foreground">Delivered</p>
-                <p className="text-muted-foreground text-xs">Estimated delivery in 3-5 business days</p>
-              </div>
-            </div>
+            {isBankTransfer ? (
+              <>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Payment Proof Received</p>
+                    <p className="text-muted-foreground text-xs">We have received your payment screenshot</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full border-2 border-amber-400 flex-shrink-0 mt-0.5 flex items-center justify-center">
+                    <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-amber-700">Under Review</p>
+                    <p className="text-muted-foreground text-xs">Our team will verify your payment and update you within 24 hours</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full border-2 border-border flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-muted-foreground">Processing</p>
+                    <p className="text-muted-foreground text-xs">Once verified, your order will be prepared</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Order Placed</p>
+                    <p className="text-muted-foreground text-xs">Our team will contact you for delivery coordination</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full border-2 border-border flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-muted-foreground">Processing</p>
+                    <p className="text-muted-foreground text-xs">Your order is being prepared</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full border-2 border-border flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-muted-foreground">Dispatched</p>
+                    <p className="text-muted-foreground text-xs">You'll be notified when your order is out for delivery</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full border-2 border-border flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-muted-foreground">Delivered</p>
+                    <p className="text-muted-foreground text-xs">Estimated delivery in 3-5 business days</p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="mt-6 pt-6 border-t border-border bg-muted/50 -mx-8 -mb-8 p-6">
             <p className="text-sm text-muted-foreground">
-              A confirmation email has been sent to your email address with order details and tracking information.
+              {isBankTransfer
+                ? `Your order #${trackingNumber} is under review. We will verify your payment and update you within 24 hours.`
+                : `Your order #${trackingNumber} has been placed! Our team will contact you for delivery coordination.`
+              }
             </p>
           </div>
         </motion.div>
@@ -139,20 +223,31 @@ function CheckoutSuccessContent() {
           >
             Continue Shopping <ArrowRight className="w-4 h-4" />
           </Link>
-          <Link
-            href="/"
-            className="flex-1 border border-border py-4 text-center font-body font-medium tracking-wider uppercase hover:bg-muted transition-colors flex items-center justify-center gap-2"
+          <a
+            href="https://wa.me/923348438007"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 border border-green-500 text-green-600 py-4 text-center font-body font-medium tracking-wider uppercase hover:bg-green-50 transition-colors flex items-center justify-center gap-2"
           >
-            <Home className="w-4 h-4" /> Back to Home
-          </Link>
+            <MessageCircle className="w-4 h-4" /> WhatsApp
+          </a>
         </motion.div>
 
+        {/* Track Link */}
+        {trackingNumber && (
+          <motion.div variants={fadeVariants} className="mt-4 text-center">
+            <Link href={`/track?number=${trackingNumber}`} className="text-sm text-primary hover:underline font-medium">
+              Track your order →
+            </Link>
+          </motion.div>
+        )}
+
         {/* Additional Info */}
-        <motion.div variants={fadeVariants} className="mt-8 text-center">
+        <motion.div variants={fadeVariants} className="mt-6 text-center">
           <p className="text-xs text-muted-foreground">
-            Need help? Contact us at{" "}
-            <a href="mailto:support@bibaestore.com" className="text-primary hover:underline">
-              support@bibaestore.com
+            Need help? Visit{" "}
+            <a href="https://bibaestore.com" className="text-primary hover:underline">
+              bibaestore.com
             </a>
           </p>
         </motion.div>

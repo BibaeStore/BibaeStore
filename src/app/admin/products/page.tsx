@@ -1,15 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Box, ImageIcon, Loader2, Eye, Tag } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Plus, Pencil, Trash2, Box, ImageIcon, Loader2, Eye, Tag, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { ProductService } from '@/services/product.service'
 import { CategoryService } from '@/services/category.service'
-import { Product, ProductFormData } from '@/types/product'
+import { Product } from '@/types/product'
 import { Category } from '@/types/category'
 import { ProductFormValues } from '@/lib/validations/product'
 import { ProductForm } from './ProductForm'
+import { uploadProductImage, createProductAction, updateProductAction, deleteProductAction } from './actions'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import {
@@ -39,6 +40,8 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 
+const PRODUCTS_PER_PAGE = 20
+
 export default function ProductsPage() {
     const [products, setProducts] = useState<Product[]>([])
     const [categories, setCategories] = useState<Category[]>([])
@@ -47,6 +50,14 @@ export default function ProductsPage() {
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [viewProduct, setViewProduct] = useState<Product | null>(null)
     const [deleteId, setDeleteId] = useState<string | null>(null)
+    const [currentPage, setCurrentPage] = useState(1)
+
+    // Pagination
+    const totalPages = Math.ceil(products.length / PRODUCTS_PER_PAGE)
+    const paginatedProducts = useMemo(() => {
+        const start = (currentPage - 1) * PRODUCTS_PER_PAGE
+        return products.slice(start, start + PRODUCTS_PER_PAGE)
+    }, [products, currentPage])
 
     const fetchData = async () => {
         try {
@@ -89,52 +100,88 @@ export default function ProductsPage() {
 
     const confirmDelete = async () => {
         if (!deleteId) return
+        const idToDelete = deleteId
+        setDeleteId(null)
+
+        // Optimistic: remove from state immediately
+        setProducts(prev => prev.filter(p => p.id !== idToDelete))
+        // Adjust page if the current page is now empty
+        const remainingCount = products.length - 1
+        const newTotalPages = Math.ceil(remainingCount / PRODUCTS_PER_PAGE)
+        if (currentPage > newTotalPages && newTotalPages > 0) {
+            setCurrentPage(newTotalPages)
+        }
 
         try {
-            await ProductService.deleteProduct(deleteId)
+            const result = await deleteProductAction(idToDelete)
+            if (result.error) throw new Error(result.error)
             toast.success("Product deleted successfully")
-            fetchData()
         } catch (error) {
             console.error(error)
-            toast.error("Failed to delete product")
-        } finally {
-            setDeleteId(null)
+            toast.error("Failed to delete product. Refreshing list...")
+            // Rollback: re-fetch if delete failed
+            fetchData()
         }
     }
 
     const handleSubmit = async (data: ProductFormValues, newFiles: File[], existingImages: string[]) => {
         try {
-            const formData: ProductFormData = {
+            // Step 1: Upload new images via server action (one at a time)
+            const imageUrls = [...existingImages]
+            for (const file of newFiles) {
+                const fd = new FormData()
+                fd.append('file', file)
+                const uploadResult = await uploadProductImage(fd)
+                if (uploadResult.error) throw new Error(uploadResult.error)
+                imageUrls.push(uploadResult.url!)
+            }
+
+            // Step 2: Build product data (all serializable, no File objects)
+            const productData = {
                 name: data.name,
                 sku: data.sku,
-                category_id: data.category_id || null,
-                short_description: data.short_description,
-                description: data.description,
+                category_id: data.category_id === 'null' ? null : (data.category_id || null),
+                images: imageUrls,
+                short_description: data.short_description || '',
+                description: data.description || '',
                 price: data.price,
                 sale_price: data.sale_price || null,
                 stock: data.stock,
                 status: data.status,
                 is_featured: data.is_featured,
-                newImages: newFiles,
-                images: existingImages
+                variants: data.variants || {},
+                size_guide: data.size_guide || null,
             }
 
+            // Step 3: Create or update via server action
             if (editingProduct) {
-                await ProductService.updateProduct(editingProduct.id, formData)
+                const result = await updateProductAction(editingProduct.id, productData)
+                if (result.error) throw Object.assign(new Error(result.error), { code: result.code })
+                setProducts(prev => prev.map(p => p.id === editingProduct.id ? (result.data as unknown as Product) : p))
                 toast.success("Product updated successfully")
             } else {
-                await ProductService.createProduct(formData)
+                const result = await createProductAction(productData)
+                if (result.error) throw Object.assign(new Error(result.error), { code: result.code })
+                setProducts(prev => [(result.data as unknown as Product), ...prev])
+                setCurrentPage(1)
                 toast.success("Product created successfully")
             }
-            fetchData()
             setIsModalOpen(false)
         } catch (error: any) {
-            console.error(error)
-            if (error.code === 'PGRST205') {
+            console.error('Product save error:', error)
+            const message = error?.message || ''
+            if (error?.code === 'PGRST205') {
                 toast.error("Database table missing. Please apply the SQL script.")
+            } else if (error?.code === '23505') {
+                toast.error("A product with this SKU already exists.")
+            } else if (message.includes('Upload')) {
+                toast.error(message)
+            } else if (message.includes('authenticated')) {
+                toast.error("Session expired. Please refresh the page and log in again.")
             } else {
                 toast.error(editingProduct ? "Failed to update product" : "Failed to create product")
             }
+            throw error
         }
     }
 
@@ -177,11 +224,38 @@ export default function ProductsPage() {
                     {/* Desktop Table */}
                     <Card className="hidden md:block bg-white border-gray-200 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                         <CardHeader className="px-8 pt-8 pb-4">
-                            <div className="space-y-1.5">
-                                <CardTitle className="font-heading text-xl text-gray-900">All Products</CardTitle>
-                                <CardDescription className="text-gray-500 text-xs uppercase tracking-widest font-bold">
-                                    {products.length} Total Products
-                                </CardDescription>
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-1.5">
+                                    <CardTitle className="font-heading text-xl text-gray-900">All Products</CardTitle>
+                                    <CardDescription className="text-gray-500 text-xs uppercase tracking-widest font-bold">
+                                        {products.length} Total Products
+                                    </CardDescription>
+                                </div>
+                                {totalPages > 1 && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-400 font-medium">
+                                            Page {currentPage} of {totalPages}
+                                        </span>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-8 w-8 border-gray-200"
+                                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                            disabled={currentPage === 1}
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-8 w-8 border-gray-200"
+                                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                            disabled={currentPage === totalPages}
+                                        >
+                                            <ChevronRight className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         </CardHeader>
                         <CardContent className="px-0 pb-0">
@@ -199,7 +273,7 @@ export default function ProductsPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {products.map((product) => (
+                                    {paginatedProducts.map((product) => (
                                         <TableRow key={product.id} className="border-b border-gray-200 hover:bg-gray-50/50 transition-colors group">
                                             <TableCell className="py-4 pl-8">
                                                 <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 overflow-hidden relative">
@@ -262,12 +336,36 @@ export default function ProductsPage() {
                                     ))}
                                 </TableBody>
                             </Table>
+
+                            {/* Bottom Pagination */}
+                            {totalPages > 1 && (
+                                <div className="flex items-center justify-between px-8 py-4 border-t border-gray-200 bg-gray-50/30">
+                                    <p className="text-xs text-gray-400">
+                                        Showing {((currentPage - 1) * PRODUCTS_PER_PAGE) + 1}–{Math.min(currentPage * PRODUCTS_PER_PAGE, products.length)} of {products.length}
+                                    </p>
+                                    <div className="flex items-center gap-1">
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                            <button
+                                                key={page}
+                                                onClick={() => setCurrentPage(page)}
+                                                className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-medium transition-all ${
+                                                    currentPage === page
+                                                        ? 'bg-gray-900 text-white shadow-sm'
+                                                        : 'text-gray-500 hover:bg-gray-100'
+                                                }`}
+                                            >
+                                                {page}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
 
                     {/* Mobile Cards */}
                     <div className="grid grid-cols-1 gap-4 md:hidden">
-                        {products.map((product) => (
+                        {paginatedProducts.map((product) => (
                             <Card key={product.id} className="bg-white border-gray-200 overflow-hidden shadow-sm">
                                 <CardContent className="p-4 space-y-4">
                                     <div className="flex items-start gap-4">
@@ -333,11 +431,39 @@ export default function ProductsPage() {
                                 </CardContent>
                             </Card>
                         ))}
+
+                        {/* Mobile Pagination */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-center gap-2 py-4">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-gray-200"
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                >
+                                    <ChevronLeft className="w-4 h-4 mr-1" /> Prev
+                                </Button>
+                                <span className="text-xs text-gray-500 px-2">
+                                    {currentPage} / {totalPages}
+                                </span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-gray-200"
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    Next <ChevronRight className="w-4 h-4 ml-1" />
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
 
             <ProductForm
+                key={editingProduct?.id || 'create'}
                 open={isModalOpen}
                 onOpenChange={setIsModalOpen}
                 initialData={editingProduct}

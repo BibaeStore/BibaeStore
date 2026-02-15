@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { Heart, ShoppingBag, Star, Truck, Shield, RotateCcw, Check, Minus, Plus, User, Loader2 } from "lucide-react";
+import { Heart, ShoppingBag, Star, Truck, Shield, RotateCcw, Check, Minus, Plus, User, Loader2, Ruler, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,7 @@ export default function ProductPage() {
   const [userComment, setUserComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [userSession, setUserSession] = useState<any>(null);
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
   const supabase = createClient();
 
@@ -110,13 +111,7 @@ export default function ProductPage() {
   }, [params?.id]);
 
   const handleAddToCart = () => {
-    if (!userSession) {
-      toast.error("Please login to add items to your cart");
-      router.push("/login?redirectedFrom=" + window.location.pathname);
-      return;
-    }
-
-    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+    if (sizes.length > 0 && !selectedSize) {
       toast.error("Please select a size");
       return;
     }
@@ -169,9 +164,37 @@ export default function ProductPage() {
     ? Math.round(((product.price - product.sale_price) / product.price) * 100)
     : 0;
 
-  // Safe defaults for arrays
-  const sizes = product.sizes || ['S', 'M', 'L', 'XL']; // Fallback if not in DB yet
-  const colors = product.colors || ['Standard'];
+  // Build sizes from variants (per-size stock) or fallback to defaults
+  const variantSizes = product.variants?.sizes;
+  const hasVariantSizes = variantSizes && Object.keys(variantSizes).length > 0;
+
+  // All sizes with stock info (from variants)
+  const allSizeData: { name: string; stock: number; enabled: boolean }[] = hasVariantSizes
+    ? Object.entries(variantSizes)
+        .map(([size, v]: [string, any]) => ({ name: size, stock: v.stock || 0, enabled: v.enabled || false }))
+    : [];
+
+  // For display: if variants exist, show ALL sizes (enabled ones selectable, disabled ones crossed out)
+  // If no variants, show default S, M, L with no stock limit
+  const sizes = hasVariantSizes
+    ? allSizeData.filter(s => s.enabled).map(s => s.name)
+    : (product.sizes && product.sizes.length > 0 ? product.sizes : ['S', 'M', 'L']);
+
+  // Unavailable sizes (enabled but stock=0, or not enabled at all)
+  const unavailableSizes = hasVariantSizes
+    ? allSizeData.filter(s => s.enabled && s.stock <= 0).map(s => s.name)
+    : [];
+
+  // Get max stock for selected size
+  const getSelectedSizeStock = (): number | null => {
+    if (!hasVariantSizes || !selectedSize) return null;
+    const sizeData = allSizeData.find(s => s.name === selectedSize);
+    return sizeData ? sizeData.stock : null;
+  };
+  const selectedSizeStock = getSelectedSizeStock();
+  const maxQuantity = selectedSizeStock !== null ? selectedSizeStock : (product.stock || 10);
+
+  const colors = product.variants?.colors?.length ? product.variants.colors : (product.colors && product.colors.length > 0 && product.colors[0] !== 'Standard' ? product.colors : []);
 
   return (
     <main className="min-h-screen">
@@ -197,43 +220,45 @@ export default function ProductPage() {
             transition={{ duration: 0.5 }}
             className="relative"
           >
-            <motion.div
-              className="aspect-[3/4] overflow-hidden bg-muted sticky top-28 cursor-zoom-in group rounded-2xl border border-gray-200"
-              onMouseEnter={() => setImageZoom(true)}
-              onMouseLeave={() => setImageZoom(false)}
-            >
-              <motion.img
-                src={activeImage}
-                alt={product.name}
-                className="w-full h-full object-cover transition-transform duration-500"
-                animate={{ scale: imageZoom ? 1.1 : 1 }}
-              />
-              {/* Badges */}
-              <div className="absolute top-4 left-4 flex flex-col gap-2">
-                {product.is_featured && (
-                  <span className="bg-foreground text-background text-[10px] font-body font-semibold tracking-wider uppercase px-3 py-1.5">Featured</span>
-                )}
-                {discount > 0 && (
-                  <span className="bg-primary text-primary-foreground text-[10px] font-body font-semibold tracking-wider px-3 py-1.5">-{discount}% Off</span>
-                )}
+            <div className="sticky top-28">
+              <motion.div
+                className="aspect-[3/4] overflow-hidden bg-muted cursor-zoom-in group rounded-2xl border border-gray-200"
+                onMouseEnter={() => setImageZoom(true)}
+                onMouseLeave={() => setImageZoom(false)}
+              >
+                <motion.img
+                  src={activeImage}
+                  alt={product.name}
+                  className="w-full h-full object-cover transition-transform duration-500"
+                  animate={{ scale: imageZoom ? 1.1 : 1 }}
+                />
+                {/* Badges */}
+                <div className="absolute top-4 left-4 flex flex-col gap-2">
+                  {product.is_featured && (
+                    <span className="bg-foreground text-background text-[10px] font-body font-semibold tracking-wider uppercase px-3 py-1.5">Featured</span>
+                  )}
+                  {discount > 0 && (
+                    <span className="bg-primary text-primary-foreground text-[10px] font-body font-semibold tracking-wider px-3 py-1.5">-{discount}% Off</span>
+                  )}
+                </div>
+              </motion.div>
+              <div className="flex gap-3 overflow-x-auto pb-2 mt-3">
+                {(product.images || []).map((img: string, i: number) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImage(img)}
+                    className={`relative w-16 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${activeImage === img ? "border-primary shadow-sm" : "border-transparent hover:border-gray-300"
+                      }`}
+                  >
+                    <Image
+                      src={img}
+                      alt={`${product.name} view ${i + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </button>
+                ))}
               </div>
-            </motion.div>
-            <div className="flex gap-4 overflow-x-auto pb-2 mt-4">
-              {[activeImage, ...(product.images || []).filter((img: string) => img !== activeImage)].map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveImage(img)}
-                  className={`relative w-20 h-24 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${activeImage === img ? "border-primary shadow-sm" : "border-transparent hover:border-gray-300"
-                    }`}
-                >
-                  <Image
-                    src={img}
-                    alt={`${product.name} view ${i + 1}`}
-                    fill
-                    className="object-cover"
-                  />
-                </button>
-              ))}
             </div>
           </motion.div>
 
@@ -291,19 +316,44 @@ export default function ProductPage() {
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-body font-medium tracking-wider uppercase">Size</p>
-                  <button className="text-xs font-body text-primary hover:underline">Size Guide</button>
+                  {product.size_guide?.headers?.length > 0 && (
+                    <button
+                      onClick={() => setSizeGuideOpen(true)}
+                      className="text-xs font-body text-primary hover:underline flex items-center gap-1"
+                    >
+                      <Ruler className="w-3 h-3" /> Size Guide
+                    </button>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {sizes.map((size: string) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`min-w-[50px] px-4 py-2.5 text-sm font-body border transition-all duration-200 ${selectedSize === size ? "bg-foreground text-background border-foreground" : "border-border hover:border-foreground"}`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+                  {sizes.map((size: string) => {
+                    const isOutOfStock = unavailableSizes.includes(size);
+                    return (
+                      <button
+                        key={size}
+                        onClick={() => {
+                          if (!isOutOfStock) {
+                            setSelectedSize(size);
+                            setQuantity(1);
+                          }
+                        }}
+                        disabled={isOutOfStock}
+                        className={`min-w-[50px] px-4 py-2.5 text-sm font-body border transition-all duration-200 relative ${
+                          isOutOfStock
+                            ? "border-border text-muted-foreground/30 cursor-not-allowed bg-gray-50"
+                            : selectedSize === size
+                              ? "bg-foreground text-background border-foreground"
+                              : "border-border hover:border-foreground"
+                        }`}
+                      >
+                        <span className={isOutOfStock ? "line-through" : ""}>{size}</span>
+                      </button>
+                    );
+                  })}
                 </div>
+                {selectedSize && selectedSizeStock !== null && selectedSizeStock <= 3 && selectedSizeStock > 0 && (
+                  <p className="text-xs text-amber-600 font-medium mt-2">Only {selectedSizeStock} left in stock!</p>
+                )}
               </div>
             )}
 
@@ -330,22 +380,27 @@ export default function ProductPage() {
             {/* Quantity */}
             <div className="mb-8">
               <p className="text-sm font-body font-medium mb-3 tracking-wider uppercase">Quantity</p>
-              <div className="flex items-center border border-border w-fit rounded-sm overflow-hidden">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="p-3 hover:bg-muted transition-colors disabled:opacity-50"
-                  disabled={quantity <= 1}
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <span className="px-6 text-sm font-body font-medium min-w-[60px] text-center">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(Math.min(10, quantity + 1))}
-                  className="p-3 hover:bg-muted transition-colors disabled:opacity-50"
-                  disabled={quantity >= 10}
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center border border-border w-fit rounded-sm overflow-hidden">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="p-3 hover:bg-muted transition-colors disabled:opacity-50"
+                    disabled={quantity <= 1}
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="px-6 text-sm font-body font-medium min-w-[60px] text-center">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
+                    className="p-3 hover:bg-muted transition-colors disabled:opacity-50"
+                    disabled={quantity >= maxQuantity}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                {quantity >= maxQuantity && maxQuantity < 10 && (
+                  <span className="text-xs text-red-500 font-medium">Only {maxQuantity} left</span>
+                )}
               </div>
             </div>
 
@@ -376,7 +431,7 @@ export default function ProductPage() {
             <div className="grid grid-cols-3 gap-4 p-4 bg-muted/30 border border-border rounded-lg">
               <div className="text-center">
                 <Truck className="w-5 h-5 mx-auto mb-1.5 text-primary" strokeWidth={1.5} />
-                <p className="text-[10px] font-body text-muted-foreground">Free Shipping</p>
+                <p className="text-[10px] font-body text-muted-foreground">Rs. 200 Shipping</p>
               </div>
               <div className="text-center">
                 <Shield className="w-5 h-5 mx-auto mb-1.5 text-primary" strokeWidth={1.5} />
@@ -508,6 +563,74 @@ export default function ProductPage() {
           </section>
         )}
       </div>
+
+      {/* Size Guide Modal */}
+      {sizeGuideOpen && product.size_guide && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => setSizeGuideOpen(false)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div>
+                <h3 className="font-heading text-xl text-gray-900">Size Guide</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">{product.name}</p>
+              </div>
+              <button
+                onClick={() => setSizeGuideOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 overflow-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr>
+                    {product.size_guide.headers.map((header: string, i: number) => (
+                      <th
+                        key={i}
+                        className="text-left py-3 px-4 text-xs font-bold uppercase tracking-wider text-gray-500 bg-gray-50 first:rounded-tl-lg last:rounded-tr-lg"
+                      >
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {product.size_guide.rows.map((row: string[], rowIdx: number) => (
+                    <tr
+                      key={rowIdx}
+                      className={`border-b border-gray-100 last:border-0 ${rowIdx % 2 === 1 ? 'bg-gray-50/50' : ''}`}
+                    >
+                      {row.map((cell: string, cellIdx: number) => (
+                        <td
+                          key={cellIdx}
+                          className={`py-3 px-4 ${cellIdx === 0 ? 'font-semibold text-gray-900' : 'text-gray-600'}`}
+                        >
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="text-[10px] text-muted-foreground mt-4 text-center">
+                All measurements are approximate. Please allow for slight variations.
+              </p>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </main>
   );
 }

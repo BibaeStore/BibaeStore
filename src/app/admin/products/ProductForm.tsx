@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Loader2, Upload, X, ImageIcon } from "lucide-react"
+import { Loader2, Upload, X, Plus, Trash2 } from "lucide-react"
 import Image from "next/image"
 
 import { Button } from "@/components/ui/button"
@@ -36,6 +35,7 @@ import {
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Product } from "@/types/product"
+import { ALL_SIZES, ProductVariants } from "@/types/product"
 import { Category } from "@/types/category"
 import { productSchema, ProductFormValues } from "@/lib/validations/product"
 
@@ -56,12 +56,47 @@ export function ProductForm({
 }: ProductFormProps) {
     const [files, setFiles] = useState<File[]>([])
     const [previews, setPreviews] = useState<string[]>([])
-    const [existingImages, setExistingImages] = useState<string[]>([])
+    const [existingImages, setExistingImages] = useState<string[]>(initialData?.images || [])
     const [isSubmitting, setIsSubmitting] = useState(false)
+
+    // Size/stock management state — initialize from initialData if editing
+    const [sizeStocks, setSizeStocks] = useState<Record<string, { stock: number; enabled: boolean }>>(() => {
+        const initial: Record<string, { stock: number; enabled: boolean }> = {}
+        ALL_SIZES.forEach(size => {
+            const sizeData = initialData?.variants?.sizes?.[size]
+            initial[size] = {
+                stock: sizeData?.stock || 0,
+                enabled: sizeData?.enabled || false
+            }
+        })
+        return initial
+    })
+
+    // Size guide state — initialize from initialData if editing
+    const [sizeGuideEnabled, setSizeGuideEnabled] = useState(!!initialData?.size_guide?.headers?.length)
+    const [sizeGuideHeaders, setSizeGuideHeaders] = useState<string[]>(
+        initialData?.size_guide?.headers || ["Size", "Chest (in)", "Waist (in)", "Length (in)"]
+    )
+    const [sizeGuideRows, setSizeGuideRows] = useState<string[][]>(
+        initialData?.size_guide?.rows || [["S", "", "", ""], ["M", "", "", ""], ["L", "", "", ""]]
+    )
 
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema),
-        defaultValues: {
+        defaultValues: initialData ? {
+            name: initialData.name,
+            sku: initialData.sku,
+            category_id: initialData.category_id || "null",
+            short_description: initialData.short_description || "",
+            description: initialData.description || "",
+            price: initialData.price,
+            sale_price: initialData.sale_price || null,
+            stock: initialData.stock,
+            status: initialData.status || "draft",
+            is_featured: initialData.is_featured || false,
+            variants: initialData.variants || undefined,
+            size_guide: initialData.size_guide || null,
+        } : {
             name: "",
             sku: "",
             category_id: "null",
@@ -72,6 +107,8 @@ export function ProductForm({
             stock: 0,
             status: "draft",
             is_featured: false,
+            variants: undefined,
+            size_guide: null,
         },
     })
 
@@ -89,8 +126,32 @@ export function ProductForm({
                     stock: initialData.stock,
                     status: initialData.status || "draft",
                     is_featured: initialData.is_featured || false,
+                    variants: initialData.variants || undefined,
+                    size_guide: initialData.size_guide || null,
                 })
                 setExistingImages(initialData.images || [])
+
+                // Initialize size stocks from variants
+                const sizes: Record<string, { stock: number; enabled: boolean }> = {}
+                ALL_SIZES.forEach(size => {
+                    const sizeData = initialData.variants?.sizes?.[size]
+                    sizes[size] = {
+                        stock: sizeData?.stock || 0,
+                        enabled: sizeData?.enabled || false
+                    }
+                })
+                setSizeStocks(sizes)
+
+                // Initialize size guide
+                if (initialData.size_guide?.headers?.length) {
+                    setSizeGuideEnabled(true)
+                    setSizeGuideHeaders(initialData.size_guide.headers)
+                    setSizeGuideRows(initialData.size_guide.rows)
+                } else {
+                    setSizeGuideEnabled(false)
+                    setSizeGuideHeaders(["Size", "Chest (in)", "Waist (in)", "Length (in)"])
+                    setSizeGuideRows([["S", "", "", ""], ["M", "", "", ""], ["L", "", "", ""]])
+                }
             } else {
                 form.reset({
                     name: "",
@@ -103,8 +164,18 @@ export function ProductForm({
                     stock: 0,
                     status: "draft",
                     is_featured: false,
+                    variants: undefined,
+                    size_guide: null,
                 })
                 setExistingImages([])
+                const initial: Record<string, { stock: number; enabled: boolean }> = {}
+                ALL_SIZES.forEach(size => {
+                    initial[size] = { stock: 0, enabled: false }
+                })
+                setSizeStocks(initial)
+                setSizeGuideEnabled(false)
+                setSizeGuideHeaders(["Size", "Chest (in)", "Waist (in)", "Length (in)"])
+                setSizeGuideRows([["S", "", "", ""], ["M", "", "", ""], ["L", "", "", ""]])
             }
             setFiles([])
             setPreviews([])
@@ -126,20 +197,50 @@ export function ProductForm({
     }
 
     const removeExistingImage = (index: number) => {
-        // In a real app, might want to track these removals to send to backend
         setExistingImages((prev) => prev.filter((_, i) => i !== index))
+    }
+
+    const handleSizeToggle = (size: string, enabled: boolean) => {
+        setSizeStocks(prev => ({
+            ...prev,
+            [size]: { ...prev[size], enabled, stock: enabled ? prev[size].stock : 0 }
+        }))
+    }
+
+    const handleSizeStockChange = (size: string, stock: number) => {
+        setSizeStocks(prev => ({
+            ...prev,
+            [size]: { ...prev[size], stock: Math.max(0, stock) }
+        }))
     }
 
     const handleSubmit = async (values: ProductFormValues) => {
         try {
             setIsSubmitting(true)
+
+            // Build variants from size stocks
+            const hasAnySizeEnabled = Object.values(sizeStocks).some(s => s.enabled)
+            const variants: ProductVariants | undefined = hasAnySizeEnabled ? {
+                sizes: sizeStocks,
+                colors: values.variants?.colors || []
+            } : undefined
+
+            // Calculate total stock from enabled sizes
+            const totalStock = hasAnySizeEnabled
+                ? Object.values(sizeStocks).reduce((sum, s) => sum + (s.enabled ? s.stock : 0), 0)
+                : values.stock
+
             await onSubmit({
                 ...values,
                 category_id: values.category_id === "null" ? null : values.category_id,
+                stock: totalStock,
+                variants,
+                size_guide: sizeGuideEnabled ? { headers: sizeGuideHeaders, rows: sizeGuideRows } : null,
             }, files, existingImages)
             onOpenChange(false)
         } catch (error) {
-            console.error(error)
+            // Error toast is handled by the parent onSubmit
+            console.error('ProductForm submit error:', error)
         } finally {
             setIsSubmitting(false)
         }
@@ -253,7 +354,6 @@ export function ProductForm({
                         <div className="space-y-4">
                             <FormLabel className="text-gray-700">Product Images</FormLabel>
                             <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
-                                {/* Upload Button */}
                                 <div className="relative aspect-square border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer overflow-hidden group">
                                     <input
                                         type="file"
@@ -266,46 +366,22 @@ export function ProductForm({
                                     <span className="text-xs text-gray-500 text-center px-2 group-hover:text-gray-700">Add Images</span>
                                 </div>
 
-                                {/* Existing Images */}
                                 {existingImages.map((src, index) => (
                                     <div key={`existing-${index}`} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 bg-white group shadow-sm">
-                                        <Image
-                                            src={src}
-                                            alt={`Existing ${index}`}
-                                            fill
-                                            className="object-cover"
-                                        />
+                                        <Image src={src} alt={`Existing ${index}`} fill className="object-cover" />
                                         <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button
-                                                type="button"
-                                                variant="destructive"
-                                                size="icon"
-                                                className="h-6 w-6 rounded-full shadow-md"
-                                                onClick={() => removeExistingImage(index)}
-                                            >
+                                            <Button type="button" variant="destructive" size="icon" className="h-6 w-6 rounded-full shadow-md" onClick={() => removeExistingImage(index)}>
                                                 <X className="h-3 w-3" />
                                             </Button>
                                         </div>
                                     </div>
                                 ))}
 
-                                {/* New Previews */}
                                 {previews.map((src, index) => (
                                     <div key={`new-${index}`} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 bg-white group shadow-sm">
-                                        <Image
-                                            src={src}
-                                            alt={`Preview ${index}`}
-                                            fill
-                                            className="object-cover"
-                                        />
+                                        <Image src={src} alt={`Preview ${index}`} fill className="object-cover" />
                                         <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button
-                                                type="button"
-                                                variant="destructive"
-                                                size="icon"
-                                                className="h-6 w-6 rounded-full shadow-md"
-                                                onClick={() => removeFile(index)}
-                                            >
+                                            <Button type="button" variant="destructive" size="icon" className="h-6 w-6 rounded-full shadow-md" onClick={() => removeFile(index)}>
                                                 <X className="h-3 w-3" />
                                             </Button>
                                         </div>
@@ -314,14 +390,14 @@ export function ProductForm({
                             </div>
                         </div>
 
-                        {/* Pricing & Stock */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Pricing */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
                                 name="price"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-gray-700">Price</FormLabel>
+                                        <FormLabel className="text-gray-700">Price (Rs.)</FormLabel>
                                         <FormControl>
                                             <Input type="number" step="0.01" {...field} className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/20" />
                                         </FormControl>
@@ -343,20 +419,166 @@ export function ProductForm({
                                     </FormItem>
                                 )}
                             />
+                        </div>
 
-                            <FormField
-                                control={form.control}
-                                name="stock"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-gray-700">Stock Quantity</FormLabel>
-                                        <FormControl>
-                                            <Input type="number" {...field} className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/20" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                        {/* Sizes & Stock Management */}
+                        <div className="space-y-4 border border-gray-200 rounded-xl p-5 bg-gray-50/50">
+                            <div>
+                                <FormLabel className="text-gray-700 text-base font-semibold">Sizes & Stock</FormLabel>
+                                <FormDescription className="text-gray-500 text-xs mt-1">
+                                    Enable sizes and set stock per size. Total stock is auto-calculated.
+                                </FormDescription>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {ALL_SIZES.map((size) => (
+                                    <div key={size} className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${sizeStocks[size]?.enabled ? 'bg-white border-primary/30 shadow-sm' : 'bg-gray-50 border-gray-200'}`}>
+                                        <Checkbox
+                                            checked={sizeStocks[size]?.enabled || false}
+                                            onCheckedChange={(checked) => handleSizeToggle(size, !!checked)}
+                                            className="data-[state=checked]:bg-primary data-[state=checked]:border-primary border-gray-400"
+                                        />
+                                        <span className={`text-sm font-bold min-w-[30px] ${sizeStocks[size]?.enabled ? 'text-gray-900' : 'text-gray-400'}`}>{size}</span>
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            value={sizeStocks[size]?.stock || 0}
+                                            onChange={(e) => handleSizeStockChange(size, parseInt(e.target.value) || 0)}
+                                            disabled={!sizeStocks[size]?.enabled}
+                                            className="h-8 w-20 text-center text-sm bg-white border-gray-200 disabled:opacity-40"
+                                            placeholder="Stock"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+
+                            {Object.values(sizeStocks).some(s => s.enabled) && (
+                                <div className="flex items-center gap-2 text-xs text-primary font-medium bg-primary/5 p-2 rounded-lg">
+                                    <span>Total Stock: {Object.values(sizeStocks).reduce((sum, s) => sum + (s.enabled ? s.stock : 0), 0)}</span>
+                                </div>
+                            )}
+
+                            {!Object.values(sizeStocks).some(s => s.enabled) && (
+                                <FormField
+                                    control={form.control}
+                                    name="stock"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-gray-700 text-xs">Global Stock (no sizes enabled)</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" {...field} className="bg-white border-gray-200 text-gray-900 focus-visible:ring-primary/20 h-9" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
+                        </div>
+
+                        {/* Size Guide */}
+                        <div className="space-y-4 border border-gray-200 rounded-xl p-5 bg-gray-50/50">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <FormLabel className="text-gray-700 text-base font-semibold">Size Guide</FormLabel>
+                                    <p className="text-gray-500 text-xs mt-1">
+                                        Add a measurement table customers can view on the product page.
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Checkbox
+                                        checked={sizeGuideEnabled}
+                                        onCheckedChange={(checked) => setSizeGuideEnabled(!!checked)}
+                                        className="data-[state=checked]:bg-primary data-[state=checked]:border-primary border-gray-400"
+                                    />
+                                    <span className="text-sm text-gray-600">Include Size Guide</span>
+                                </div>
+                            </div>
+
+                            {sizeGuideEnabled && (
+                                <div className="space-y-4">
+                                    {/* Column Headers */}
+                                    <div>
+                                        <p className="text-xs text-gray-500 font-medium mb-2 uppercase tracking-wider">Columns</p>
+                                        <div className="flex flex-wrap gap-2 items-center">
+                                            {sizeGuideHeaders.map((header, i) => (
+                                                <div key={i} className="flex items-center gap-1">
+                                                    <Input
+                                                        value={header}
+                                                        onChange={(e) => {
+                                                            const newHeaders = [...sizeGuideHeaders]
+                                                            newHeaders[i] = e.target.value
+                                                            setSizeGuideHeaders(newHeaders)
+                                                        }}
+                                                        className="h-8 w-32 text-sm bg-white border-gray-200 text-gray-900 focus-visible:ring-primary/20"
+                                                        placeholder="Column name"
+                                                    />
+                                                    {sizeGuideHeaders.length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const newHeaders = sizeGuideHeaders.filter((_, idx) => idx !== i)
+                                                                setSizeGuideHeaders(newHeaders)
+                                                                setSizeGuideRows(sizeGuideRows.map(row => row.filter((_, idx) => idx !== i)))
+                                                            }}
+                                                            className="text-gray-400 hover:text-red-500 transition-colors p-0.5"
+                                                        >
+                                                            <X className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setSizeGuideHeaders([...sizeGuideHeaders, ""])
+                                                    setSizeGuideRows(sizeGuideRows.map(row => [...row, ""]))
+                                                }}
+                                                className="h-8 w-8 flex items-center justify-center border border-dashed border-gray-300 rounded-md text-gray-400 hover:text-primary hover:border-primary transition-colors"
+                                            >
+                                                <Plus className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Rows */}
+                                    <div>
+                                        <p className="text-xs text-gray-500 font-medium mb-2 uppercase tracking-wider">Measurements</p>
+                                        <div className="space-y-2">
+                                            {sizeGuideRows.map((row, rowIdx) => (
+                                                <div key={rowIdx} className="flex items-center gap-2">
+                                                    {row.map((cell, cellIdx) => (
+                                                        <Input
+                                                            key={cellIdx}
+                                                            value={cell}
+                                                            onChange={(e) => {
+                                                                const newRows = sizeGuideRows.map(r => [...r])
+                                                                newRows[rowIdx][cellIdx] = e.target.value
+                                                                setSizeGuideRows(newRows)
+                                                            }}
+                                                            className="h-8 w-32 text-sm bg-white border-gray-200 text-gray-900 focus-visible:ring-primary/20"
+                                                            placeholder={sizeGuideHeaders[cellIdx] || ""}
+                                                        />
+                                                    ))}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSizeGuideRows(sizeGuideRows.filter((_, idx) => idx !== rowIdx))}
+                                                        className="text-gray-400 hover:text-red-500 transition-colors p-0.5 flex-shrink-0"
+                                                    >
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSizeGuideRows([...sizeGuideRows, new Array(sizeGuideHeaders.length).fill("")])}
+                                            className="mt-2 text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
+                                        >
+                                            <Plus className="h-3.5 w-3.5" /> Add Row
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Description */}

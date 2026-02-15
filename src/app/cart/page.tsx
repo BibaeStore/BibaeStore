@@ -142,18 +142,14 @@ export default function Cart() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span className={totalPrice >= 5000 ? "text-green-600" : ""}>
-                    {totalPrice >= 5000 ? "Free" : formatPrice(200)}
-                  </span>
+                  <span>{formatPrice(200)}</span>
                 </div>
-                {totalPrice >= 5000 && (
-                  <p className="text-[10px] text-green-600 flex items-center gap-1">
-                    <Truck className="w-3 h-3" /> Free shipping on orders over Rs. 5,000
-                  </p>
-                )}
+                <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <Truck className="w-3 h-3" /> Standard delivery across Pakistan
+                </p>
                 <div className="border-t border-border pt-4 flex justify-between font-semibold text-lg">
                   <span>Total</span>
-                  <span className="font-heading">{formatPrice(totalPrice >= 5000 ? totalPrice : totalPrice + 200)}</span>
+                  <span className="font-heading">{formatPrice(totalPrice + 200)}</span>
                 </div>
               </div>
               <motion.button

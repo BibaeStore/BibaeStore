@@ -165,6 +165,13 @@ export default function ProfileClient() {
                                 Orders
                             </button>
                             <Link
+                                href="/track"
+                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wider bg-white text-gray-500 hover:bg-gray-50 border border-gray-100 transition-all"
+                            >
+                                <Package className="w-4 h-4" />
+                                Track Order
+                            </Link>
+                            <Link
                                 href="/cart"
                                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wider bg-white text-gray-500 hover:bg-gray-50 border border-gray-100 transition-all"
                             >
@@ -223,7 +230,7 @@ export default function ProfileClient() {
                                                         value={phone}
                                                         onChange={(e) => setPhone(e.target.value)}
                                                         className="pl-12 h-14 bg-gray-50/50 border-gray-200 rounded-2xl focus:ring-primary/20 focus:bg-white transition-all text-sm"
-                                                        placeholder="+92 300 1234567"
+                                                        placeholder="+92 334 8438007"
                                                     />
                                                 </div>
                                             </div>
@@ -260,8 +267,8 @@ export default function ProfileClient() {
                                                 <div key={order.id} className="border border-gray-100 rounded-3xl overflow-hidden hover:border-primary/20 transition-all hover:shadow-xl hover:shadow-gray-200/50 group">
                                                     <div className="bg-gray-50/50 p-6 flex flex-wrap items-center justify-between gap-6 border-b border-gray-100 group-hover:bg-white transition-colors">
                                                         <div>
-                                                            <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold">Serial Number</p>
-                                                            <p className="text-sm font-mono font-bold text-gray-900 mt-1">#{order.id.slice(0, 8).toUpperCase()}</p>
+                                                            <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold">Tracking Number</p>
+                                                            <p className="text-sm font-mono font-bold text-primary mt-1">{order.tracking_number || `#${order.id.slice(0, 8).toUpperCase()}`}</p>
                                                         </div>
                                                         <div>
                                                             <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold">Placement Date</p>

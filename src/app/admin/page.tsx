@@ -6,80 +6,97 @@ import {
     Users,
     ShoppingBag,
     DollarSign,
-    ArrowUpRight,
-    ArrowDownRight,
     Package,
     Clock,
     Calendar,
-    Filter
+    Bell,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { OrderService } from '@/services/order.service'
 import { formatDistanceToNow } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { formatPrice } from '@/lib/products'
 import LoadingSpinner from '@/components/LoadingSpinner'
-
-const stats = [
-    {
-        title: "Total Revenue",
-        value: "Rs. 0.00",
-        change: "0%",
-        trend: "up",
-        icon: DollarSign,
-        color: "text-emerald-600",
-        bg: "bg-emerald-100/50"
-    },
-    {
-        title: "Active Orders",
-        value: "0",
-        change: "0%",
-        trend: "up",
-        icon: ShoppingBag,
-        color: "text-primary",
-        bg: "bg-primary/10"
-    },
-    {
-        title: "Total Customers",
-        value: "0",
-        change: "0%",
-        trend: "up",
-        icon: Users,
-        color: "text-blue-600",
-        bg: "bg-blue-100/50"
-    },
-    {
-        title: "Avg. Order",
-        value: "Rs. 0.00",
-        change: "0%",
-        trend: "down",
-        icon: TrendingUp,
-        color: "text-amber-600",
-        bg: "bg-amber-100/50"
-    },
-]
+import { useAdminNotifications } from '@/contexts/AdminNotificationContext'
 
 export default function AdminDashboard() {
     const router = useRouter()
     const [orders, setOrders] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [stats, setStats] = useState({
+        totalRevenue: 0,
+        activeOrders: 0,
+        totalCustomers: 0,
+        avgOrderValue: 0,
+        todayOrders: 0,
+        todayRevenue: 0
+    })
+    const { newOrderCount, resetCount, lastNewOrderId } = useAdminNotifications()
+
+    const fetchData = useCallback(async () => {
+        try {
+            const [ordersData, statsData] = await Promise.all([
+                OrderService.getAllOrders(),
+                OrderService.getOrderStats()
+            ])
+            setOrders(ordersData.slice(0, 5))
+            setStats(statsData)
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error)
+        } finally {
+            setIsLoading(false)
+        }
+    }, [])
 
     useEffect(() => {
-        const fetchRecentOrders = async () => {
-            try {
-                const data = await OrderService.getAllOrders()
-                setOrders(data.slice(0, 5)) // Get last 5
-            } catch (error) {
-                console.error('Error fetching recent orders:', error)
-            } finally {
-                setIsLoading(false)
-            }
+        fetchData()
+    }, [fetchData])
+
+    // Refresh dashboard data when a new order comes in via the shared context
+    useEffect(() => {
+        if (lastNewOrderId) {
+            fetchData()
         }
-        fetchRecentOrders()
-    }, [])
+    }, [lastNewOrderId, fetchData])
+
+    const statsCards = [
+        {
+            title: "Total Revenue",
+            value: formatPrice(stats.totalRevenue),
+            subtitle: `${formatPrice(stats.todayRevenue)} today`,
+            icon: DollarSign,
+            color: "text-emerald-600",
+            bg: "bg-emerald-100/50"
+        },
+        {
+            title: "Active Orders",
+            value: stats.activeOrders.toString(),
+            subtitle: `${stats.todayOrders} new today`,
+            icon: ShoppingBag,
+            color: "text-primary",
+            bg: "bg-primary/10"
+        },
+        {
+            title: "Total Customers",
+            value: stats.totalCustomers.toString(),
+            subtitle: "Registered users",
+            icon: Users,
+            color: "text-blue-600",
+            bg: "bg-blue-100/50"
+        },
+        {
+            title: "Avg. Order",
+            value: formatPrice(stats.avgOrderValue),
+            subtitle: "Per order average",
+            icon: TrendingUp,
+            color: "text-amber-600",
+            bg: "bg-amber-100/50"
+        },
+    ]
+
     return (
         <div className="space-y-10 pb-10">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -88,10 +105,27 @@ export default function AdminDashboard() {
                     <p className="text-gray-500 font-body text-sm uppercase tracking-[0.1em]">Bibaé Boutique Intelligence Overview</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" className="h-11 border-gray-200 bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-2xl px-6 text-xs uppercase tracking-widest transition-all shadow-sm">
-                        <Calendar className="w-4 h-4 mr-2" /> Last 30 Days
+                    {newOrderCount > 0 && (
+                        <Button
+                            variant="outline"
+                            className="h-11 border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-2xl px-6 text-xs uppercase tracking-widest transition-all shadow-sm relative"
+                            onClick={() => { resetCount(); router.push('/admin/orders'); }}
+                        >
+                            <Bell className="w-4 h-4 mr-2 animate-bounce" />
+                            {newOrderCount} New {newOrderCount === 1 ? 'Order' : 'Orders'}
+                        </Button>
+                    )}
+                    <Button
+                        variant="outline"
+                        className="h-11 border-gray-200 bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-2xl px-6 text-xs uppercase tracking-widest transition-all shadow-sm"
+                        onClick={() => router.push('/admin/orders')}
+                    >
+                        <Calendar className="w-4 h-4 mr-2" /> View Orders
                     </Button>
-                    <Button className="h-11 bg-gray-900 hover:bg-gray-800 text-white border border-primary/50 hover:border-primary font-bold rounded-2xl px-6 text-xs uppercase tracking-widest shadow-sm hover:shadow-md transition-all">
+                    <Button
+                        className="h-11 bg-gray-900 hover:bg-gray-800 text-white border border-primary/50 hover:border-primary font-bold rounded-2xl px-6 text-xs uppercase tracking-widest shadow-sm hover:shadow-md transition-all"
+                        onClick={() => router.push('/admin/products')}
+                    >
                         Create Product
                     </Button>
                 </div>
@@ -99,7 +133,7 @@ export default function AdminDashboard() {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {stats.map((stat, i) => (
+                {statsCards.map((stat, i) => (
                     <motion.div
                         key={stat.title}
                         initial={{ opacity: 0, y: 30 }}
@@ -111,14 +145,11 @@ export default function AdminDashboard() {
                                 <div className={`w-12 h-12 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center transition-transform group-hover:scale-110 duration-500 shadow-sm`}>
                                     <stat.icon className="w-6 h-6" />
                                 </div>
-                                <div className={`flex items-center text-xs font-bold px-2.5 py-1 rounded-full ${stat.trend === 'up' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                                    {stat.change}
-                                    {stat.trend === 'up' ? <ArrowUpRight className="w-3 h-3 ml-0.5" /> : <ArrowDownRight className="w-3 h-3 ml-0.5" />}
-                                </div>
                             </div>
                             <div className="mt-6 space-y-1">
                                 <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold">{stat.title}</p>
-                                <h3 className="text-2xl font-bold text-gray-900 tracking-tight">{stat.value}</h3>
+                                <h3 className="text-2xl font-bold text-gray-900 tracking-tight">{isLoading ? '...' : stat.value}</h3>
+                                <p className="text-[10px] text-gray-400">{stat.subtitle}</p>
                             </div>
                         </div>
                     </motion.div>
@@ -133,36 +164,45 @@ export default function AdminDashboard() {
                             <CardTitle className="font-heading text-xl text-gray-900">Live Transactions</CardTitle>
                             <CardDescription className="text-gray-400 text-xs uppercase tracking-widest font-bold">Latest store movements</CardDescription>
                         </div>
-                        <Button variant="ghost" className="text-primary hover:bg-primary/5 h-10 px-4 rounded-xl text-xs font-bold uppercase tracking-widest transition-all">Explore All</Button>
+                        <Button
+                            variant="ghost"
+                            className="text-primary hover:bg-primary/5 h-10 px-4 rounded-xl text-xs font-bold uppercase tracking-widest transition-all"
+                            onClick={() => router.push('/admin/orders')}
+                        >
+                            Explore All
+                        </Button>
                     </CardHeader>
                     <CardContent className="px-8 pb-8">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold border-b border-gray-200">
-                                        <th className="py-5">Serial</th>
+                                        <th className="py-5">Tracking</th>
                                         <th className="py-5">Client</th>
                                         <th className="py-5">Valuation</th>
+                                        <th className="py-5">Payment</th>
                                         <th className="py-5 text-right">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="text-sm">
                                     {isLoading ? (
                                         <tr>
-                                            <td colSpan={4} className="py-10 text-center">
+                                            <td colSpan={5} className="py-10 text-center">
                                                 <LoadingSpinner size="sm" />
                                             </td>
                                         </tr>
                                     ) : orders.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} className="py-10 text-center text-gray-400">
+                                            <td colSpan={5} className="py-10 text-center text-gray-400">
                                                 No transactions found
                                             </td>
                                         </tr>
                                     ) : (
                                         orders.map((order) => (
                                             <tr key={order.id} className="border-b border-gray-200 hover:bg-gray-50/50 transition-colors group cursor-pointer" onClick={() => router.push('/admin/orders')}>
-                                                <td className="py-5 font-mono text-gray-500 group-hover:text-primary transition-colors">#{order.id.slice(0, 8).toUpperCase()}</td>
+                                                <td className="py-5 font-mono text-gray-500 group-hover:text-primary transition-colors text-xs">
+                                                    {order.tracking_number || `#${order.id.slice(0, 8).toUpperCase()}`}
+                                                </td>
                                                 <td className="py-5">
                                                     <div className="flex flex-col">
                                                         <span className="font-medium text-gray-900">{order.client?.full_name || 'Guest'}</span>
@@ -172,14 +212,26 @@ export default function AdminDashboard() {
                                                     </div>
                                                 </td>
                                                 <td className="py-5 font-bold text-gray-900">{formatPrice(order.total_amount)}</td>
+                                                <td className="py-5">
+                                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${
+                                                        order.payment_method === 'online'
+                                                            ? 'bg-blue-50 text-blue-600'
+                                                            : 'bg-gray-100 text-gray-600'
+                                                    }`}>
+                                                        {order.payment_method === 'online' ? 'Bank' : 'COD'}
+                                                    </span>
+                                                </td>
                                                 <td className="py-5 text-right">
-                                                    <span className={`inline-flex px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-[0.1em] ${order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
-                                                            order.status === 'processing' ? 'bg-primary/10 text-primary' :
-                                                                order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
-                                                                    order.status === 'pending' ? 'bg-amber-100 text-amber-600' :
-                                                                        'bg-gray-100 text-gray-500'
-                                                        }`}>
-                                                        {order.status}
+                                                    <span className={`inline-flex px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-[0.1em] ${
+                                                        order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
+                                                        order.status === 'processing' ? 'bg-primary/10 text-primary' :
+                                                        order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                                                        order.status === 'under_review' ? 'bg-amber-100 text-amber-600' :
+                                                        order.status === 'pending' ? 'bg-orange-100 text-orange-600' :
+                                                        order.status === 'cancelled' ? 'bg-red-100 text-red-600' :
+                                                        'bg-gray-100 text-gray-500'
+                                                    }`}>
+                                                        {order.status === 'under_review' ? 'Review' : order.status}
                                                     </span>
                                                 </td>
                                             </tr>
@@ -191,50 +243,51 @@ export default function AdminDashboard() {
                     </CardContent>
                 </Card>
 
-                {/* Inventory Summary */}
+                {/* Quick Stats Summary */}
                 <Card className="bg-white border-gray-200 rounded-[2.5rem] shadow-sm hover:shadow-md transition-shadow">
                     <CardHeader className="px-8 pt-8 pb-4">
                         <div className="space-y-1.5">
-                            <CardTitle className="font-heading text-xl text-gray-900">Stock Analytics</CardTitle>
-                            <CardDescription className="text-gray-400 text-xs uppercase tracking-widest font-bold">Category Distribution</CardDescription>
+                            <CardTitle className="font-heading text-xl text-gray-900">Order Summary</CardTitle>
+                            <CardDescription className="text-gray-400 text-xs uppercase tracking-widest font-bold">Status Distribution</CardDescription>
                         </div>
                     </CardHeader>
                     <CardContent className="px-8 pb-8 space-y-7">
-                        {[
-                            { label: "Ladies Stitched", value: 85, color: "bg-primary" },
-                            { label: "Kids Collection", value: 62, color: "bg-blue-500" },
-                            { label: "Baby Products", value: 45, color: "bg-emerald-500" },
-                            { label: "Unstitched Fabric", value: 28, color: "bg-rose-500" },
-                        ].map((item) => (
-                            <div key={item.label} className="space-y-2.5 group cursor-default">
-                                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.15em]">
-                                    <span className="text-gray-500 group-hover:text-gray-900 transition-colors">{item.label}</span>
-                                    <span className="text-gray-400">{item.value}%</span>
+                        {!isLoading && (() => {
+                            const allOrders = orders.length > 5 ? orders : orders; // Use what we have
+                            return [
+                                { label: "Pending", count: allOrders.filter((o: any) => o.status === 'pending').length, color: "bg-orange-500" },
+                                { label: "Under Review", count: allOrders.filter((o: any) => o.status === 'under_review').length, color: "bg-amber-500" },
+                                { label: "Processing", count: allOrders.filter((o: any) => o.status === 'processing').length, color: "bg-blue-500" },
+                                { label: "Shipped", count: allOrders.filter((o: any) => o.status === 'shipped').length, color: "bg-indigo-500" },
+                                { label: "Delivered", count: allOrders.filter((o: any) => o.status === 'delivered').length, color: "bg-emerald-500" },
+                            ].map((item) => (
+                                <div key={item.label} className="space-y-2.5 group cursor-default">
+                                    <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.15em]">
+                                        <span className="text-gray-500 group-hover:text-gray-900 transition-colors">{item.label}</span>
+                                        <span className="text-gray-400">{item.count}</span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: allOrders.length > 0 ? `${Math.max(5, (item.count / allOrders.length) * 100)}%` : '0%' }}
+                                            transition={{ duration: 1.5, ease: "easeOut" }}
+                                            className={`h-full ${item.color} shadow-sm`}
+                                        />
+                                    </div>
                                 </div>
-                                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${item.value}%` }}
-                                        transition={{ duration: 1.5, ease: "easeOut" }}
-                                        className={`h-full ${item.color} shadow-sm`}
-                                    />
-                                </div>
-                            </div>
-                        ))}
+                            ));
+                        })()}
 
                         <div className="mt-10 pt-8 border-t border-gray-200">
-                            <div className="p-5 rounded-[1.5rem] bg-red-50 border border-red-100 group overflow-hidden relative">
+                            <div className="p-5 rounded-[1.5rem] bg-primary/5 border border-primary/10 group overflow-hidden relative">
                                 <div className="relative z-10 flex items-center gap-5">
-                                    <div className="w-12 h-12 rounded-2xl bg-white text-red-500 flex items-center justify-center transition-transform group-hover:scale-110 duration-500 shadow-sm border border-red-100">
+                                    <div className="w-12 h-12 rounded-2xl bg-white text-primary flex items-center justify-center transition-transform group-hover:scale-110 duration-500 shadow-sm border border-primary/10">
                                         <Package className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-500">Alert Status</p>
-                                        <p className="text-sm font-medium text-gray-900 mt-1">12 items low stock</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Today's Activity</p>
+                                        <p className="text-sm font-medium text-gray-900 mt-1">{stats.todayOrders} orders · {formatPrice(stats.todayRevenue)}</p>
                                     </div>
-                                </div>
-                                <div className="absolute top-0 right-0 p-2 opacity-10">
-                                    <Package className="w-16 h-16 text-red-500" />
                                 </div>
                             </div>
                         </div>

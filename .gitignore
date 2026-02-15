@@ -41,7 +41,13 @@ next-env.d.ts
 *.swp
 *.swo
 
+
 # custom
 .agent/
 .gemini/
 .antigravity/
+
+# secrets & config
+.env
+.mcp.json
+nul

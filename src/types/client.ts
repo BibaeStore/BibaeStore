@@ -17,17 +17,39 @@ export interface CartItem {
     product?: any; // For joined data
 }
 
+export interface StatusHistoryEntry {
+    status: string;
+    timestamp: string;
+    note?: string;
+}
+
 export interface Order {
     id: string;
-    client_id: string;
+    client_id: string | null;
     total_amount: number;
-    status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+    status: 'pending' | 'under_review' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
     payment_method?: 'cod' | 'online';
     payment_proof_url?: string;
     shipping_address?: string;
+    tracking_number?: string;
+    payment_status?: 'pending' | 'under_review' | 'verified' | 'rejected';
+    admin_notes?: string;
+    status_history?: StatusHistoryEntry[];
+    cancellation_requested?: boolean;
+    cancellation_reason?: string;
+    discount_amount?: number;
+    coupon_code?: string;
+    guest_email?: string;
+    guest_name?: string;
+    guest_phone?: string;
     created_at?: string;
     updated_at?: string;
     items?: OrderItem[];
+    client?: {
+        full_name: string;
+        email: string;
+        phone_number?: string;
+    };
 }
 
 export interface OrderItem {

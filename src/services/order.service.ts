@@ -1,17 +1,21 @@
 import { createClient } from '../lib/supabase/client';
-import { Order, OrderItem } from '../types/client';
+import { Order, OrderItem, StatusHistoryEntry } from '../types/client';
 import { CartService } from './cart.service';
 
 export class OrderService {
-    private static supabase = createClient();
+    private static get supabase() {
+        return createClient();
+    }
 
     static async placeOrder(
-        clientId: string,
+        clientId: string | null,
         totalAmount: number,
-        items: { product_id: string, quantity: number, price: number }[],
+        items: { product_id: string, quantity: number, price: number, size?: string, color?: string }[],
         shippingAddress: string,
         paymentMethod: 'cod' | 'online' = 'cod',
-        proofFile?: File
+        proofFile?: File,
+        onlineMethod?: string,
+        guestInfo?: { email: string, name: string, phone: string }
     ): Promise<Order> {
         let payment_proof_url = null;
 
@@ -19,10 +23,11 @@ export class OrderService {
         if (paymentMethod === 'online' && proofFile) {
             const fileExt = proofFile.name.split('.').pop();
             const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-            const filePath = `${clientId}/${fileName}`;
+            const folder = clientId || 'guest';
+            const filePath = `${folder}/${fileName}`;
 
             const { error: uploadError } = await this.supabase.storage
-                .from('orders') // Ensure this bucket exists
+                .from('orders')
                 .upload(filePath, proofFile);
 
             if (uploadError) throw new Error(`Proof upload failed: ${uploadError.message}`);
@@ -34,50 +39,42 @@ export class OrderService {
             payment_proof_url = data.publicUrl;
         }
 
-        // Try using RPC for atomic transaction (Faster)
-        try {
-            const { data: orderId, error: rpcError } = await this.supabase
-                .rpc('place_order', {
-                    p_client_id: clientId,
-                    p_total_amount: totalAmount,
-                    p_items: items,
-                    p_shipping_address: shippingAddress,
-                    p_payment_method: paymentMethod,
-                    p_payment_proof_url: payment_proof_url
-                });
+        const initialStatus = paymentMethod === 'online' ? 'under_review' : 'pending';
+        const initialPaymentStatus = paymentMethod === 'online' ? 'under_review' : 'pending';
 
-            if (!rpcError && orderId) {
-                // Return the created order details
-                return { id: orderId.id } as Order;
-            }
-            // If RPC doesn't exist or fails, fall through to legacy method
-            console.warn("RPC failed or returned no ID, falling back to sequential. Error:", rpcError);
-        } catch (e) {
-            console.warn("RPC attempt failed with exception:", e);
+        // Build order data
+        const orderData: any = {
+            total_amount: totalAmount,
+            status: initialStatus,
+            shipping_address: shippingAddress,
+            payment_method: paymentMethod,
+            payment_proof_url: payment_proof_url,
+            payment_status: initialPaymentStatus
+        };
+
+        if (clientId) {
+            orderData.client_id = clientId;
         }
 
-        // Legacy Method (Fallback)
-        // 1. Create the order
+        if (guestInfo) {
+            orderData.guest_email = guestInfo.email;
+            orderData.guest_name = guestInfo.name;
+            orderData.guest_phone = guestInfo.phone;
+        }
+
+        // Create the order
         const { data: order, error: orderError } = await this.supabase
             .from('orders')
-            .insert({
-                client_id: clientId,
-                total_amount: totalAmount,
-                status: 'pending',
-                shipping_address: shippingAddress,
-                payment_method: paymentMethod,
-                payment_proof_url: payment_proof_url
-            })
+            .insert(orderData)
             .select()
             .single();
 
         if (orderError) {
             console.error("Supabase Order Insert Error:", orderError);
-            // alert(`Debug: Insert failed - ${orderError.message}`); // Temporary for debugging
             throw new Error(`Database Insert Failed: ${orderError.message} (${orderError.code})`);
         }
 
-        // 2. Create order items
+        // Create order items
         const orderItems = items.map(item => ({
             order_id: order.id,
             product_id: item.product_id,
@@ -91,10 +88,87 @@ export class OrderService {
 
         if (itemsError) throw itemsError;
 
-        // 3. Clear the cart
-        await CartService.clearCart(clientId);
+        // Deduct stock for each item's size
+        for (const item of items) {
+            if (item.size) {
+                await this.deductSizeStock(item.product_id, item.size, item.quantity);
+            }
+        }
+
+        // Clear the cart (only for logged-in users with DB cart)
+        if (clientId) {
+            await CartService.clearCart(clientId);
+        }
 
         return order;
+    }
+
+    private static async deductSizeStock(productId: string, size: string, quantity: number): Promise<void> {
+        const { data: product } = await this.supabase
+            .from('products')
+            .select('variants, stock')
+            .eq('id', productId)
+            .single();
+
+        if (product?.variants?.sizes?.[size]) {
+            const newStock = Math.max(0, (product.variants.sizes[size].stock || 0) - quantity);
+            const updatedVariants = {
+                ...product.variants,
+                sizes: {
+                    ...product.variants.sizes,
+                    [size]: { ...product.variants.sizes[size], stock: newStock }
+                }
+            };
+
+            // Calculate total stock from all sizes
+            const totalStock = Object.values(updatedVariants.sizes as Record<string, { stock: number }>)
+                .reduce((sum, s) => sum + (s.stock || 0), 0);
+
+            await this.supabase
+                .from('products')
+                .update({ variants: updatedVariants, stock: totalStock })
+                .eq('id', productId);
+        } else {
+            // Fallback: deduct from global stock
+            const newStock = Math.max(0, (product?.stock || 0) - quantity);
+            await this.supabase
+                .from('products')
+                .update({ stock: newStock })
+                .eq('id', productId);
+        }
+    }
+
+    static async restoreSizeStock(productId: string, size: string, quantity: number): Promise<void> {
+        const { data: product } = await this.supabase
+            .from('products')
+            .select('variants, stock')
+            .eq('id', productId)
+            .single();
+
+        if (product?.variants?.sizes?.[size]) {
+            const newStock = (product.variants.sizes[size].stock || 0) + quantity;
+            const updatedVariants = {
+                ...product.variants,
+                sizes: {
+                    ...product.variants.sizes,
+                    [size]: { ...product.variants.sizes[size], stock: newStock }
+                }
+            };
+
+            const totalStock = Object.values(updatedVariants.sizes as Record<string, { stock: number }>)
+                .reduce((sum, s) => sum + (s.stock || 0), 0);
+
+            await this.supabase
+                .from('products')
+                .update({ variants: updatedVariants, stock: totalStock })
+                .eq('id', productId);
+        } else {
+            const newStock = (product?.stock || 0) + quantity;
+            await this.supabase
+                .from('products')
+                .update({ stock: newStock })
+                .eq('id', productId);
+        }
     }
 
     static async getOrders(clientId: string): Promise<Order[]> {
@@ -111,7 +185,7 @@ export class OrderService {
     static async getOrderDetails(orderId: string): Promise<Order> {
         const { data, error } = await this.supabase
             .from('orders')
-            .select('*, items:order_items(*, product:products(*))')
+            .select('*, items:order_items(*, product:products(*)), client:clients(full_name, email, phone_number)')
             .eq('id', orderId)
             .single();
 
@@ -129,6 +203,20 @@ export class OrderService {
         return data || [];
     }
 
+    static async getOrderByTracking(trackingNumber: string): Promise<Order | null> {
+        const { data, error } = await this.supabase
+            .from('orders')
+            .select('*')
+            .eq('tracking_number', trackingNumber)
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') return null;
+            throw error;
+        }
+        return data;
+    }
+
     static async updateOrderStatus(orderId: string, status: string): Promise<void> {
         const { error } = await this.supabase
             .from('orders')
@@ -139,5 +227,220 @@ export class OrderService {
             .eq('id', orderId);
 
         if (error) throw error;
+    }
+
+    static async updateStatusWithHistory(orderId: string, status: string, note?: string): Promise<void> {
+        // Get current status history
+        const { data: order, error: selectError } = await this.supabase
+            .from('orders')
+            .select('status_history')
+            .eq('id', orderId)
+            .single();
+
+        if (selectError) {
+            console.error('Failed to read order for status update:', selectError.message, selectError.code);
+            throw new Error(`Cannot read order: ${selectError.message}`);
+        }
+
+        const currentHistory: StatusHistoryEntry[] = order?.status_history || [];
+        const newEntry: StatusHistoryEntry = {
+            status,
+            timestamp: new Date().toISOString(),
+            note: note || `Status changed to ${status}`
+        };
+
+        const { error } = await this.supabase
+            .from('orders')
+            .update({
+                status,
+                status_history: [...currentHistory, newEntry],
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', orderId);
+
+        if (error) {
+            console.error('Failed to update order status:', error.message, error.code);
+            throw new Error(`Status update failed: ${error.message}`);
+        }
+    }
+
+    static async updatePaymentStatus(orderId: string, paymentStatus: string, orderStatus?: string): Promise<void> {
+        const updateData: any = {
+            payment_status: paymentStatus,
+            updated_at: new Date().toISOString()
+        };
+        if (orderStatus) {
+            updateData.status = orderStatus;
+        }
+
+        // Also update status history
+        const { data: order, error: selectError } = await this.supabase
+            .from('orders')
+            .select('status_history')
+            .eq('id', orderId)
+            .single();
+
+        if (selectError) {
+            console.error('Failed to read order for payment update:', selectError.message, selectError.code);
+            throw new Error(`Cannot read order: ${selectError.message}`);
+        }
+
+        const currentHistory: StatusHistoryEntry[] = order?.status_history || [];
+        const newEntry: StatusHistoryEntry = {
+            status: orderStatus || paymentStatus,
+            timestamp: new Date().toISOString(),
+            note: paymentStatus === 'verified' ? 'Payment verified by admin' : paymentStatus === 'rejected' ? 'Payment rejected by admin' : `Payment status: ${paymentStatus}`
+        };
+        updateData.status_history = [...currentHistory, newEntry];
+
+        const { error } = await this.supabase
+            .from('orders')
+            .update(updateData)
+            .eq('id', orderId);
+
+        if (error) {
+            console.error('Failed to update payment status:', error.message, error.code);
+            throw new Error(`Payment update failed: ${error.message}`);
+        }
+    }
+
+    static async addAdminNote(orderId: string, note: string): Promise<void> {
+        const { error } = await this.supabase
+            .from('orders')
+            .update({
+                admin_notes: note,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', orderId);
+
+        if (error) throw error;
+    }
+
+    static async requestCancellation(orderId: string, reason: string): Promise<void> {
+        const { data: order, error: selectError } = await this.supabase
+            .from('orders')
+            .select('status_history')
+            .eq('id', orderId)
+            .single();
+
+        if (selectError) {
+            console.error('Failed to read order for cancellation:', selectError.message);
+            throw new Error(`Cannot read order: ${selectError.message}`);
+        }
+
+        const currentHistory: StatusHistoryEntry[] = order?.status_history || [];
+        const newEntry: StatusHistoryEntry = {
+            status: 'cancellation_requested',
+            timestamp: new Date().toISOString(),
+            note: `Cancellation requested: ${reason}`
+        };
+
+        const { error } = await this.supabase
+            .from('orders')
+            .update({
+                cancellation_requested: true,
+                cancellation_reason: reason,
+                status_history: [...currentHistory, newEntry],
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', orderId);
+
+        if (error) throw error;
+    }
+
+    static async approveCancellation(orderId: string): Promise<void> {
+        await this.updateStatusWithHistory(orderId, 'cancelled', 'Cancellation approved by admin');
+
+        const { error } = await this.supabase
+            .from('orders')
+            .update({
+                cancellation_requested: false,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', orderId);
+
+        if (error) throw error;
+    }
+
+    static async getOrderStats(): Promise<{
+        totalRevenue: number;
+        activeOrders: number;
+        totalCustomers: number;
+        avgOrderValue: number;
+        todayOrders: number;
+        todayRevenue: number;
+    }> {
+        // Total revenue from delivered orders
+        const { data: deliveredOrders } = await this.supabase
+            .from('orders')
+            .select('total_amount')
+            .eq('status', 'delivered');
+
+        const totalRevenue = (deliveredOrders || []).reduce((sum, o) => sum + Number(o.total_amount), 0);
+
+        // Active orders (not delivered, not cancelled)
+        const { count: activeOrders } = await this.supabase
+            .from('orders')
+            .select('*', { count: 'exact', head: true })
+            .not('status', 'in', '("delivered","cancelled")');
+
+        // Total customers
+        const { count: totalCustomers } = await this.supabase
+            .from('clients')
+            .select('*', { count: 'exact', head: true });
+
+        // All orders for avg calculation
+        const { data: allOrders } = await this.supabase
+            .from('orders')
+            .select('total_amount')
+            .not('status', 'eq', 'cancelled');
+
+        const avgOrderValue = allOrders && allOrders.length > 0
+            ? allOrders.reduce((sum, o) => sum + Number(o.total_amount), 0) / allOrders.length
+            : 0;
+
+        // Today's orders
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const { data: todayOrdersData } = await this.supabase
+            .from('orders')
+            .select('total_amount')
+            .gte('created_at', today.toISOString());
+
+        const todayOrders = todayOrdersData?.length || 0;
+        const todayRevenue = (todayOrdersData || []).reduce((sum, o) => sum + Number(o.total_amount), 0);
+
+        return {
+            totalRevenue,
+            activeOrders: activeOrders || 0,
+            totalCustomers: totalCustomers || 0,
+            avgOrderValue,
+            todayOrders,
+            todayRevenue
+        };
+    }
+
+    static exportOrdersCSV(orders: Order[]): string {
+        const headers = ['Order ID', 'Tracking #', 'Customer', 'Email', 'Phone', 'Total', 'Status', 'Payment', 'Payment Status', 'Address', 'Date'];
+        const rows = orders.map(order => [
+            order.id.slice(0, 8).toUpperCase(),
+            order.tracking_number || '',
+            order.client?.full_name || 'Unknown',
+            order.client?.email || '',
+            order.client?.phone_number || '',
+            order.total_amount,
+            order.status,
+            order.payment_method || 'cod',
+            order.payment_status || 'pending',
+            (order.shipping_address || '').replace(/,/g, ';'),
+            order.created_at ? new Date(order.created_at).toLocaleDateString() : ''
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+        ].join('\n');
+
+        return csvContent;
     }
 }

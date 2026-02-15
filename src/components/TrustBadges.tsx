@@ -4,7 +4,7 @@ import { Truck, Shield, RotateCcw, Headphones } from "lucide-react";
 import { motion } from "framer-motion";
 
 const badges = [
-  { icon: Truck, title: "Free Shipping", desc: "On orders over Rs. 5,000" },
+  { icon: Truck, title: "Nationwide Delivery", desc: "Flat Rs. 200 shipping" },
   { icon: Shield, title: "Premium Quality", desc: "Handcrafted with care" },
   { icon: RotateCcw, title: "Easy Returns", desc: "7-day return policy" },
   { icon: Headphones, title: "24/7 Support", desc: "We're here to help" },

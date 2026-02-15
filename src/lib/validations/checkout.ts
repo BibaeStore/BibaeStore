@@ -17,29 +17,29 @@ export const shippingSchema = z.object({
     country: z.string().min(2, "Please select your country"),
 });
 
-// Payment schema (UI only, no real processing)
 // Payment schema
 export const paymentSchema = z.object({
     method: z.enum(["cod", "online"], {
         required_error: "Please select a payment method",
     }),
-    // Online payment fields (optional but validated if method is online)
-    onlineMethod: z.enum(["sadapay", "jazzcash"]).optional(),
-    proofFile: z.any().optional(), // File validation handled in component
-
-    // Card fields (keeping for backward compatibility or if we add card later, but making optional for now)
-    cardNumber: z.string().optional(),
-    cardName: z.string().optional(),
-    expiryDate: z.string().optional(),
-    cvv: z.string().optional(),
+    onlineMethod: z.enum(["sadapay", "jazzcash", "easypaisa", "askari"]).optional(),
+    proofFile: z.any().optional(),
 }).refine((data) => {
     if (data.method === "online") {
         return !!data.onlineMethod;
     }
     return true;
 }, {
-    message: "Please select an account (Sadapay or JazzCash)",
+    message: "Please select a payment account",
     path: ["onlineMethod"],
+}).refine((data) => {
+    if (data.method === "online") {
+        return !!data.proofFile;
+    }
+    return true;
+}, {
+    message: "Please upload your payment proof screenshot",
+    path: ["proofFile"],
 });
 
 // Complete checkout schema

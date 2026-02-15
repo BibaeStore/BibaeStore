@@ -1,11 +1,21 @@
 'use client'
 
 import { Search, Bell } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { useAdminNotifications } from '@/contexts/AdminNotificationContext'
 
 export function AdminHeader() {
+    const router = useRouter()
+    const { newOrderCount, resetCount } = useAdminNotifications()
+
+    const handleBellClick = () => {
+        resetCount()
+        router.push('/admin/orders')
+    }
+
     return (
         <header className="h-16 border-b border-gray-300 bg-white/80 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-30 transition-all duration-300 shadow-sm">
             <div className="flex items-center gap-4 flex-1">
@@ -22,9 +32,18 @@ export function AdminHeader() {
 
             <div className="flex items-center gap-3 sm:gap-4">
                 <div className="flex items-center gap-1.5">
-                    <Button variant="ghost" size="icon" className="relative w-9 h-9 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-all duration-300">
-                        <Bell className="w-4 h-4" />
-                        <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full ring-2 ring-white animate-pulse"></span>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleBellClick}
+                        className="relative w-9 h-9 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-all duration-300"
+                    >
+                        <Bell className={`w-4 h-4 ${newOrderCount > 0 ? 'animate-bounce' : ''}`} />
+                        {newOrderCount > 0 ? (
+                            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">
+                                {newOrderCount > 99 ? '99+' : newOrderCount}
+                            </span>
+                        ) : null}
                     </Button>
                 </div>
 

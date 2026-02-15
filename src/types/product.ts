@@ -1,3 +1,21 @@
+export interface SizeStock {
+    stock: number;
+    enabled: boolean;
+}
+
+export interface ProductVariants {
+    sizes?: Record<string, SizeStock>;
+    colors?: string[];
+}
+
+export const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const;
+export type SizeName = typeof ALL_SIZES[number];
+
+export interface SizeGuide {
+    headers: string[];
+    rows: string[][];
+}
+
 export interface Product {
     id: string;
     name: string;
@@ -11,7 +29,8 @@ export interface Product {
     stock: number;
     status: 'active' | 'inactive' | 'draft';
     is_featured: boolean;
-    variants?: any; // strict type later if needed
+    variants?: ProductVariants;
+    size_guide?: SizeGuide | null;
     sizes?: string[];
     colors?: string[];
     created_at?: string;
@@ -25,8 +44,8 @@ export type ProductFormData = {
     name: string;
     sku: string;
     category_id: string | null;
-    images?: string[]; // Existing images to keep
-    newImages?: File[]; // New images to upload
+    images?: string[];
+    newImages?: File[];
     short_description?: string;
     description?: string;
     price: number;
@@ -34,5 +53,6 @@ export type ProductFormData = {
     stock: number;
     status: 'active' | 'inactive' | 'draft';
     is_featured: boolean;
-    variants?: any;
+    variants?: ProductVariants;
+    size_guide?: SizeGuide | null;
 };

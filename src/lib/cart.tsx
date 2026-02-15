@@ -96,11 +96,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUserId(session?.user?.id || null);
       if (event === 'SIGNED_IN' && session?.user?.id) {
-        // Sync local to DB? Or just overwrite? 
-        // Best practice: Merge local to DB if DB is empty, or just load DB. 
-        // For simplicity: load DB.
+        // Merge: combine guest localStorage cart with DB cart
+        const localData = localStorage.getItem('bibae_cart');
+        let localItems: CartItem[] = [];
+        if (localData) {
+          try { localItems = JSON.parse(localData); } catch (e) { /* ignore */ }
+        }
+
         const dbItems = await CartService.getCart(session.user.id);
-        const mappedItems: CartItem[] = dbItems.map(item => ({
+        const mappedDbItems: CartItem[] = dbItems.map(item => ({
           product: {
             ...item.product,
             image: item.product.images?.[0] || '/assets/placeholder.jpg'
@@ -109,7 +113,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
           size: "Standard",
           color: "Default"
         }));
-        setItems(mappedItems);
+
+        // Merge local items into DB items
+        const merged = [...mappedDbItems];
+        for (const localItem of localItems) {
+          const existing = merged.find(m => m.product.id === localItem.product.id);
+          if (existing) {
+            // Item exists in DB, keep the higher quantity
+            existing.quantity = Math.max(existing.quantity, localItem.quantity);
+          } else {
+            // New item from guest cart, add it
+            merged.push(localItem);
+          }
+        }
+
+        // Sync merged items to DB
+        for (const localItem of localItems) {
+          const inDb = mappedDbItems.find(d => d.product.id === localItem.product.id);
+          if (!inDb) {
+            try {
+              await CartService.addToCart(session.user.id, localItem.product.id, localItem.quantity);
+            } catch (e) {
+              console.error("Failed to sync local item to DB:", e);
+            }
+          }
+        }
+
+        setItems(merged);
+        localStorage.removeItem('bibae_cart');
       } else if (event === 'SIGNED_OUT') {
         setItems([]);
         localStorage.removeItem('bibae_cart');

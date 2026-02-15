@@ -13,7 +13,7 @@ import {
     BarChart3,
     Gift,
     Settings,
-    LogOut
+    LogOut,
 } from "lucide-react"
 
 import {
@@ -26,12 +26,13 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useAdminNotifications } from "@/contexts/AdminNotificationContext"
 
 const logo = '/assets/icon.png'
 
-const mainMenuItems = [
+const baseMenuItems = [
     { title: "Dashboard", icon: LayoutDashboard, href: "/admin" },
-    { title: "Orders", icon: ShoppingBag, href: "/admin/orders", badge: "12" },
+    { title: "Orders", icon: ShoppingBag, href: "/admin/orders", badgeKey: "orders" },
     { title: "Products", icon: Package, href: "/admin/products" },
     { title: "Categories", icon: Layers, href: "/admin/categories" },
     { title: "Customers", icon: Users, href: "/admin/customers" },
@@ -46,6 +47,14 @@ export function AdminSidebar() {
     const router = useRouter()
     const supabase = createClient()
     const [hoveredItem, setHoveredItem] = React.useState<string | null>(null)
+    const { newOrderCount, resetCount } = useAdminNotifications()
+
+    // Reset count when visiting orders page
+    React.useEffect(() => {
+        if (pathname?.startsWith('/admin/orders')) {
+            resetCount()
+        }
+    }, [pathname, resetCount])
 
     const handleLogout = async () => {
         try {
@@ -96,9 +105,10 @@ export function AdminSidebar() {
             <SidebarContent className="px-3 py-6 overflow-y-auto overflow-x-hidden scrollbar-none font-body">
                 {/* Main Navigation */}
                 <SidebarMenu className="gap-1.5">
-                    {mainMenuItems.map((item) => {
+                    {baseMenuItems.map((item) => {
                         const isActive = item.href === '/admin' ? pathname === '/admin' : (pathname === item.href || pathname.startsWith(item.href + '/'))
                         const isHovered = hoveredItem === item.title
+                        const badge = item.badgeKey === 'orders' && newOrderCount > 0 ? newOrderCount.toString() : undefined
 
                         return (
                             <SidebarMenuItem key={item.title}>
@@ -120,13 +130,12 @@ export function AdminSidebar() {
                                             {item.title}
                                         </span>
 
-                                        {item.badge && !isActive && (
-                                            <span className="ml-auto bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-gray-200 group-data-[collapsible=icon]:hidden">
-                                                {item.badge}
+                                        {badge && !isActive && (
+                                            <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse group-data-[collapsible=icon]:hidden">
+                                                {badge}
                                             </span>
                                         )}
 
-                                        {/* Active Indicator Glow */}
                                         {isActive && (
                                             <div className="absolute right-2 w-1.5 h-1.5 bg-white/40 rounded-full group-data-[collapsible=icon]:hidden" />
                                         )}

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
 import { products, categories } from '@/lib/products'
 import { CategoryService } from '@/services/category.service'
-import { ProductService } from '@/services/product.service'
+import { uploadProductImage, createProductAction } from '@/app/admin/products/actions'
 import { formatDate } from '@/lib/utils'
 
 export default function SeedPage() {
@@ -94,21 +94,31 @@ export default function SeedPage() {
                     log(`Warning: Failed to fetch image for "${product.name}". Using placeholder path.`)
                 }
 
-                // Create Product
-                await ProductService.createProduct({
+                // Upload image via server action
+                let imageUrls: string[] = []
+                if (imageFile) {
+                    const fd = new FormData()
+                    fd.append('file', imageFile)
+                    const uploadResult = await uploadProductImage(fd)
+                    if (uploadResult.url) imageUrls.push(uploadResult.url)
+                    else log(`Warning: Image upload failed for "${product.name}": ${uploadResult.error}`)
+                }
+
+                // Create Product via server action
+                const result = await createProductAction({
                     name: product.name,
-                    sku: `SKU-${Math.random().toString(36).substring(7).toUpperCase()}`, // Generate SKU
+                    sku: `SKU-${Math.random().toString(36).substring(7).toUpperCase()}`,
                     category_id: categoryId,
                     price: product.price,
                     sale_price: product.originalPrice || null,
-                    stock: 50, // Default stock
+                    stock: 50,
                     status: 'active',
                     is_featured: product.isFeatured || false,
                     short_description: product.description.substring(0, 100),
                     description: product.description,
-                    images: [], // We upload newImages
-                    newImages: imageFile ? [imageFile] : []
+                    images: imageUrls,
                 })
+                if (result.error) throw new Error(result.error)
             }
 
             log('Products seeded successfully.')

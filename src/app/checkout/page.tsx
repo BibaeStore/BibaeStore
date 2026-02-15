@@ -26,7 +26,12 @@ import {
   MapPin,
   Phone,
   Truck,
-  ArrowLeft
+  ArrowLeft,
+  LogIn,
+  X,
+  Loader2,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -47,6 +52,7 @@ export default function CheckoutPage() {
   const [currentStep, setCurrentStep] = useState<Step>("contact");
   const [completedSteps, setCompletedSteps] = useState<Step[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderPlaced, setOrderPlaced] = useState(false);
 
   // Form data storage
   const [contactData, setContactData] = useState<ContactFormData | null>(null);
@@ -103,15 +109,15 @@ export default function CheckoutPage() {
     }
   };
 
-  // Redirect if cart is empty
+  // Redirect if cart is empty (but not after order placement)
   useEffect(() => {
-    if (items.length === 0 && !isSubmitting) {
+    if (items.length === 0 && !isSubmitting && !orderPlaced) {
       router.push("/cart");
     }
-  }, [items.length, isSubmitting, router]);
+  }, [items.length, isSubmitting, orderPlaced, router]);
 
   const currentStepIndex = steps.findIndex(s => s.id === currentStep);
-  const shippingCost = totalPrice >= 5000 ? 0 : 200;
+  const shippingCost = 200;
   const finalTotal = totalPrice + shippingCost;
 
   const handleStepComplete = (step: Step, data: any) => {
@@ -128,47 +134,80 @@ export default function CheckoutPage() {
   };
 
   const handleFinalSubmit = async () => {
+    if (!shippingData || !paymentData || !contactData) {
+      toast.error("Please complete all checkout steps");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      if (session?.user?.id && shippingData && paymentData) {
-        const addressString = `${shippingData.address}, ${shippingData.city}, ${shippingData.state}, ${shippingData.zipCode}, ${shippingData.country}`;
-        const orderItems = items.map(item => ({
-          product_id: item.product.id,
-          quantity: item.quantity,
-          price: item.product.price
-        }));
+      const addressString = `${shippingData.firstName} ${shippingData.lastName}, ${shippingData.address}, ${shippingData.city}, ${shippingData.state}, ${shippingData.zipCode}, ${shippingData.country}`;
+      const orderItems = items.map(item => ({
+        product_id: item.product.id,
+        quantity: item.quantity,
+        price: item.product.sale_price || item.product.price,
+        size: item.size,
+        color: item.color
+      }));
 
-        const promise = OrderService.placeOrder(
-          session.user.id,
-          finalTotal,
-          orderItems,
-          addressString,
-          paymentData.method,
-          paymentData.proofFile // Will be undefined if COD
-        );
+      const isGuest = !session?.user?.id;
+      const guestInfo = isGuest ? {
+        email: contactData.email,
+        name: `${shippingData.firstName} ${shippingData.lastName}`,
+        phone: contactData.phone
+      } : undefined;
 
-        toast.promise(promise, {
-            loading: 'Creating your order...',
-            success: (order) => {
-                // Clear cart
-                clearCart();
-                // Redirect
-                router.push(`/checkout/success?order=${order.id.slice(0, 8).toUpperCase()}`);
-                return `Order placed successfully! Order #${order.id.slice(0, 8).toUpperCase()}`;
-            },
-            error: (err) => `Order failed: ${err.message}`
-        });
+      const promise = OrderService.placeOrder(
+        session?.user?.id || null,
+        finalTotal,
+        orderItems,
+        addressString,
+        paymentData.method,
+        paymentData.proofFile,
+        paymentData.onlineMethod,
+        guestInfo
+      );
 
-        await promise; // Wait for it to complete to handle local state (redirect happens in success callback but we wait here to ensure no race conditions if needed, though with promise toast it handles it)
+      toast.promise(promise, {
+          loading: 'Creating your order...',
+          success: (order) => {
+              setOrderPlaced(true);
+              clearCart();
+              if (isGuest) {
+                localStorage.removeItem('bibae_cart');
+              }
 
-      } else {
-        // Guest order logic simulation (fallback)
-         await new Promise(resolve => setTimeout(resolve, 1500));
-         clearCart();
-         router.push(`/checkout/success?order=GUEST-${Date.now().toString().slice(-6)}`);
-         toast.success("Guest order placed successfully!");
-      }
+              // Send order confirmation email (fire-and-forget)
+              const customerEmail = contactData!.email;
+              const customerName = `${shippingData!.firstName} ${shippingData!.lastName}`;
+              fetch('/api/send-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  type: 'order_placed',
+                  to: customerEmail,
+                  data: {
+                    name: customerName,
+                    trackingNumber: order.tracking_number || order.id.slice(0, 8).toUpperCase(),
+                    totalAmount: finalTotal,
+                    paymentMethod: paymentData!.method === 'cod' ? 'Cash on Delivery' : `Bank Transfer (${paymentData!.onlineMethod || 'Online'})`,
+                    items: items.map(item => ({
+                      name: item.product.name,
+                      quantity: item.quantity,
+                      price: item.product.sale_price || item.product.price
+                    }))
+                  }
+                })
+              }).catch(err => console.error('Email send failed:', err));
+
+              router.push(`/checkout/success?id=${order.id}&method=${paymentData!.method}`);
+              return 'Order placed successfully!';
+          },
+          error: (err) => `Order failed: ${err.message}`
+      });
+
+      await promise;
 
     } catch (error: any) {
       console.error("Order placement failed:", error);
@@ -178,9 +217,6 @@ export default function CheckoutPage() {
         details: error?.details,
         hint: error?.hint
       });
-      // Toasts handled above, but if it was a synchronous error before the promise, we need a toast
-      if (!isSubmitting) toast.error(`Failed to place order: ${error?.message || "Unknown error"}`);
-      // Toasts handled above
     } finally {
       setIsSubmitting(false);
     }
@@ -257,6 +293,10 @@ export default function CheckoutPage() {
                       key="contact"
                       initialData={profile ? { email: profile.email, phone: profile.phone_number || "" } : null}
                       onComplete={(data) => handleStepComplete("contact", data)}
+                      onLoginSuccess={(newSession, newProfile) => {
+                        setSession(newSession);
+                        setProfile(newProfile);
+                      }}
                     />
                   )}
                   {currentStep === "shipping" && (
@@ -272,7 +312,7 @@ export default function CheckoutPage() {
                   {currentStep === "payment" && (
                     <PaymentForm
                       key="payment"
-                      initialData={profile ? { cardName: profile.full_name || "" } : null}
+                      initialData={null}
                       onComplete={(data) => handleStepComplete("payment", data)}
                     />
                   )}
@@ -322,9 +362,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span className={shippingCost === 0 ? "text-green-600" : ""}>
-                    {shippingCost === 0 ? "Free" : formatPrice(shippingCost)}
-                  </span>
+                  <span>{formatPrice(200)}</span>
                 </div>
                 <div className="border-t border-border pt-2 flex justify-between font-semibold text-base">
                   <span>Total</span>
@@ -342,19 +380,62 @@ export default function CheckoutPage() {
 // Contact Form Component
 function ContactForm({
   onComplete,
-  initialData
+  initialData,
+  onLoginSuccess
 }: {
   onComplete: (data: ContactFormData) => void,
-  initialData: Partial<ContactFormData> | null
+  initialData: Partial<ContactFormData> | null,
+  onLoginSuccess: (session: any, profile: any) => void
 }) {
-  const { register, handleSubmit, formState: { errors } } = useForm<ContactFormData>({
+  const { register, handleSubmit, formState: { errors }, setValue } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
     defaultValues: initialData || {}
   });
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const supabaseLogin = createClient();
 
   const onSubmit = (data: ContactFormData) => {
     onComplete(data);
     toast.success("Contact information saved!");
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginError('');
+
+    try {
+      const { data, error } = await supabaseLogin.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword
+      });
+
+      if (error) {
+        setLoginError(error.message);
+        return;
+      }
+
+      if (data.session?.user) {
+        // Fetch profile to auto-fill fields
+        const profile = await ClientService.getProfile(data.session.user.id);
+        if (profile) {
+          setValue('email', profile.email || '');
+          setValue('phone', profile.phone_number || '');
+          onLoginSuccess(data.session, profile);
+        }
+        setShowLoginModal(false);
+        toast.success('Logged in! Your information has been filled automatically.');
+      }
+    } catch (err: any) {
+      setLoginError(err.message || 'Login failed');
+    } finally {
+      setLoginLoading(false);
+    }
   };
 
   return (
@@ -367,7 +448,7 @@ function ContactForm({
     >
       <div className="mb-6">
         <h2 className="font-heading text-2xl mb-2">Contact Information</h2>
-        <p className="text-sm text-muted-foreground">We'll use this to send order updates</p>
+        <p className="text-sm text-muted-foreground">We&apos;ll use this to send order updates</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -396,7 +477,7 @@ function ContactForm({
             <input
               {...register("phone")}
               type="tel"
-              placeholder="+92 300 1234567"
+              placeholder="+92 334 8438007"
               className="w-full pl-10 pr-4 py-3 border border-border bg-transparent focus:outline-none focus:border-primary transition-colors"
             />
           </div>
@@ -410,7 +491,115 @@ function ContactForm({
         >
           Continue to Shipping <ChevronRight className="w-4 h-4" />
         </motion.button>
+
+        {/* Login option */}
+        {!initialData?.email && (
+          <div className="text-center pt-2">
+            <div className="relative flex items-center justify-center gap-3 mb-3">
+              <div className="h-px bg-border flex-1" />
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">or</span>
+              <div className="h-px bg-border flex-1" />
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowLoginModal(true)}
+              className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:underline transition-colors"
+            >
+              <LogIn className="w-4 h-4" />
+              Login to autofill your information
+            </button>
+          </div>
+        )}
       </form>
+
+      {/* Login Modal */}
+      <AnimatePresence>
+        {showLoginModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowLoginModal(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-2xl w-full max-w-md p-8 relative shadow-2xl"
+            >
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <LogIn className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-heading text-xl font-bold">Login to Continue</h3>
+                <p className="text-sm text-muted-foreground mt-1">Your details will be filled automatically</p>
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="email"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:border-primary focus:bg-white transition-all text-sm"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:border-primary focus:bg-white transition-all text-sm pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {loginError && (
+                  <p className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-lg p-2.5">{loginError}</p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loginLoading}
+                  className="w-full bg-primary text-white py-3 rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {loginLoading ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</>
+                  ) : (
+                    <><LogIn className="w-4 h-4" /> Sign In & Continue</>
+                  )}
+                </button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -570,7 +759,7 @@ function PaymentForm({
   const method = watch("method");
   const onlineMethod = watch("onlineMethod");
   const [dragActive, setDragActive] = useState(false);
-  const [fileName, setFileName] = useState<string | null>(initialData?.proofFile?.name || null);
+  const [fileName, setFileName] = useState<string | null>(null);
 
   const onSubmit = (data: PaymentFormData) => {
     onComplete(data);
@@ -580,15 +769,55 @@ function PaymentForm({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        if (file.size > 5 * 1024 * 1024) {
             toast.error("File size must be less than 5MB");
-            e.target.value = ""; // Clear input
+            e.target.value = "";
             return;
         }
         setFileName(file.name);
         setValue("proofFile", file);
     }
   };
+
+  const bankAccounts = [
+    {
+      id: 'sadapay' as const,
+      name: 'Sadapay',
+      color: '#1c1c1c',
+      accountName: 'Bibae Store',
+      accountNumber: '03121531511',
+      badge: 'Recommended',
+      badgeColor: 'bg-green-100 text-green-700'
+    },
+    {
+      id: 'jazzcash' as const,
+      name: 'JazzCash',
+      color: '#bf202f',
+      accountName: 'Bibae Store',
+      accountNumber: '03348438007',
+      badge: null,
+      badgeColor: ''
+    },
+    {
+      id: 'easypaisa' as const,
+      name: 'Easypaisa',
+      color: '#3AAA35',
+      accountName: 'Bibae Store',
+      accountNumber: '03348438007',
+      badge: null,
+      badgeColor: ''
+    },
+    {
+      id: 'askari' as const,
+      name: 'Askari Bank',
+      color: '#003366',
+      accountName: 'Bibae Store',
+      accountNumber: '0000000000000',
+      iban: 'PK00ASKI0000000000000000',
+      badge: null,
+      badgeColor: ''
+    }
+  ];
 
   return (
     <motion.div
@@ -604,7 +833,7 @@ function PaymentForm({
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        
+
         {/* Payment Method Selection */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col gap-3 transition-all ${method === 'cod' ? 'border-primary bg-primary/5' : 'border-border hover:border-gray-300'}`}>
@@ -614,7 +843,7 @@ function PaymentForm({
                 </div>
                 <div>
                     <span className={`block font-body font-medium ${method === 'cod' ? 'text-primary' : 'text-foreground'}`}>Cash on Delivery</span>
-                    <span className="text-xs text-muted-foreground">Pay with cash upon arrival</span>
+                    <span className="text-xs text-muted-foreground">Pay with cash upon delivery</span>
                 </div>
             </label>
 
@@ -624,14 +853,14 @@ function PaymentForm({
                     <input type="radio" value="online" {...register("method")} className="accent-primary w-4 h-4" />
                 </div>
                 <div>
-                    <span className={`block font-body font-medium ${method === 'online' ? 'text-primary' : 'text-foreground'}`}>Online Transfer</span>
-                    <span className="text-xs text-muted-foreground">Sadapay / JazzCash</span>
+                    <span className={`block font-body font-medium ${method === 'online' ? 'text-primary' : 'text-foreground'}`}>Bank Transfer</span>
+                    <span className="text-xs text-muted-foreground">Sadapay / JazzCash / Easypaisa / Askari</span>
                 </div>
             </label>
         </div>
         {errors.method && <p className="text-sm text-destructive">{errors.method.message}</p>}
 
-        {/* Online Payment Details */}
+        {/* Bank Transfer Options */}
         <AnimatePresence>
             {method === 'online' && (
                 <motion.div
@@ -640,41 +869,45 @@ function PaymentForm({
                     exit={{ opacity: 0, height: 0 }}
                     className="space-y-6 overflow-hidden"
                 >
-                    <div className="bg-muted p-4 rounded-lg space-y-4">
+                    <div className="bg-muted/50 p-4 rounded-xl space-y-3">
                         <h3 className="font-medium text-sm">Select Account to Transfer:</h3>
-                        
-                        <label className={`flex items-center gap-4 p-3 rounded border bg-background cursor-pointer transition-colors ${onlineMethod === 'sadapay' ? 'border-primary ring-1 ring-primary' : 'border-border'}`}>
-                            <input type="radio" value="sadapay" {...register("onlineMethod")} className="accent-primary" />
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-bold text-[#1c1c1c]">Sadapay</span>
-                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Active</span>
-                                </div>
-                                <p className="text-sm font-medium mt-1">Hunain Ahmed</p>
-                                <p className="text-sm text-muted-foreground font-mono">0310 5589055</p>
-                            </div>
-                        </label>
 
-                        <label className={`flex items-center gap-4 p-3 rounded border bg-background cursor-pointer transition-colors ${onlineMethod === 'jazzcash' ? 'border-primary ring-1 ring-primary' : 'border-border'}`}>
-                            <input type="radio" value="jazzcash" {...register("onlineMethod")} className="accent-primary" />
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-bold text-[#bf202f]">JazzCash</span>
+                        {bankAccounts.map((account) => (
+                            <label key={account.id} className={`flex items-center gap-4 p-4 rounded-xl border bg-background cursor-pointer transition-all ${onlineMethod === account.id ? 'border-primary ring-1 ring-primary shadow-sm' : 'border-border hover:border-gray-300'}`}>
+                                <input type="radio" value={account.id} {...register("onlineMethod")} className="accent-primary" />
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="font-bold" style={{ color: account.color }}>{account.name}</span>
+                                        {account.badge && (
+                                            <span className={`text-[10px] ${account.badgeColor} px-2 py-0.5 rounded-full font-medium`}>{account.badge}</span>
+                                        )}
+                                    </div>
+                                    <p className="text-sm font-medium">{account.accountName}</p>
+                                    <p className="text-sm text-muted-foreground font-mono">{account.accountNumber}</p>
+                                    {account.iban && (
+                                        <p className="text-xs text-muted-foreground font-mono mt-0.5">IBAN: {account.iban}</p>
+                                    )}
                                 </div>
-                                <p className="text-sm font-medium mt-1">Hunain Ahmed</p>
-                                <p className="text-sm text-muted-foreground font-mono">0315 6383689</p>
-                            </div>
-                        </label>
+                            </label>
+                        ))}
                         {errors.onlineMethod && <p className="text-sm text-destructive">{errors.onlineMethod.message}</p>}
+                    </div>
+
+                    {/* Info message */}
+                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800">
+                        After uploading your payment proof, our team will verify and confirm your order within 24 hours.
                     </div>
 
                     {/* File Upload */}
                     <div className="space-y-2">
-                        <label className="block text-sm font-medium">Upload Transaction Slip</label>
-                        <div 
-                            className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragActive ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
+                        <label className="block text-sm font-medium">
+                            Upload Transaction Screenshot <span className="text-destructive">*</span>
+                        </label>
+                        <div
+                            className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${dragActive ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
                             onDragEnter={() => setDragActive(true)}
                             onDragLeave={() => setDragActive(false)}
+                            onDragOver={(e) => e.preventDefault()}
                             onDrop={(e) => {
                                 e.preventDefault();
                                 setDragActive(false);
@@ -689,10 +922,10 @@ function PaymentForm({
                                 }
                             }}
                         >
-                            <input 
-                                type="file" 
-                                id="proof-upload" 
-                                className="hidden" 
+                            <input
+                                type="file"
+                                id="proof-upload"
+                                className="hidden"
                                 accept="image/*"
                                 onChange={handleFileChange}
                             />
@@ -713,6 +946,7 @@ function PaymentForm({
                                 )}
                             </label>
                         </div>
+                        {errors.proofFile && <p className="text-sm text-destructive">{errors.proofFile.message as string}</p>}
                     </div>
                 </motion.div>
             )}
@@ -809,10 +1043,6 @@ function ReviewStep({
                         </div>
                     )}
                 </div>
-            )}
-             {/* Fallback for legacy/card */}
-            {paymentData.cardNumber && (
-                <p>Card ending in {paymentData.cardNumber.slice(-4)}</p>
             )}
           </div>
         </div>
