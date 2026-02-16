@@ -50,6 +50,9 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/', request.url))
     }
 
+    // Prevent browser/CDN caching of HTML pages so data is always fresh
+    supabaseResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+
     return supabaseResponse
 }
 
