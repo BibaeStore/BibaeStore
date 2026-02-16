@@ -1,36 +1,16 @@
 'use client'
 
-import { useState, useEffect } from "react";
 import ProductCard from "./ProductCard";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Award } from "lucide-react";
-import { ProductService } from "@/services/product.service";
+import { Product } from "@/types/product";
 
-export default function FeaturedProducts() {
-  const [featured, setFeatured] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+interface FeaturedProductsProps {
+  products: Product[];
+}
 
-  useEffect(() => {
-    async function loadFeatured() {
-      try {
-        const data = await ProductService.getProducts();
-        // Filter for featured products and limit to 8
-        const featuredProducts = data.filter((p: any) => p.is_featured).slice(0, 8);
-        setFeatured(featuredProducts);
-      } catch (error) {
-        console.error("Failed to load featured products:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadFeatured();
-  }, []);
-
-  if (loading) {
-    return <div className="py-20 text-center">Loading Featured Products...</div>; // Skeleton could be better here
-  }
-
+export default function FeaturedProducts({ products }: FeaturedProductsProps) {
   return (
     <section className="bg-muted/50 py-20">
       <div className="container mx-auto px-4">
@@ -50,18 +30,18 @@ export default function FeaturedProducts() {
         </motion.div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {featured.map((product, i) => (
-             <ProductCard 
-                key={product.id} 
+          {products.map((product, i) => (
+             <ProductCard
+                key={product.id}
                 product={{
                   ...product,
                   price: product.sale_price || product.price,
                   originalPrice: product.sale_price ? product.price : null,
                   image: product.images?.[0] || '/assets/placeholder.jpg',
                   category: product.category?.name || 'Uncategorized',
-                  isNew: product.created_at && (new Date().getTime() - new Date(product.created_at).getTime()) < 30 * 24 * 60 * 60 * 1000 // New if < 30 days
-                }} 
-                index={i} 
+                  isNew: product.created_at ? (new Date().getTime() - new Date(product.created_at).getTime()) < 30 * 24 * 60 * 60 * 1000 : false
+                }}
+                index={i}
               />
           ))}
         </div>

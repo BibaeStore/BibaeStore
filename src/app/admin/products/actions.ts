@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
 
 // ─── Image Upload ────────────────────────────────────────────────────────────
 // Uploads a single product image via server-side Supabase client.
@@ -47,6 +48,11 @@ export async function createProductAction(
         .single()
 
     if (error) return { error: error.message, code: error.code }
+
+    // Refresh SSR cache for public pages
+    revalidatePath('/')
+    revalidatePath('/shop')
+
     return { data }
 }
 
@@ -69,6 +75,12 @@ export async function updateProductAction(
         .single()
 
     if (error) return { error: error.message, code: error.code }
+
+    // Refresh SSR cache for public pages
+    revalidatePath('/')
+    revalidatePath('/shop')
+    revalidatePath(`/product/${id}`)
+
     return { data }
 }
 
@@ -88,5 +100,10 @@ export async function deleteProductAction(
         .eq('id', id)
 
     if (error) return { error: error.message, code: error.code }
+
+    // Refresh SSR cache for public pages
+    revalidatePath('/')
+    revalidatePath('/shop')
+
     return {}
 }

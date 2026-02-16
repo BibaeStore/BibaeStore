@@ -1,38 +1,16 @@
 'use client'
 
-import { useState, useEffect } from "react";
 import ProductCard from "./ProductCard";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
-import { ProductService } from "@/services/product.service";
+import { Product } from "@/types/product";
 
-export default function NewArrivals() {
-  const [newProducts, setNewProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+interface NewArrivalsProps {
+  products: Product[];
+}
 
-  useEffect(() => {
-    async function loadNewArrivals() {
-      try {
-        const data = await ProductService.getProducts();
-        // Assuming order by 'created_at' desc from service, just take top 8
-        // Or if we need strict "is_new" flag if available in DB props? 
-        // Let's rely on creation date or sort order from service which is created_at desc
-        const freshDrops = data.slice(0, 8); 
-        setNewProducts(freshDrops);
-      } catch (error) {
-        console.error("Failed to load new arrivals:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadNewArrivals();
-  }, []);
-
-  if (loading) {
-     return <div className="py-20 text-center">Loading New Arrivals...</div>;
-  }
-
+export default function NewArrivals({ products }: NewArrivalsProps) {
   return (
     <section className="py-20">
       <div className="container mx-auto px-4">
@@ -53,18 +31,18 @@ export default function NewArrivals() {
         </motion.div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {newProducts.map((product, i) => (
-            <ProductCard 
-                key={product.id} 
+          {products.map((product, i) => (
+            <ProductCard
+                key={product.id}
                 product={{
                   ...product,
                   price: product.sale_price || product.price,
                   originalPrice: product.sale_price ? product.price : null,
                   image: product.images?.[0] || '/assets/placeholder.jpg',
                   category: product.category?.name || 'Uncategorized',
-                  isNew: true // These ARE the new arrivals
-                }} 
-                index={i} 
+                  isNew: true
+                }}
+                index={i}
               />
           ))}
         </div>
