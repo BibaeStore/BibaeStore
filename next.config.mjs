@@ -6,6 +6,11 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '5mb',
     },
+    // Disable client-side router cache completely
+    staleTimes: {
+      dynamic: 0,
+      static: 0,
+    },
   },
   async headers() {
     return [

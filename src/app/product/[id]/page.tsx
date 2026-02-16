@@ -2,6 +2,10 @@ import { notFound } from "next/navigation";
 import { getProduct, getRelatedProducts, getProductReviews } from "@/lib/server-queries";
 import ProductContent from "./ProductContent";
 
+// Force dynamic rendering — never cache this page
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface ProductPageProps {
   params: Promise<{ id: string }>;
 }
