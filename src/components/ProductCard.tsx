@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 import { formatPrice } from "@/lib/products";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { useWishlist } from "@/lib/wishlist";
 
 export interface ProductCardItem {
@@ -33,9 +34,10 @@ export default function ProductCard({ product, index = 0 }: Props) {
   const isWishlisted = isInWishlist(product.id);
 
   const Wrapper = isSoldOut ? 'div' : Link;
+  const href = product.slug ? `/shop/${product.slug}` : `/shop/${product.id}`; // Changed /product/ to /shop/ to match new route structure
   const wrapperProps = isSoldOut
     ? { className: "block h-full cursor-default" }
-    : { href: `/product/${product.id}`, className: "group block h-full" };
+    : { href, className: "group block h-full" };
 
   return (
     <motion.div
@@ -46,10 +48,12 @@ export default function ProductCard({ product, index = 0 }: Props) {
       {/* @ts-expect-error - dynamic wrapper */}
       <Wrapper {...wrapperProps}>
         <div className={`relative overflow-hidden bg-white aspect-[3/4] shadow-card border border-gray-200 transition-all duration-500 rounded-sm ${isSoldOut ? 'grayscale-[30%]' : 'group-hover:shadow-card-hover group-hover:border-primary/50'}`}>
-          <img
+          <Image
             src={product.image}
             alt={product.name}
-            className={`w-full h-full object-cover transition-transform duration-700 ${isSoldOut ? '' : 'group-hover:scale-105'}`}
+            fill
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            className={`object-cover transition-transform duration-700 ${isSoldOut ? '' : 'group-hover:scale-105'}`}
             loading="lazy"
           />
 
@@ -84,11 +88,10 @@ export default function ProductCard({ product, index = 0 }: Props) {
                   e.preventDefault();
                   toggleWishlist(product);
                 }}
-                className={`p-2.5 backdrop-blur-sm transition-colors duration-200 ${
-                  isWishlisted
-                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                    : 'bg-background/90 hover:bg-primary hover:text-primary-foreground'
-                }`}
+                className={`p-2.5 backdrop-blur-sm transition-colors duration-200 ${isWishlisted
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  : 'bg-background/90 hover:bg-primary hover:text-primary-foreground'
+                  }`}
                 aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
               >
                 <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-current' : ''}`} />

@@ -113,4 +113,15 @@
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Admin specific overrides */
+.admin-font-reset {
+  font-style: normal !important;
+}
+.admin-font-reset em, .admin-font-reset i {
+  font-style: italic; /* Allow specific italics */
 }

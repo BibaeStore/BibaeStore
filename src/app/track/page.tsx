@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -119,7 +119,7 @@ function TrackingContent() {
     const [searched, setSearched] = useState(false)
     const [isCancelled, setIsCancelled] = useState(false)
 
-    const handleSearch = async (number?: string) => {
+    const handleSearch = useCallback(async (number?: string) => {
         const query = (number || inputValue).trim()
         if (!query) {
             toast.error('Please enter a tracking number')
@@ -148,15 +148,14 @@ function TrackingContent() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [inputValue])
 
     // Auto-search if prefilled
     useEffect(() => {
         if (prefilled) {
             handleSearch(prefilled)
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [prefilled, handleSearch])
 
     const timeline = order ? buildTimeline(order) : []
 
@@ -303,10 +302,10 @@ function TrackingContent() {
                                         <p className="font-body text-sm">
                                             {order.created_at
                                                 ? new Date(order.created_at).toLocaleDateString('en-US', {
-                                                      year: 'numeric',
-                                                      month: 'long',
-                                                      day: 'numeric',
-                                                  })
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                })
                                                 : 'N/A'}
                                         </p>
                                     </div>
@@ -338,13 +337,12 @@ function TrackingContent() {
                                                 <div className="flex flex-col items-center">
                                                     {/* Circle */}
                                                     <div
-                                                        className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-all ${
-                                                            step.completed
-                                                                ? step.active
-                                                                    ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20'
-                                                                    : 'bg-emerald-500 border-emerald-500 text-white'
-                                                                : 'bg-muted border-border text-muted-foreground/40'
-                                                        }`}
+                                                        className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-all ${step.completed
+                                                            ? step.active
+                                                                ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20'
+                                                                : 'bg-emerald-500 border-emerald-500 text-white'
+                                                            : 'bg-muted border-border text-muted-foreground/40'
+                                                            }`}
                                                     >
                                                         {step.completed && !step.active ? (
                                                             <CheckCircle2 className="w-5 h-5" />
@@ -355,29 +353,26 @@ function TrackingContent() {
                                                     {/* Line */}
                                                     {!isLast && (
                                                         <div
-                                                            className={`w-0.5 flex-1 min-h-[40px] ${
-                                                                step.completed && timeline[index + 1]?.completed
-                                                                    ? 'bg-emerald-500'
-                                                                    : step.completed
-                                                                      ? 'bg-gradient-to-b from-emerald-500 to-border'
-                                                                      : 'bg-border'
-                                                            }`}
+                                                            className={`w-0.5 flex-1 min-h-[40px] ${step.completed && timeline[index + 1]?.completed
+                                                                ? 'bg-emerald-500'
+                                                                : step.completed
+                                                                    ? 'bg-gradient-to-b from-emerald-500 to-border'
+                                                                    : 'bg-border'
+                                                                }`}
                                                         />
                                                     )}
                                                 </div>
 
                                                 {/* Content */}
                                                 <div
-                                                    className={`pb-8 ${
-                                                        isLast ? 'pb-0' : ''
-                                                    }`}
+                                                    className={`pb-8 ${isLast ? 'pb-0' : ''
+                                                        }`}
                                                 >
                                                     <p
-                                                        className={`font-heading text-base font-medium ${
-                                                            step.completed
-                                                                ? 'text-foreground'
-                                                                : 'text-muted-foreground/50'
-                                                        }`}
+                                                        className={`font-heading text-base font-medium ${step.completed
+                                                            ? 'text-foreground'
+                                                            : 'text-muted-foreground/50'
+                                                            }`}
                                                     >
                                                         {step.label}
                                                     </p>

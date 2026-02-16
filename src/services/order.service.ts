@@ -49,7 +49,12 @@ export class OrderService {
             shipping_address: shippingAddress,
             payment_method: paymentMethod,
             payment_proof_url: payment_proof_url,
-            payment_status: initialPaymentStatus
+            payment_status: initialPaymentStatus,
+            status_history: [{
+                status: initialStatus,
+                timestamp: new Date().toISOString(),
+                note: 'Order placed by customer'
+            }]
         };
 
         if (clientId) {
@@ -79,7 +84,9 @@ export class OrderService {
             order_id: order.id,
             product_id: item.product_id,
             quantity: item.quantity,
-            price: item.price
+            price: item.price,
+            size: item.size || 'Standard',
+            color: item.color || null
         }));
 
         const { error: itemsError } = await this.supabase

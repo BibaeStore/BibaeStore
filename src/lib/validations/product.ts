@@ -26,6 +26,10 @@ export const productSchema = z.object({
     stock: z.coerce.number().int().min(0, "Stock cannot be negative."),
     status: z.enum(['active', 'inactive', 'draft']).default('draft'),
     is_featured: z.boolean().default(false),
+    slug: z.string().optional(),
+    meta_title: z.string().optional(),
+    meta_description: z.string().optional(),
+    keywords: z.string().optional(), // Comma-separated string in form
     variants: variantsSchema,
     size_guide: sizeGuideSchema,
 })

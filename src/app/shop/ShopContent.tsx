@@ -79,8 +79,32 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
     return () => clearTimeout(timer);
   }, [selectedCategory, search, sortBy, products]);
 
+  // JSON-LD for Collection Page (Product Group Schema)
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: selectedCategory ? `${selectedCategory} Collection` : 'Shop All Products | Bibae Store',
+    description: `Discover our exclusive ${selectedCategory?.toLowerCase() || ''} collection. Handcrafted premium boutique fashion with fast delivery in Pakistan.`,
+    url: selectedCategory
+      ? `https://bibaestore.com/shop/category/${selectedCategory.toLowerCase().replace(/\s+/g, '-')}`
+      : 'https://bibaestore.com/shop',
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: filtered.map((product, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: `https://bibaestore.com/shop/${product.slug || product.id}`,
+        name: product.name,
+      })),
+    },
+  };
+
   return (
     <main className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Banner */}
       <div className="bg-gray-50 text-gray-900 py-16 md:py-20 text-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">

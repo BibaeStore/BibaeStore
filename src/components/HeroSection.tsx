@@ -1,5 +1,6 @@
 'use client'
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 const heroBanner = '/assets/hero-banner.jpg';
@@ -8,23 +9,26 @@ import { ArrowRight } from "lucide-react";
 export default function HeroSection() {
   return (
     <section className="relative h-[90vh] md:h-[95vh] overflow-hidden bg-gray-100">
-      <img
+      <Image
         src={heroBanner}
-        alt="Bibae Store Collection"
-        className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 hover:scale-105"
+        alt="Bibae Store Exclusive 2026 Collection - Premium Boutique Fashion Pakistan"
+        fill
+        priority
+        className="absolute inset-0 object-cover transition-transform duration-1000 hover:scale-105"
+        sizes="100vw"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
 
       <div className="relative container mx-auto px-4 h-full flex items-center">
         <div className="max-w-lg text-white">
           <motion.div
-            initial={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7 }}
             className="w-12 h-[2px] bg-primary mb-6"
           />
           <motion.p
-            initial={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-primary font-body text-sm tracking-[0.3em] uppercase mb-4"
@@ -32,7 +36,7 @@ export default function HeroSection() {
             New Collection 2026
           </motion.p>
           <motion.h1
-            initial={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.25 }}
             className="font-heading text-5xl md:text-7xl lg:text-8xl font-light text-white leading-[0.95] mb-6"
@@ -42,15 +46,15 @@ export default function HeroSection() {
             <span className="text-primary font-medium italic">Redefined</span>
           </motion.h1>
           <motion.p
-            initial={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
             className="text-white/80 font-body text-base md:text-lg mb-10 max-w-sm leading-relaxed"
           >
-            Discover premium fashion and baby products curated with love and crafted with elegance.
+            Discover premium fashion and baby products curated with love and crafted with elegance in Pakistan.
           </motion.p>
           <motion.div
-            initial={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.55 }}
             className="flex flex-col sm:flex-row gap-4"
@@ -63,7 +67,7 @@ export default function HeroSection() {
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
-              href="/shop?category=Ladies"
+              href="/shop/category/ladies"
               className="border border-white/40 text-white px-10 py-4 text-sm font-body font-medium tracking-widest uppercase hover:bg-white/10 transition-all duration-300 text-center shadow-button hover:shadow-button-hover hover:-translate-y-0.5 rounded-sm"
             >
               Explore

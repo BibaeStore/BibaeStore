@@ -39,6 +39,8 @@ CREATE TABLE IF NOT EXISTS public.order_items (
     product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE SET NULL,
     quantity INTEGER NOT NULL CHECK (quantity > 0),
     price NUMERIC NOT NULL CHECK (price >= 0),
+    size TEXT,
+    color TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

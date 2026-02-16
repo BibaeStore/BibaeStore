@@ -149,6 +149,10 @@ export default function ProductsPage() {
                 stock: data.stock,
                 status: data.status,
                 is_featured: data.is_featured,
+                slug: data.slug || null,
+                meta_title: data.meta_title || null,
+                meta_description: data.meta_description || null,
+                keywords: data.keywords ? data.keywords.split(',').map(k => k.trim()).filter(Boolean) : null,
                 variants: data.variants || {},
                 size_guide: data.size_guide || null,
             }
@@ -348,11 +352,10 @@ export default function ProductsPage() {
                                             <button
                                                 key={page}
                                                 onClick={() => setCurrentPage(page)}
-                                                className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-medium transition-all ${
-                                                    currentPage === page
+                                                className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-medium transition-all ${currentPage === page
                                                         ? 'bg-gray-900 text-white shadow-sm'
                                                         : 'text-gray-500 hover:bg-gray-100'
-                                                }`}
+                                                    }`}
                                             >
                                                 {page}
                                             </button>

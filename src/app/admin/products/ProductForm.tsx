@@ -94,6 +94,10 @@ export function ProductForm({
             stock: initialData.stock,
             status: initialData.status || "draft",
             is_featured: initialData.is_featured || false,
+            slug: initialData.slug || "",
+            meta_title: initialData.meta_title || "",
+            meta_description: initialData.meta_description || "",
+            keywords: initialData.keywords?.join(", ") || "",
             variants: initialData.variants || undefined,
             size_guide: initialData.size_guide || null,
         } : {
@@ -107,6 +111,10 @@ export function ProductForm({
             stock: 0,
             status: "draft",
             is_featured: false,
+            slug: "",
+            meta_title: "",
+            meta_description: "",
+            keywords: "",
             variants: undefined,
             size_guide: null,
         },
@@ -126,6 +134,10 @@ export function ProductForm({
                     stock: initialData.stock,
                     status: initialData.status || "draft",
                     is_featured: initialData.is_featured || false,
+                    slug: initialData.slug || "",
+                    meta_title: initialData.meta_title || "",
+                    meta_description: initialData.meta_description || "",
+                    keywords: initialData.keywords?.join(", ") || "",
                     variants: initialData.variants || undefined,
                     size_guide: initialData.size_guide || null,
                 })
@@ -164,6 +176,10 @@ export function ProductForm({
                     stock: 0,
                     status: "draft",
                     is_featured: false,
+                    slug: "",
+                    meta_title: "",
+                    meta_description: "",
+                    keywords: "",
                     variants: undefined,
                     size_guide: null,
                 })
@@ -635,6 +651,70 @@ export function ProductForm({
                             )}
                         />
 
+                        {/* SEO Settings */}
+                        <div className="space-y-4 border border-gray-200 rounded-xl p-5 bg-gray-50/50">
+                            <div>
+                                <FormLabel className="text-gray-700 text-base font-semibold">SEO Configuration</FormLabel>
+                                <FormDescription className="text-gray-500 text-xs mt-1">
+                                    Optimize this product for search engines.
+                                </FormDescription>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="slug"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-gray-700">Slug (URL)</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Leave empty to auto-generate from name" {...field} className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/20" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="meta_title"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-gray-700">Meta Title</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Browser Tab Title" {...field} className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/20" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            <FormField
+                                control={form.control}
+                                name="meta_description"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-gray-700">Meta Description</FormLabel>
+                                        <FormControl>
+                                            <Textarea placeholder="Brief summary for search results..." className="h-20 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/20" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="keywords"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-gray-700">Keywords (Comma Separated)</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="baby clothes, organic, cotton..." {...field} className="bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus-visible:ring-primary/20" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting} className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 hover:border-gray-400 font-bold shadow-sm hover:shadow-md transition-all">
                                 Cancel
@@ -647,6 +727,6 @@ export function ProductForm({
                     </form>
                 </Form>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     )
 }

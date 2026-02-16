@@ -37,7 +37,12 @@ export interface Product {
     updated_at?: string;
     category?: {
         name: string;
+        slug?: string;
     };
+    slug?: string;
+    meta_title?: string;
+    meta_description?: string;
+    keywords?: string[];
 }
 
 export type ProductFormData = {

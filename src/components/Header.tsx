@@ -14,9 +14,9 @@ const logo = '/assets/logo.png';
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "Shop", href: "/shop" },
-  { label: "Ladies", href: "/shop?category=Ladies" },
-  { label: "Kids", href: "/shop?category=Kids" },
-  { label: "Baby Products", href: "/shop?category=Baby Products" },
+  { label: "Ladies", href: "/shop/category/ladies" },
+  { label: "Kids", href: "/shop/category/kids" },
+  { label: "Baby Products", href: "/shop/category/baby-products" },
 ];
 
 export default function Header() {
@@ -32,8 +32,6 @@ export default function Header() {
   const isAdminPath = pathname.startsWith('/admin');
   const [session, setSession] = useState<any>(null);
   const supabase = createClient();
-
-  if (isAdminPath) return null;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -87,6 +85,8 @@ export default function Header() {
   const headerBgClass = scrolled
     ? "bg-white/80 backdrop-blur-md shadow-soft border-b border-border transition-all duration-300"
     : "bg-transparent border-transparent transition-all duration-300";
+
+  if (isAdminPath) return null;
 
   return (
     <header className={`sticky top-0 z-50 transition-all duration-300 ${headerBgClass}`}>

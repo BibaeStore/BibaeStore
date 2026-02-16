@@ -1,8 +1,8 @@
 // ============================================================
-// Bibae Store - Email Sending Service
+// Bibae Store - Email Sending Service (Nodemailer Edition)
 // ============================================================
 
-import { resend } from './resend';
+import nodemailer from 'nodemailer';
 import {
   orderPlacedTemplate,
   orderConfirmedTemplate,
@@ -13,7 +13,22 @@ import {
   cancellationRequestAdminTemplate,
 } from './email-templates';
 
-const FROM_ADDRESS = 'Bibaé Store <noreply@bibaestore.com>5grgr47r5t';
+// --------------------------------------------------
+// SMTP Configuration
+// --------------------------------------------------
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com', // Defaulting to Gmail but should be set in .env
+  port: Number(process.env.SMTP_PORT) || 465,
+  secure: true, // Use SSL/TLS
+  auth: {
+    user: process.env.SMTP_USER, // e.g., no-reply@bibaestore.com
+    pass: process.env.SMTP_PASSWORD,
+  },
+});
+
+const FROM_ADDRESS = '"Bibaé Store" <no-reply@bibaestore.com>';
+const SUPPORT_ADDRESS = '"Bibaé Support" <support@bibaestore.com>';
 const ADMIN_EMAIL = 'bibaestore@gmail.com';
 
 // --------------------------------------------------
@@ -67,21 +82,63 @@ interface CancellationRequestAdminData {
 }
 
 // --------------------------------------------------
+// Helper: Send Mail
+// --------------------------------------------------
+
+async function sendMail({ to, subject, html, replyTo }: { to: string; subject: string; html: string; replyTo?: string }) {
+  try {
+    const info = await transporter.sendMail({
+      from: FROM_ADDRESS,
+      to,
+      subject,
+      html,
+      replyTo: replyTo || SUPPORT_ADDRESS,
+    });
+    console.log('Email sent: %s', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Email sending failed:', error);
+    return { success: false, error };
+  }
+}
+
+// --------------------------------------------------
 // Send functions
 // --------------------------------------------------
 
+/**
+ * When customer places an order:
+ * 1. Send confirmation to Customer
+ * 2. Send notification to Admin
+ */
 export async function sendOrderPlacedEmail(to: string, data: OrderPlacedData) {
-  return await resend.emails.send({
-    from: FROM_ADDRESS,
+  // 1. To Customer
+  const customerMail = await sendMail({
     to,
-    subject: `Order Placed — ${data.trackingNumber} | Bibaé Store`,
+    subject: `Order Confirmation — ${data.trackingNumber} | Bibaé Store`,
     html: orderPlacedTemplate(data),
   });
+
+  // 2. To Admin
+  await sendMail({
+    to: ADMIN_EMAIL,
+    subject: `🔔 NEW ORDER PLACED: ${data.trackingNumber}`,
+    html: `
+      <h2>New Order Received</h2>
+      <p><strong>Customer:</strong> ${data.name} (${to})</p>
+      <p><strong>Order ID:</strong> ${data.trackingNumber}</p>
+      <p><strong>Total:</strong> Rs. ${data.totalAmount}</p>
+      <p><strong>Payment Method:</strong> ${data.paymentMethod.toUpperCase()}</p>
+      <hr/>
+      <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/orders">View in Admin Dashboard</a></p>
+    `,
+  });
+
+  return customerMail;
 }
 
 export async function sendOrderConfirmedEmail(to: string, data: OrderConfirmedData) {
-  return await resend.emails.send({
-    from: FROM_ADDRESS,
+  return await sendMail({
     to,
     subject: `Order Confirmed — ${data.trackingNumber} | Bibaé Store`,
     html: orderConfirmedTemplate(data),
@@ -89,8 +146,7 @@ export async function sendOrderConfirmedEmail(to: string, data: OrderConfirmedDa
 }
 
 export async function sendOrderDispatchedEmail(to: string, data: OrderDispatchedData) {
-  return await resend.emails.send({
-    from: FROM_ADDRESS,
+  return await sendMail({
     to,
     subject: `Your Order is On Its Way — ${data.trackingNumber} | Bibaé Store`,
     html: orderDispatchedTemplate(data),
@@ -98,8 +154,7 @@ export async function sendOrderDispatchedEmail(to: string, data: OrderDispatched
 }
 
 export async function sendOrderDeliveredEmail(to: string, data: OrderDeliveredData) {
-  return await resend.emails.send({
-    from: FROM_ADDRESS,
+  return await sendMail({
     to,
     subject: `Order Delivered — ${data.trackingNumber} | Bibaé Store`,
     html: orderDeliveredTemplate(data),
@@ -107,8 +162,7 @@ export async function sendOrderDeliveredEmail(to: string, data: OrderDeliveredDa
 }
 
 export async function sendPaymentRejectedEmail(to: string, data: PaymentRejectedData) {
-  return await resend.emails.send({
-    from: FROM_ADDRESS,
+  return await sendMail({
     to,
     subject: `Payment Issue — ${data.trackingNumber} | Bibaé Store`,
     html: paymentRejectedTemplate(data),
@@ -116,8 +170,7 @@ export async function sendPaymentRejectedEmail(to: string, data: PaymentRejected
 }
 
 export async function sendCancellationApprovedEmail(to: string, data: CancellationApprovedData) {
-  return await resend.emails.send({
-    from: FROM_ADDRESS,
+  return await sendMail({
     to,
     subject: `Cancellation Approved — ${data.trackingNumber} | Bibaé Store`,
     html: cancellationApprovedTemplate(data),
@@ -125,10 +178,43 @@ export async function sendCancellationApprovedEmail(to: string, data: Cancellati
 }
 
 export async function sendCancellationRequestToAdmin(data: CancellationRequestAdminData) {
-  return await resend.emails.send({
-    from: FROM_ADDRESS,
+  return await sendMail({
     to: ADMIN_EMAIL,
     subject: `Cancellation Request — ${data.trackingNumber} | ${data.customerName}`,
     html: cancellationRequestAdminTemplate(data),
+  });
+}
+
+/**
+ * Helper for welcome emails (previously in resend.ts)
+ */
+export async function sendWelcomeEmail(to: string, name: string) {
+  return await sendMail({
+    to,
+    subject: `Welcome to Bibaé Store, ${name}!`,
+    html: `
+      <h2>Welcome aboard, ${name}!</h2>
+      <p>Thank you for joining the Bibaé community. We are excited to have you with us.</p>
+      <p>Explore our latest collections and find something unique for yourself.</p>
+      <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/shop">Start Shopping</a></p>
+    `,
+  });
+}
+
+/**
+ * Helper for admin registration notifications (previously in resend.ts)
+ */
+export async function sendAdminNewUserEmail(data: { email: string; name: string; phone: string }) {
+  return await sendMail({
+    to: ADMIN_EMAIL,
+    subject: `✨ New Client Registered: ${data.name}`,
+    html: `
+      <h2>New Client Registration</h2>
+      <p><strong>Name:</strong> ${data.name}</p>
+      <p><strong>Email:</strong> ${data.email}</p>
+      <p><strong>Phone:</strong> ${data.phone}</p>
+      <hr/>
+      <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/customers">View in Dashboard</a></p>
+    `,
   });
 }

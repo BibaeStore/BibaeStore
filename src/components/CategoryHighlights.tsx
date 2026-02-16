@@ -1,15 +1,16 @@
 'use client'
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 const categoryLadies = '/assets/category-ladies.jpg';
 const categoryKids = '/assets/category-kids.jpg';
 const categoryBaby = '/assets/category-baby.jpg';
 
 const cats = [
-  { name: "Ladies", subtitle: "Ready-to-Wear", image: categoryLadies, href: "/shop?category=Ladies" },
-  { name: "Kids", subtitle: "Girls Collection", image: categoryKids, href: "/shop?category=Kids" },
-  { name: "Baby Products", subtitle: "Nursery Essentials", image: categoryBaby, href: "/shop?category=Baby Products" },
+  { name: "Ladies", subtitle: "Ready-to-Wear", image: categoryLadies, href: "/shop/category/ladies" },
+  { name: "Kids", subtitle: "Girls Collection", image: categoryKids, href: "/shop/category/kids" },
+  { name: "Baby Products", subtitle: "Nursery Essentials", image: categoryBaby, href: "/shop/category/baby-products" },
 ];
 
 export default function CategoryHighlights() {
@@ -34,10 +35,12 @@ export default function CategoryHighlights() {
             transition={{ duration: 0.5, delay: i * 0.15 }}
           >
             <Link href={cat.href} className="group block relative overflow-hidden aspect-[3/4] shadow-card hover:shadow-card-hover border border-gray-200 hover:border-primary/50 transition-all duration-500 rounded-sm">
-              <img
+              <Image
                 src={cat.image}
                 alt={cat.name}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                fill
+                sizes="(max-width: 768px) 100vw, 33vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-6 text-background">

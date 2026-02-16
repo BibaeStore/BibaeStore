@@ -16,7 +16,7 @@ export default function AdminLayout({
 
     if (isLoginPage) {
         return (
-            <div className="min-h-screen w-full bg-[#fafafa] text-gray-900">
+            <div className="min-h-screen w-full bg-[#fafafa] text-gray-900 font-body admin-font-reset">
                 {children}
             </div>
         )
@@ -25,7 +25,7 @@ export default function AdminLayout({
     return (
         <AdminNotificationProvider>
             <SidebarProvider>
-                <div className="flex min-h-screen w-full bg-[#fafafa] text-gray-900">
+                <div className="flex min-h-screen w-full bg-[#fafafa] text-gray-900 font-body admin-font-reset">
                     <AdminSidebar />
                     <SidebarInset className="flex flex-col flex-1 overflow-hidden bg-transparent">
                         <AdminHeader />
