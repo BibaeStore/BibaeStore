@@ -38,9 +38,8 @@ export default function AdminLoginPage() {
 
             if (data.user) {
                 toast.success('Admin access granted!')
-                // For now, redirect only if it's the admin email, 
-                // but usually you'd check roles in a real app
-                if (data.user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+                // Check if user is admin
+                if (data.user.email === 'bibaestore@gmail.com') {
                     router.push('/admin')
                 } else {
                     toast.error('Unauthorized access. Admin only.')
@@ -101,7 +100,7 @@ export default function AdminLoginPage() {
                                     <ShieldCheck className="w-8 h-8 text-primary" />
                                 </div>
                             </div>
-                            
+
                             <div className="space-y-2">
                                 <h1 className="text-3xl font-heading font-bold text-gray-900 tracking-tight">
                                     Admin Portal
