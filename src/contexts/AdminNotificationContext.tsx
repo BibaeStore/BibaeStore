@@ -13,7 +13,7 @@ interface AdminNotificationContextType {
 
 const AdminNotificationContext = createContext<AdminNotificationContextType>({
     newOrderCount: 0,
-    resetCount: () => {},
+    resetCount: () => { },
     lastNewOrderId: null,
 })
 
@@ -26,32 +26,50 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
 
     useEffect(() => {
         const supabase = createClient()
-        const channel = supabase
-            .channel('admin-notifications')
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'orders'
-            }, (payload) => {
-                setNewOrderCount(prev => prev + 1)
-                setLastNewOrderId(payload.new.id as string)
+        let retryTimeout: NodeJS.Timeout | null = null
 
-                toast.success('New order received!', {
-                    description: `Order #${(payload.new.id as string)?.slice(0, 8).toUpperCase()} - ${formatPrice(payload.new.total_amount)}`,
-                    duration: 8000,
+        const setupChannel = () => {
+            const channel = supabase
+                .channel('admin-notifications')
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'orders'
+                }, (payload) => {
+                    setNewOrderCount(prev => prev + 1)
+                    setLastNewOrderId(payload.new.id as string)
+
+                    toast.success('New order received!', {
+                        description: `Order #${(payload.new.id as string)?.slice(0, 8).toUpperCase()} - ${formatPrice(payload.new.total_amount)}`,
+                        duration: 8000,
+                    })
+
+                    try {
+                        audioRef.current?.play().catch(() => { })
+                    } catch { }
+                })
+                .subscribe((status, err) => {
+                    if (err) {
+                        console.error('[AdminNotifications] Realtime subscription error:', err)
+
+                        // Handle rate limit errors
+                        if (err.message?.includes('429') || err.message?.includes('rate limit')) {
+                            console.warn('[AdminNotifications] Rate limit hit, retrying in 5s...')
+                            retryTimeout = setTimeout(() => {
+                                supabase.removeChannel(channel)
+                                setupChannel()
+                            }, 5000)
+                        }
+                    }
                 })
 
-                try {
-                    audioRef.current?.play().catch(() => {})
-                } catch {}
-            })
-            .subscribe((status, err) => {
-                if (err) {
-                    console.error('[AdminNotifications] Realtime subscription error:', err)
-                }
-            })
+            return channel
+        }
+
+        const channel = setupChannel()
 
         return () => {
+            if (retryTimeout) clearTimeout(retryTimeout)
             supabase.removeChannel(channel)
         }
     }, [])

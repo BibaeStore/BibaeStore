@@ -206,6 +206,29 @@ export default function OrdersPage() {
 
     useEffect(() => {
         const supabase = createClient()
+
+        // Throttle UPDATE events to prevent excessive API calls
+        let updateTimeout: NodeJS.Timeout | null = null
+        const pendingUpdates = new Set<string>()
+
+        const processUpdates = async () => {
+            const idsToUpdate = Array.from(pendingUpdates)
+            pendingUpdates.clear()
+
+            for (const orderId of idsToUpdate) {
+                try {
+                    const fullOrder = await OrderService.getOrderDetails(orderId)
+                    setOrders(prev => prev.map(o => o.id === orderId ? fullOrder : o))
+
+                    if (selectedOrderRef.current?.id === orderId) {
+                        setSelectedOrder(fullOrder)
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch updated order:', err)
+                }
+            }
+        }
+
         const channel = supabase
             .channel('orders-page-live')
             .on('postgres_changes', {
@@ -245,19 +268,17 @@ export default function OrdersPage() {
                 event: 'UPDATE',
                 schema: 'public',
                 table: 'orders'
-            }, async (payload) => {
+            }, (payload) => {
                 const updatedOrderId = payload.new.id as string
-                try {
-                    const fullOrder = await OrderService.getOrderDetails(updatedOrderId)
-                    setOrders(prev => prev.map(o => o.id === updatedOrderId ? fullOrder : o))
 
-                    // Use ref to avoid stale closure — no channel recreation needed
-                    if (selectedOrderRef.current?.id === updatedOrderId) {
-                        setSelectedOrder(fullOrder)
-                    }
-                } catch (err) {
-                    console.error('Failed to fetch updated order:', err)
-                }
+                // Add to pending updates
+                pendingUpdates.add(updatedOrderId)
+
+                // Clear existing timeout
+                if (updateTimeout) clearTimeout(updateTimeout)
+
+                // Process updates after 500ms of no new updates (debounce)
+                updateTimeout = setTimeout(processUpdates, 500)
             })
             .on('postgres_changes', {
                 event: 'DELETE',
@@ -278,6 +299,7 @@ export default function OrdersPage() {
             })
 
         return () => {
+            if (updateTimeout) clearTimeout(updateTimeout)
             supabase.removeChannel(channel)
         }
     }, [resetCount])
@@ -740,270 +762,270 @@ export default function OrdersPage() {
                         </div>
                     ) : (
                         <>
-                        {/* Mobile Cards — visible on small screens */}
-                        <div className="sm:hidden divide-y divide-gray-100">
-                            {filteredOrders.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-48 text-gray-400 px-6">
-                                    <Package className="w-10 h-10 mb-3 opacity-20" />
-                                    <p className="text-sm font-body">No orders found.</p>
-                                </div>
-                            ) : filteredOrders.map((order) => (
-                                <div
-                                    key={order.id}
-                                    onClick={() => setSelectedOrder(order)}
-                                    className={`p-4 cursor-pointer active:bg-gray-50 transition-colors ${highlightedOrderIds.has(order.id) ? 'bg-amber-50' : ''}`}
-                                >
-                                    <div className="flex items-start justify-between gap-2 mb-2">
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-mono text-sm font-semibold text-gray-900 truncate">
-                                                {order.tracking_number || `#${order.id.slice(0, 8).toUpperCase()}`}
-                                            </p>
-                                            <p className="text-xs text-gray-500 mt-0.5 truncate">
-                                                {order.client?.full_name || order.guest_name || 'Guest'}
-                                                {!order.client && <span className="ml-1 text-amber-600 font-bold">(Guest)</span>}
-                                            </p>
-                                        </div>
-                                        <Badge className={`${getStatusColor(order.status)} border px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 shadow-none`}>
-                                            {formatStatusLabel(order.status)}
-                                        </Badge>
+                            {/* Mobile Cards — visible on small screens */}
+                            <div className="sm:hidden divide-y divide-gray-100">
+                                {filteredOrders.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center h-48 text-gray-400 px-6">
+                                        <Package className="w-10 h-10 mb-3 opacity-20" />
+                                        <p className="text-sm font-body">No orders found.</p>
                                     </div>
-                                    <div className="flex items-center justify-between gap-2 text-xs text-gray-500">
-                                        <span>{order.created_at ? format(new Date(order.created_at), 'MMM dd, yyyy') : 'N/A'}</span>
-                                        <span className="font-bold text-gray-900">{formatPrice(order.total_amount)}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-2 mt-2">
-                                        <Badge variant="outline" className={`border text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 ${order.payment_method === 'online' ? 'border-violet-200 bg-violet-50 text-violet-600' : 'border-gray-200 bg-gray-50 text-gray-600'}`}>
-                                            {order.payment_method === 'online' ? 'Bank' : 'COD'}
-                                        </Badge>
-                                        <Badge className={`${getPaymentStatusColor(order.payment_status || 'pending')} border px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-none`}>
-                                            {formatStatusLabel(order.payment_status || 'pending')}
-                                        </Badge>
-                                        {order.cancellation_requested && (
-                                            <Badge className="bg-red-50 text-red-600 border-red-200 border px-1.5 py-0.5 rounded-full text-[9px] font-bold">
-                                                <AlertTriangle className="w-2.5 h-2.5 mr-0.5 inline" />Cancel Req
+                                ) : filteredOrders.map((order) => (
+                                    <div
+                                        key={order.id}
+                                        onClick={() => setSelectedOrder(order)}
+                                        className={`p-4 cursor-pointer active:bg-gray-50 transition-colors ${highlightedOrderIds.has(order.id) ? 'bg-amber-50' : ''}`}
+                                    >
+                                        <div className="flex items-start justify-between gap-2 mb-2">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-mono text-sm font-semibold text-gray-900 truncate">
+                                                    {order.tracking_number || `#${order.id.slice(0, 8).toUpperCase()}`}
+                                                </p>
+                                                <p className="text-xs text-gray-500 mt-0.5 truncate">
+                                                    {order.client?.full_name || order.guest_name || 'Guest'}
+                                                    {!order.client && <span className="ml-1 text-amber-600 font-bold">(Guest)</span>}
+                                                </p>
+                                            </div>
+                                            <Badge className={`${getStatusColor(order.status)} border px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 shadow-none`}>
+                                                {formatStatusLabel(order.status)}
                                             </Badge>
-                                        )}
+                                        </div>
+                                        <div className="flex items-center justify-between gap-2 text-xs text-gray-500">
+                                            <span>{order.created_at ? format(new Date(order.created_at), 'MMM dd, yyyy') : 'N/A'}</span>
+                                            <span className="font-bold text-gray-900">{formatPrice(order.total_amount)}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between gap-2 mt-2">
+                                            <Badge variant="outline" className={`border text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 ${order.payment_method === 'online' ? 'border-violet-200 bg-violet-50 text-violet-600' : 'border-gray-200 bg-gray-50 text-gray-600'}`}>
+                                                {order.payment_method === 'online' ? 'Bank' : 'COD'}
+                                            </Badge>
+                                            <Badge className={`${getPaymentStatusColor(order.payment_status || 'pending')} border px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-none`}>
+                                                {formatStatusLabel(order.payment_status || 'pending')}
+                                            </Badge>
+                                            {order.cancellation_requested && (
+                                                <Badge className="bg-red-50 text-red-600 border-red-200 border px-1.5 py-0.5 rounded-full text-[9px] font-bold">
+                                                    <AlertTriangle className="w-2.5 h-2.5 mr-0.5 inline" />Cancel Req
+                                                </Badge>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
 
-                        {/* Desktop Table — hidden on mobile */}
-                        <div className="hidden sm:block overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
-                            <Table className="min-w-[900px]">
-                                <TableHeader className="bg-gray-50/50 border-b border-gray-200">
-                                    <TableRow className="hover:bg-transparent border-gray-200">
-                                        <TableHead className="w-[120px] py-5 pl-8 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Tracking #</TableHead>
-                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Customer</TableHead>
-                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Date</TableHead>
-                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Items</TableHead>
-                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Total</TableHead>
-                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Payment</TableHead>
-                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Pay Status</TableHead>
-                                        <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Status</TableHead>
-                                        <TableHead className="text-right py-5 pr-8 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredOrders.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={9} className="h-48 text-center">
-                                                <div className="flex flex-col items-center justify-center text-gray-400">
-                                                    <Package className="w-12 h-12 mb-4 opacity-20" />
-                                                    <p className="font-body text-sm">No orders found matching your criteria.</p>
-                                                </div>
-                                            </TableCell>
+                            {/* Desktop Table — hidden on mobile */}
+                            <div className="hidden sm:block overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+                                <Table className="min-w-[900px]">
+                                    <TableHeader className="bg-gray-50/50 border-b border-gray-200">
+                                        <TableRow className="hover:bg-transparent border-gray-200">
+                                            <TableHead className="w-[120px] py-5 pl-8 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Tracking #</TableHead>
+                                            <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Customer</TableHead>
+                                            <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Date</TableHead>
+                                            <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Items</TableHead>
+                                            <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Total</TableHead>
+                                            <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Payment</TableHead>
+                                            <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Pay Status</TableHead>
+                                            <TableHead className="py-5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Status</TableHead>
+                                            <TableHead className="text-right py-5 pr-8 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold">Actions</TableHead>
                                         </TableRow>
-                                    ) : (
-                                        filteredOrders.map((order) => (
-                                            <TableRow
-                                                key={order.id}
-                                                className={`border-b border-gray-200 hover:bg-gray-50/50 transition-all duration-700 group cursor-pointer ${highlightedOrderIds.has(order.id) ? 'bg-amber-50 border-amber-200' : ''}`}
-                                                onClick={() => setSelectedOrder(order)}
-                                            >
-                                                {/* Tracking # / Order ID */}
-                                                <TableCell className="py-5 pl-8">
-                                                    <div className="flex flex-col">
-                                                        <span className="font-mono text-gray-900 font-medium group-hover:text-primary transition-colors text-sm">
-                                                            {order.tracking_number || `#${order.id.slice(0, 8).toUpperCase()}`}
-                                                        </span>
-                                                        {order.cancellation_requested && (
-                                                            <Badge className="mt-1 bg-red-50 text-red-600 border-red-200 border px-1.5 py-0 rounded-full text-[9px] font-bold tracking-wider w-fit flex items-center gap-1">
-                                                                <AlertTriangle className="w-2.5 h-2.5" />
-                                                                CANCEL REQ
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-
-                                                {/* Customer */}
-                                                <TableCell className="py-5">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold border uppercase ${order.client ? 'bg-primary/10 text-primary border-primary/20' : 'bg-amber-50 text-amber-600 border-amber-200'}`}>
-                                                            {(order.client?.full_name || order.guest_name || 'G')?.charAt(0)}
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-sm font-medium text-gray-900">
-                                                                {order.client?.full_name || order.guest_name || 'Guest'}
-                                                                {!order.client && <span className="text-[9px] ml-1.5 px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-200 font-bold">GUEST</span>}
-                                                            </span>
-                                                            <span className="text-[10px] text-gray-400">{order.client?.email || order.guest_email}</span>
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-
-                                                {/* Date */}
-                                                <TableCell className="py-5 text-gray-500 text-sm">
-                                                    {order.created_at ? (
-                                                        <>
-                                                            {format(new Date(order.created_at), 'MMM dd, yyyy')}
-                                                            <span className="text-xs text-gray-400 ml-1">{format(new Date(order.created_at), 'HH:mm')}</span>
-                                                        </>
-                                                    ) : 'N/A'}
-                                                </TableCell>
-
-                                                {/* Items count */}
-                                                <TableCell className="py-5 text-gray-500 text-sm">
-                                                    {order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? 's' : ''}
-                                                </TableCell>
-
-                                                {/* Total */}
-                                                <TableCell className="py-5 font-bold text-gray-900">
-                                                    {formatPrice(order.total_amount)}
-                                                </TableCell>
-
-                                                {/* Payment Method */}
-                                                <TableCell className="py-5">
-                                                    <Badge variant="outline" className={`border text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 ${order.payment_method === 'online'
-                                                        ? 'border-violet-200 bg-violet-50 text-violet-600'
-                                                        : 'border-gray-200 bg-gray-50 text-gray-600'
-                                                        }`}
-                                                    >
-                                                        {order.payment_method === 'online' ? (
-                                                            <><CreditCard className="w-3 h-3 mr-1 inline" />Bank</>
-                                                        ) : (
-                                                            <><Banknote className="w-3 h-3 mr-1 inline" />COD</>
-                                                        )}
-                                                    </Badge>
-                                                </TableCell>
-
-                                                {/* Payment Status */}
-                                                <TableCell className="py-5">
-                                                    <Badge className={`${getPaymentStatusColor(order.payment_status || 'pending')} border px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-none`}>
-                                                        {formatStatusLabel(order.payment_status || 'pending')}
-                                                    </Badge>
-                                                </TableCell>
-
-                                                {/* Order Status */}
-                                                <TableCell className="py-5">
-                                                    <Badge className={`${getStatusColor(order.status)} border px-2.5 py-0.5 rounded-full flex w-fit items-center shadow-sm uppercase text-[10px] font-bold tracking-wider`}>
-                                                        {getStatusIcon(order.status)}
-                                                        {formatStatusLabel(order.status)}
-                                                    </Badge>
-                                                </TableCell>
-
-                                                {/* Actions Dropdown */}
-                                                <TableCell className="text-right py-5 pr-8">
-                                                    <div onClick={(e) => e.stopPropagation()}>
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-gray-900 hover:bg-gray-100">
-                                                                    <MoreHorizontal className="w-4 h-4" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end" className="w-[200px] bg-white border-gray-200 rounded-xl shadow-lg p-1">
-                                                                <DropdownMenuLabel className="text-xs text-gray-400 uppercase tracking-widest px-2 py-1.5 font-bold">Manage</DropdownMenuLabel>
-
-                                                                <DropdownMenuItem onClick={() => setSelectedOrder(order)} className="rounded-lg text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 cursor-pointer px-2 py-2 mb-0.5">
-                                                                    <Eye className="w-3.5 h-3.5 mr-2 text-gray-400" /> View Details
-                                                                </DropdownMenuItem>
-
-                                                                <DropdownMenuItem onClick={() => handleEdit(order)} className="rounded-lg text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 cursor-pointer px-2 py-2 mb-0.5">
-                                                                    <Pencil className="w-3.5 h-3.5 mr-2 text-gray-400" /> Edit Info
-                                                                </DropdownMenuItem>
-
-                                                                <DropdownMenuItem onClick={() => handleDelete(order.id)} className="rounded-lg text-sm text-red-600 hover:bg-red-50 cursor-pointer px-2 py-2 mb-0.5">
-                                                                    <Trash2 className="w-3.5 h-3.5 mr-2 text-red-400" /> Delete Order
-                                                                </DropdownMenuItem>
-
-
-                                                                {order.status === 'pending' && (
-                                                                    <DropdownMenuItem
-                                                                        onClick={() => handleStatusUpdate(order.id, 'processing', 'Order confirmed by admin')}
-                                                                        disabled={!!updatingOrderId}
-                                                                        className="rounded-lg text-sm text-emerald-600 bg-emerald-50 hover:bg-emerald-100 cursor-pointer px-2 py-2 mb-0.5 font-bold"
-                                                                    >
-                                                                        {updatingOrderId === order.id ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-2" />} Confirm Order
-                                                                    </DropdownMenuItem>
-                                                                )}
-
-                                                                <DropdownMenuSeparator className="bg-gray-100 my-1" />
-                                                                <DropdownMenuLabel className="text-[9px] text-gray-400 uppercase tracking-widest px-2 py-1 font-bold">Status Update</DropdownMenuLabel>
-
-                                                                <DropdownMenuItem
-                                                                    onClick={() => handleStatusUpdate(order.id, 'processing', 'Moved to processing')}
-                                                                    disabled={!!updatingOrderId}
-                                                                    className="rounded-lg text-sm text-blue-600 hover:bg-blue-50 cursor-pointer px-2 py-2"
-                                                                >
-                                                                    <Package className="w-3.5 h-3.5 mr-2" /> Mark Processing
-                                                                </DropdownMenuItem>
-
-                                                                <DropdownMenuItem
-                                                                    onClick={() => openDispatchDialog(order.id)}
-                                                                    disabled={!!updatingOrderId}
-                                                                    className="rounded-lg text-sm text-indigo-600 hover:bg-indigo-50 cursor-pointer px-2 py-2"
-                                                                >
-                                                                    <Truck className="w-3.5 h-3.5 mr-2" /> Mark Shipped
-                                                                </DropdownMenuItem>
-
-                                                                <DropdownMenuItem
-                                                                    onClick={() => handleStatusUpdate(order.id, 'delivered', 'Order delivered')}
-                                                                    disabled={!!updatingOrderId}
-                                                                    className="rounded-lg text-sm text-emerald-600 hover:bg-emerald-50 cursor-pointer px-2 py-2"
-                                                                >
-                                                                    <CheckCircle2 className="w-3.5 h-3.5 mr-2" /> Mark Delivered
-                                                                </DropdownMenuItem>
-
-                                                                <DropdownMenuSeparator className="bg-gray-100 my-1" />
-
-                                                                <DropdownMenuItem
-                                                                    onClick={() => handleStatusUpdate(order.id, 'cancelled', 'Order cancelled by admin')}
-                                                                    disabled={!!updatingOrderId}
-                                                                    className="rounded-lg text-sm text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer px-2 py-2 font-bold"
-                                                                >
-                                                                    <Ban className="w-3.5 h-3.5 mr-2" /> Cancel Order
-                                                                </DropdownMenuItem>
-
-                                                                {order.cancellation_requested && (
-                                                                    <>
-                                                                        <DropdownMenuSeparator className="bg-gray-100 my-1" />
-                                                                        <DropdownMenuLabel className="text-[9px] text-red-400 uppercase tracking-widest px-2 py-1 font-bold">Cancellation Request</DropdownMenuLabel>
-                                                                        <DropdownMenuItem
-                                                                            onClick={() => handleApproveCancellation(order.id)}
-                                                                            disabled={!!updatingOrderId}
-                                                                            className="rounded-lg text-sm text-red-600 bg-red-50 hover:bg-red-100 cursor-pointer px-2 py-2 font-bold"
-                                                                        >
-                                                                            <CheckCircle2 className="w-3.5 h-3.5 mr-2" /> Approve Cancel
-                                                                        </DropdownMenuItem>
-                                                                        <DropdownMenuItem
-                                                                            onClick={() => handleRejectCancellation(order.id)}
-                                                                            disabled={!!updatingOrderId}
-                                                                            className="rounded-lg text-sm text-gray-600 hover:bg-gray-100 cursor-pointer px-2 py-2"
-                                                                        >
-                                                                            <XCircle className="w-3.5 h-3.5 mr-2" /> Reject Cancel
-                                                                        </DropdownMenuItem>
-                                                                    </>
-                                                                )}
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredOrders.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={9} className="h-48 text-center">
+                                                    <div className="flex flex-col items-center justify-center text-gray-400">
+                                                        <Package className="w-12 h-12 mb-4 opacity-20" />
+                                                        <p className="font-body text-sm">No orders found matching your criteria.</p>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
-                                        ))
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
+                                        ) : (
+                                            filteredOrders.map((order) => (
+                                                <TableRow
+                                                    key={order.id}
+                                                    className={`border-b border-gray-200 hover:bg-gray-50/50 transition-all duration-700 group cursor-pointer ${highlightedOrderIds.has(order.id) ? 'bg-amber-50 border-amber-200' : ''}`}
+                                                    onClick={() => setSelectedOrder(order)}
+                                                >
+                                                    {/* Tracking # / Order ID */}
+                                                    <TableCell className="py-5 pl-8">
+                                                        <div className="flex flex-col">
+                                                            <span className="font-mono text-gray-900 font-medium group-hover:text-primary transition-colors text-sm">
+                                                                {order.tracking_number || `#${order.id.slice(0, 8).toUpperCase()}`}
+                                                            </span>
+                                                            {order.cancellation_requested && (
+                                                                <Badge className="mt-1 bg-red-50 text-red-600 border-red-200 border px-1.5 py-0 rounded-full text-[9px] font-bold tracking-wider w-fit flex items-center gap-1">
+                                                                    <AlertTriangle className="w-2.5 h-2.5" />
+                                                                    CANCEL REQ
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+
+                                                    {/* Customer */}
+                                                    <TableCell className="py-5">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold border uppercase ${order.client ? 'bg-primary/10 text-primary border-primary/20' : 'bg-amber-50 text-amber-600 border-amber-200'}`}>
+                                                                {(order.client?.full_name || order.guest_name || 'G')?.charAt(0)}
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-medium text-gray-900">
+                                                                    {order.client?.full_name || order.guest_name || 'Guest'}
+                                                                    {!order.client && <span className="text-[9px] ml-1.5 px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-200 font-bold">GUEST</span>}
+                                                                </span>
+                                                                <span className="text-[10px] text-gray-400">{order.client?.email || order.guest_email}</span>
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+
+                                                    {/* Date */}
+                                                    <TableCell className="py-5 text-gray-500 text-sm">
+                                                        {order.created_at ? (
+                                                            <>
+                                                                {format(new Date(order.created_at), 'MMM dd, yyyy')}
+                                                                <span className="text-xs text-gray-400 ml-1">{format(new Date(order.created_at), 'HH:mm')}</span>
+                                                            </>
+                                                        ) : 'N/A'}
+                                                    </TableCell>
+
+                                                    {/* Items count */}
+                                                    <TableCell className="py-5 text-gray-500 text-sm">
+                                                        {order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? 's' : ''}
+                                                    </TableCell>
+
+                                                    {/* Total */}
+                                                    <TableCell className="py-5 font-bold text-gray-900">
+                                                        {formatPrice(order.total_amount)}
+                                                    </TableCell>
+
+                                                    {/* Payment Method */}
+                                                    <TableCell className="py-5">
+                                                        <Badge variant="outline" className={`border text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 ${order.payment_method === 'online'
+                                                            ? 'border-violet-200 bg-violet-50 text-violet-600'
+                                                            : 'border-gray-200 bg-gray-50 text-gray-600'
+                                                            }`}
+                                                        >
+                                                            {order.payment_method === 'online' ? (
+                                                                <><CreditCard className="w-3 h-3 mr-1 inline" />Bank</>
+                                                            ) : (
+                                                                <><Banknote className="w-3 h-3 mr-1 inline" />COD</>
+                                                            )}
+                                                        </Badge>
+                                                    </TableCell>
+
+                                                    {/* Payment Status */}
+                                                    <TableCell className="py-5">
+                                                        <Badge className={`${getPaymentStatusColor(order.payment_status || 'pending')} border px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-none`}>
+                                                            {formatStatusLabel(order.payment_status || 'pending')}
+                                                        </Badge>
+                                                    </TableCell>
+
+                                                    {/* Order Status */}
+                                                    <TableCell className="py-5">
+                                                        <Badge className={`${getStatusColor(order.status)} border px-2.5 py-0.5 rounded-full flex w-fit items-center shadow-sm uppercase text-[10px] font-bold tracking-wider`}>
+                                                            {getStatusIcon(order.status)}
+                                                            {formatStatusLabel(order.status)}
+                                                        </Badge>
+                                                    </TableCell>
+
+                                                    {/* Actions Dropdown */}
+                                                    <TableCell className="text-right py-5 pr-8">
+                                                        <div onClick={(e) => e.stopPropagation()}>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-gray-900 hover:bg-gray-100">
+                                                                        <MoreHorizontal className="w-4 h-4" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end" className="w-[200px] bg-white border-gray-200 rounded-xl shadow-lg p-1">
+                                                                    <DropdownMenuLabel className="text-xs text-gray-400 uppercase tracking-widest px-2 py-1.5 font-bold">Manage</DropdownMenuLabel>
+
+                                                                    <DropdownMenuItem onClick={() => setSelectedOrder(order)} className="rounded-lg text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 cursor-pointer px-2 py-2 mb-0.5">
+                                                                        <Eye className="w-3.5 h-3.5 mr-2 text-gray-400" /> View Details
+                                                                    </DropdownMenuItem>
+
+                                                                    <DropdownMenuItem onClick={() => handleEdit(order)} className="rounded-lg text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 cursor-pointer px-2 py-2 mb-0.5">
+                                                                        <Pencil className="w-3.5 h-3.5 mr-2 text-gray-400" /> Edit Info
+                                                                    </DropdownMenuItem>
+
+                                                                    <DropdownMenuItem onClick={() => handleDelete(order.id)} className="rounded-lg text-sm text-red-600 hover:bg-red-50 cursor-pointer px-2 py-2 mb-0.5">
+                                                                        <Trash2 className="w-3.5 h-3.5 mr-2 text-red-400" /> Delete Order
+                                                                    </DropdownMenuItem>
+
+
+                                                                    {order.status === 'pending' && (
+                                                                        <DropdownMenuItem
+                                                                            onClick={() => handleStatusUpdate(order.id, 'processing', 'Order confirmed by admin')}
+                                                                            disabled={!!updatingOrderId}
+                                                                            className="rounded-lg text-sm text-emerald-600 bg-emerald-50 hover:bg-emerald-100 cursor-pointer px-2 py-2 mb-0.5 font-bold"
+                                                                        >
+                                                                            {updatingOrderId === order.id ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-2" />} Confirm Order
+                                                                        </DropdownMenuItem>
+                                                                    )}
+
+                                                                    <DropdownMenuSeparator className="bg-gray-100 my-1" />
+                                                                    <DropdownMenuLabel className="text-[9px] text-gray-400 uppercase tracking-widest px-2 py-1 font-bold">Status Update</DropdownMenuLabel>
+
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => handleStatusUpdate(order.id, 'processing', 'Moved to processing')}
+                                                                        disabled={!!updatingOrderId}
+                                                                        className="rounded-lg text-sm text-blue-600 hover:bg-blue-50 cursor-pointer px-2 py-2"
+                                                                    >
+                                                                        <Package className="w-3.5 h-3.5 mr-2" /> Mark Processing
+                                                                    </DropdownMenuItem>
+
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => openDispatchDialog(order.id)}
+                                                                        disabled={!!updatingOrderId}
+                                                                        className="rounded-lg text-sm text-indigo-600 hover:bg-indigo-50 cursor-pointer px-2 py-2"
+                                                                    >
+                                                                        <Truck className="w-3.5 h-3.5 mr-2" /> Mark Shipped
+                                                                    </DropdownMenuItem>
+
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => handleStatusUpdate(order.id, 'delivered', 'Order delivered')}
+                                                                        disabled={!!updatingOrderId}
+                                                                        className="rounded-lg text-sm text-emerald-600 hover:bg-emerald-50 cursor-pointer px-2 py-2"
+                                                                    >
+                                                                        <CheckCircle2 className="w-3.5 h-3.5 mr-2" /> Mark Delivered
+                                                                    </DropdownMenuItem>
+
+                                                                    <DropdownMenuSeparator className="bg-gray-100 my-1" />
+
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => handleStatusUpdate(order.id, 'cancelled', 'Order cancelled by admin')}
+                                                                        disabled={!!updatingOrderId}
+                                                                        className="rounded-lg text-sm text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer px-2 py-2 font-bold"
+                                                                    >
+                                                                        <Ban className="w-3.5 h-3.5 mr-2" /> Cancel Order
+                                                                    </DropdownMenuItem>
+
+                                                                    {order.cancellation_requested && (
+                                                                        <>
+                                                                            <DropdownMenuSeparator className="bg-gray-100 my-1" />
+                                                                            <DropdownMenuLabel className="text-[9px] text-red-400 uppercase tracking-widest px-2 py-1 font-bold">Cancellation Request</DropdownMenuLabel>
+                                                                            <DropdownMenuItem
+                                                                                onClick={() => handleApproveCancellation(order.id)}
+                                                                                disabled={!!updatingOrderId}
+                                                                                className="rounded-lg text-sm text-red-600 bg-red-50 hover:bg-red-100 cursor-pointer px-2 py-2 font-bold"
+                                                                            >
+                                                                                <CheckCircle2 className="w-3.5 h-3.5 mr-2" /> Approve Cancel
+                                                                            </DropdownMenuItem>
+                                                                            <DropdownMenuItem
+                                                                                onClick={() => handleRejectCancellation(order.id)}
+                                                                                disabled={!!updatingOrderId}
+                                                                                className="rounded-lg text-sm text-gray-600 hover:bg-gray-100 cursor-pointer px-2 py-2"
+                                                                            >
+                                                                                <XCircle className="w-3.5 h-3.5 mr-2" /> Reject Cancel
+                                                                            </DropdownMenuItem>
+                                                                        </>
+                                                                    )}
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </>
                     )}
                 </CardContent>

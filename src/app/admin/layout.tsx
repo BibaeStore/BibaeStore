@@ -19,18 +19,30 @@ export default function AdminLayout({
     const [isAuthenticated, setIsAuthenticated] = useState(false)
     const supabaseRef = useRef(createClient())
 
-    const isLoginPage = !pathname || pathname.startsWith('/admin/login')
-    const isLoginPageRef = useRef(isLoginPage)
-    useEffect(() => { isLoginPageRef.current = isLoginPage }, [isLoginPage])
+    // Check if current page is login page
+    const isLoginPage = pathname?.includes('/admin/login') || false
 
     useEffect(() => {
         const supabase = supabaseRef.current
         const checkAuth = async () => {
             try {
-                const { data: { user } } = await supabase.auth.getUser()
-                setIsAuthenticated(!!user)
+                // Use getSession instead of getUser - it's cached and doesn't hit API
+                const { data: { session }, error } = await supabase.auth.getSession()
 
-                if (!user && !isLoginPageRef.current) {
+                if (error) {
+                    // Handle rate limit errors gracefully
+                    if (error.status === 429) {
+                        console.warn('Rate limit reached, retrying in 2s...')
+                        setTimeout(checkAuth, 2000)
+                        return
+                    }
+                    throw error
+                }
+
+                setIsAuthenticated(!!session?.user)
+
+                // Only redirect if not authenticated AND not already on login page
+                if (!session?.user && !pathname?.includes('/admin/login')) {
                     router.push('/admin/login')
                 }
             } catch (error) {
@@ -44,13 +56,14 @@ export default function AdminLayout({
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setIsAuthenticated(!!session?.user)
-            if (!session?.user && !isLoginPageRef.current) {
+            // Only redirect if not authenticated AND not already on login page
+            if (!session?.user && !pathname?.includes('/admin/login')) {
                 router.push('/admin/login')
             }
         })
 
         return () => subscription.unsubscribe()
-    }, [router])
+    }, [router, pathname])
 
     // While checking auth, show nothing or a small loader for non-login pages
     if (isLoading && !isLoginPage) {

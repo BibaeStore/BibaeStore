@@ -128,21 +128,31 @@ export default function ProductsPage() {
     useEffect(() => {
         fetchData()
 
-        // Set up Realtime subscription
+        // Set up Realtime subscription with debouncing
         const supabase = createClient()
+        let refetchTimeout: NodeJS.Timeout | null = null
+
         const channel = supabase
             .channel('admin-products-updates')
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'products' },
                 () => {
-                    // Refetch data when any change happens in the products table
-                    fetchData()
+                    // Debounce refetch to avoid excessive API calls
+                    if (refetchTimeout) clearTimeout(refetchTimeout)
+                    refetchTimeout = setTimeout(() => {
+                        fetchData()
+                    }, 1000) // Wait 1s after last change
                 }
             )
-            .subscribe()
+            .subscribe((status, err) => {
+                if (err) {
+                    console.error('[Products] Realtime subscription error:', err)
+                }
+            })
 
         return () => {
+            if (refetchTimeout) clearTimeout(refetchTimeout)
             supabase.removeChannel(channel)
         }
     }, [])
@@ -547,31 +557,31 @@ export default function ProductsPage() {
                             <Card key={product.id} className="bg-white border-gray-200 overflow-hidden shadow-sm">
                                 <CardContent className="p-4 space-y-4">
                                     <div className="flex items-start gap-4">
-                                        <div className="w-20 h-20 rounded-xl bg-gray-50 border border-gray-200 overflow-hidden relative flex-shrink-0">
+                                        <div className="w-24 h-24 rounded-xl bg-white border border-gray-200 overflow-hidden relative flex-shrink-0 shadow-sm">
                                             {product.images && product.images.length > 0 ? (
                                                 <Image
                                                     src={product.images[0]}
                                                     alt={product.name}
                                                     fill
-                                                    className="object-cover"
+                                                    className="object-cover hover:scale-105 transition-transform duration-500"
+                                                    sizes="(max-width: 768px) 96px, 96px"
                                                 />
                                             ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                                <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50">
                                                     <ImageIcon className="w-8 h-8" />
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <h4 className="text-gray-900 font-medium truncate">{product.name}</h4>
-                                                    <p className="text-gray-500 text-xs font-mono mt-0.5">{product.sku}</p>
+                                        <div className="flex-1 min-w-0 py-1">
+                                            <div className="flex justify-between items-start gap-2">
+                                                <div className="min-w-0">
+                                                    <h4 className="text-gray-900 font-medium truncate text-base leading-tight">{product.name}</h4>
+                                                    <p className="text-gray-500 text-xs font-mono mt-1">{product.sku}</p>
                                                 </div>
-                                                <Badge variant="secondary" className={
-                                                    product.status === 'active' ? "bg-green-100 text-green-700" :
-                                                        product.status === 'draft' ? "bg-yellow-100 text-yellow-700" :
-                                                            "bg-red-100 text-red-700"
-                                                }>
+                                                <Badge variant="secondary" className={`flex-shrink-0 ${product.status === 'active' ? "bg-green-100 text-green-700 hover:bg-green-100" :
+                                                        product.status === 'draft' ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-100" :
+                                                            "bg-red-100 text-red-700 hover:bg-red-100"
+                                                    }`}>
                                                     {product.status}
                                                 </Badge>
                                             </div>

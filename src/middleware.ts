@@ -44,7 +44,9 @@ export async function middleware(request: NextRequest) {
 
     // Protect admin routes — must be logged in AND must be the admin email
     const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
-    if (isAdminRoute) {
+    const isAdminLoginRoute = request.nextUrl.pathname.startsWith('/admin/login')
+
+    if (isAdminRoute && !isAdminLoginRoute) {
         if (!user) {
             const url = request.nextUrl.clone()
             url.pathname = '/admin/login'
@@ -55,6 +57,11 @@ export async function middleware(request: NextRequest) {
             // Authenticated but not admin — redirect to home
             return NextResponse.redirect(new URL('/', request.url))
         }
+    }
+
+    // Redirect logged in admin away from login page
+    if (isAdminLoginRoute && user && user.email === process.env.ADMIN_EMAIL) {
+        return NextResponse.redirect(new URL('/admin', request.url))
     }
 
     // Redirect logged in users away from auth pages

@@ -369,7 +369,7 @@ export function ProductForm({
                         {/* Images */}
                         <div className="space-y-4">
                             <FormLabel className="text-gray-700">Product Images</FormLabel>
-                            <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                                 <div className="relative aspect-square border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer overflow-hidden group">
                                     <input
                                         type="file"
@@ -385,9 +385,9 @@ export function ProductForm({
                                 {existingImages.map((src, index) => (
                                     <div key={`existing-${index}`} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 bg-white group shadow-sm">
                                         <Image src={src} alt={`Existing ${index}`} fill className="object-cover" />
-                                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button type="button" variant="destructive" size="icon" className="h-6 w-6 rounded-full shadow-md" onClick={() => removeExistingImage(index)}>
-                                                <X className="h-3 w-3" />
+                                        <div className="absolute top-1 right-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                            <Button type="button" variant="destructive" size="icon" className="h-6 w-6 rounded-full shadow-md bg-white hover:bg-red-50 text-red-500 border border-gray-200" onClick={() => removeExistingImage(index)}>
+                                                <X className="h-3.5 w-3.5" />
                                             </Button>
                                         </div>
                                     </div>
@@ -396,9 +396,9 @@ export function ProductForm({
                                 {previews.map((src, index) => (
                                     <div key={`new-${index}`} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 bg-white group shadow-sm">
                                         <Image src={src} alt={`Preview ${index}`} fill className="object-cover" />
-                                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button type="button" variant="destructive" size="icon" className="h-6 w-6 rounded-full shadow-md" onClick={() => removeFile(index)}>
-                                                <X className="h-3 w-3" />
+                                        <div className="absolute top-1 right-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                            <Button type="button" variant="destructive" size="icon" className="h-6 w-6 rounded-full shadow-md bg-white hover:bg-red-50 text-red-500 border border-gray-200" onClick={() => removeFile(index)}>
+                                                <X className="h-3.5 w-3.5" />
                                             </Button>
                                         </div>
                                     </div>
