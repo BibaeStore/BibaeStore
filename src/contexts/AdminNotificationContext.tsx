@@ -45,7 +45,11 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
                     audioRef.current?.play().catch(() => {})
                 } catch {}
             })
-            .subscribe()
+            .subscribe((status, err) => {
+                if (err) {
+                    console.error('[AdminNotifications] Realtime subscription error:', err)
+                }
+            })
 
         return () => {
             supabase.removeChannel(channel)

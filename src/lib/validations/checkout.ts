@@ -23,7 +23,15 @@ export const paymentSchema = z.object({
         required_error: "Please select a payment method",
     }),
     onlineMethod: z.enum(["sadapay", "jazzcash", "easypaisa", "askari"]).optional(),
-    proofFile: z.any().optional(),
+    proofFile: z.custom<File>((val) => val === undefined || val instanceof File, {
+        message: "Payment proof must be a file",
+    }).refine(
+        (file) => !file || file.size <= 5_000_000,
+        { message: "Payment proof must be less than 5MB" }
+    ).refine(
+        (file) => !file || file.type.startsWith('image/'),
+        { message: "Payment proof must be an image (JPG, PNG, etc.)" }
+    ).optional(),
 }).refine((data) => {
     if (data.method === "online") {
         return !!data.onlineMethod;

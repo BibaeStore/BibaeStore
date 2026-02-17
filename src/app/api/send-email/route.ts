@@ -21,6 +21,13 @@ type EmailType =
 
 export async function POST(request: Request) {
   try {
+    // Verify internal API secret to prevent unauthorized email sending
+    const apiSecret = request.headers.get('x-api-secret');
+    const expectedSecret = process.env.INTERNAL_API_SECRET;
+    if (expectedSecret && apiSecret !== expectedSecret) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { type, to, data } = body as {
       type: EmailType;
@@ -81,6 +88,14 @@ export async function POST(request: Request) {
           },
           { status: 400 }
         );
+    }
+
+    if (result && !result.success) {
+      console.error('[send-email] Email sending failed for type:', type, result.error);
+      return NextResponse.json(
+        { error: 'Email failed to send. SMTP error occurred.' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(

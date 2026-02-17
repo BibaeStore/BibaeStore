@@ -171,43 +171,49 @@ export default function CheckoutPage() {
 
       toast.promise(promise, {
         loading: 'Creating your order...',
-        success: (order) => {
-          setOrderPlaced(true);
-          clearCart();
-          if (isGuest) {
-            localStorage.removeItem('bibae_cart');
-          }
-
-          // Send order confirmation email (fire-and-forget)
-          const customerEmail = contactData!.email;
-          const customerName = `${shippingData!.firstName} ${shippingData!.lastName}`;
-          fetch('/api/send-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: 'order_placed',
-              to: customerEmail,
-              data: {
-                name: customerName,
-                trackingNumber: order.tracking_number || order.id.slice(0, 8).toUpperCase(),
-                totalAmount: finalTotal,
-                paymentMethod: paymentData!.method === 'cod' ? 'Cash on Delivery' : `Bank Transfer (${paymentData!.onlineMethod || 'Online'})`,
-                items: items.map(item => ({
-                  name: item.product.name,
-                  quantity: item.quantity,
-                  price: item.product.sale_price || item.product.price
-                }))
-              }
-            })
-          }).catch(err => console.error('Email send failed:', err));
-
-          router.push(`/checkout/success?id=${order.id}&method=${paymentData!.method}`);
-          return 'Order placed successfully!';
-        },
+        success: () => 'Order placed successfully!',
         error: (err) => `Order failed: ${err.message}`
       });
 
-      await promise;
+      const order = await promise;
+
+      setOrderPlaced(true);
+      clearCart();
+      if (isGuest) {
+        localStorage.removeItem('bibae_cart');
+      }
+
+      // Send order confirmation email — non-blocking but with proper error logging
+      const customerEmail = contactData!.email;
+      const customerName = `${shippingData!.firstName} ${shippingData!.lastName}`;
+      fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-secret': process.env.NEXT_PUBLIC_INTERNAL_API_SECRET || '',
+        },
+        body: JSON.stringify({
+          type: 'order_placed',
+          to: customerEmail,
+          data: {
+            name: customerName,
+            trackingNumber: order.tracking_number || order.id.slice(0, 8).toUpperCase(),
+            totalAmount: finalTotal,
+            paymentMethod: paymentData!.method === 'cod' ? 'Cash on Delivery' : `Bank Transfer (${paymentData!.onlineMethod || 'Online'})`,
+            items: items.map(item => ({
+              name: item.product.name,
+              quantity: item.quantity,
+              price: item.product.sale_price || item.product.price
+            }))
+          }
+        })
+      })
+        .then(async (res) => {
+          if (!res.ok) console.error(`[Order] Email API error (${res.status}):`, await res.text());
+        })
+        .catch(err => console.error('[Order] Email send failed:', err));
+
+      router.push(`/checkout/success?id=${order.id}&method=${paymentData!.method}`);
 
     } catch (error: any) {
       console.error("Order placement failed:", error);

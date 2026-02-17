@@ -2,7 +2,10 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 const SALT_ROUNDS = 12;
-const JWT_SECRET = process.env.JWT_SECRET || 'your-default-secret-change-this';
+if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is not set. Please add it to your .env.local file.');
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export const hashPassword = async (password: string): Promise<string> => {
     return await bcrypt.hash(password, SALT_ROUNDS);

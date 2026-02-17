@@ -20,19 +20,23 @@ import {
 // SMTP Configuration
 // --------------------------------------------------
 
+if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+  throw new Error('SMTP_USER and SMTP_PASSWORD environment variables must be set.');
+}
+
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com', // Defaulting to Gmail but should be set in .env
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: Number(process.env.SMTP_PORT) || 465,
   secure: true, // Use SSL/TLS
   auth: {
-    user: process.env.SMTP_USER, // e.g., no-reply@bibaestore.com
+    user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASSWORD,
   },
 });
 
 const FROM_ADDRESS = '"Bibaé Store" <no-reply@bibaestore.com>';
 const SUPPORT_ADDRESS = '"Bibaé Support" <support@bibaestore.com>';
-const ADMIN_EMAIL = 'bibaestore@gmail.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'bibaestore@gmail.com';
 
 // --------------------------------------------------
 // Types

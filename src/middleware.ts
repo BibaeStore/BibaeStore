@@ -31,7 +31,7 @@ export async function middleware(request: NextRequest) {
 
     const { data: { user } } = await supabase.auth.getUser()
 
-    // Protect sensitive routes
+    // Protect sensitive routes (customer)
     const protectedRoutes = ['/profile']
     const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
 
@@ -40,6 +40,21 @@ export async function middleware(request: NextRequest) {
         url.pathname = '/login'
         url.searchParams.set('redirectedFrom', request.nextUrl.pathname)
         return NextResponse.redirect(url)
+    }
+
+    // Protect admin routes — must be logged in AND must be the admin email
+    const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+    if (isAdminRoute) {
+        if (!user) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/admin/login'
+            return NextResponse.redirect(url)
+        }
+        const adminEmail = process.env.ADMIN_EMAIL
+        if (adminEmail && user.email !== adminEmail) {
+            // Authenticated but not admin — redirect to home
+            return NextResponse.redirect(new URL('/', request.url))
+        }
     }
 
     // Redirect logged in users away from auth pages

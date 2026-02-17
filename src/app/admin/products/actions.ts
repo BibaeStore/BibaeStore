@@ -2,6 +2,15 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { SupabaseClient } from '@supabase/supabase-js'
+
+async function verifyAdminUser(supabase: SupabaseClient): Promise<{ error?: string }> {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Not authenticated. Please log in again.' }
+    const adminEmail = process.env.ADMIN_EMAIL
+    if (adminEmail && user.email !== adminEmail) return { error: 'Not authorized. Admin access required.' }
+    return {}
+}
 
 // ─── Image Upload ────────────────────────────────────────────────────────────
 // Uploads a single product image via server-side Supabase client.
@@ -12,16 +21,14 @@ export async function uploadProductImage(
 ): Promise<{ url?: string; error?: string }> {
     const supabase = await createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { error: 'Not authenticated. Please log in again.' }
+    const authCheck = await verifyAdminUser(supabase)
+    if (authCheck.error) return { error: authCheck.error }
 
     const file = formData.get('file') as File
     if (!file || file.size === 0) {
         console.error('[uploadProductImage] No file provided or file is empty')
         return { error: 'No file provided' }
     }
-
-    console.log(`[uploadProductImage] Uploading file: ${file.name} (${file.size} bytes)`)
 
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
     const filePath = `${Date.now()}-${Math.random().toString(36).substring(7)}-${sanitizedName}`
@@ -35,8 +42,6 @@ export async function uploadProductImage(
         return { error: `Upload "${file.name}" failed: ${error.message}` }
     }
 
-    console.log(`[uploadProductImage] Successfully uploaded ${file.name} to ${filePath}`)
-
     const { data } = supabase.storage.from('products').getPublicUrl(filePath)
     return { url: data.publicUrl }
 }
@@ -48,13 +53,8 @@ export async function createProductAction(
 ): Promise<{ data?: Record<string, unknown>; error?: string; code?: string }> {
     const supabase = await createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        console.error('[createProductAction] Not authenticated')
-        return { error: 'Not authenticated. Please log in again.' }
-    }
-
-    console.log('[createProductAction] Inserting productData:', JSON.stringify(productData))
+    const authCheck = await verifyAdminUser(supabase)
+    if (authCheck.error) return { error: authCheck.error }
 
     const { data, error } = await supabase
         .from('products')
@@ -66,8 +66,6 @@ export async function createProductAction(
         console.error('[createProductAction] Supabase error:', error)
         return { error: error.message, code: error.code }
     }
-
-    console.log('[createProductAction] Successfully created product:', data.id)
 
     // Refresh SSR cache for public pages
     revalidatePath('/')
@@ -84,13 +82,8 @@ export async function updateProductAction(
 ): Promise<{ data?: Record<string, unknown>; error?: string; code?: string }> {
     const supabase = await createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        console.error('[updateProductAction] Not authenticated')
-        return { error: 'Not authenticated. Please log in again.' }
-    }
-
-    console.log(`[updateProductAction] Updating product ${id} with data:`, JSON.stringify(updateData))
+    const authCheck = await verifyAdminUser(supabase)
+    if (authCheck.error) return { error: authCheck.error }
 
     const { data, error } = await supabase
         .from('products')
@@ -109,7 +102,6 @@ export async function updateProductAction(
     }
 
     const updatedProduct = data[0]
-    console.log(`[updateProductAction] Successfully updated product: ${id}`)
 
     // Refresh SSR cache for public pages
     revalidatePath('/')
@@ -126,13 +118,8 @@ export async function deleteProductAction(
 ): Promise<{ error?: string; code?: string }> {
     const supabase = await createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-        console.error('[deleteProductAction] Not authenticated')
-        return { error: 'Not authenticated. Please log in again.' }
-    }
-
-    console.log(`[deleteProductAction] Deleting product ${id}`)
+    const authCheck = await verifyAdminUser(supabase)
+    if (authCheck.error) return { error: authCheck.error }
 
     const { error, count } = await supabase
         .from('products')
@@ -148,8 +135,6 @@ export async function deleteProductAction(
         console.error(`[deleteProductAction] No product found with ID ${id} to delete`)
         return { error: 'Product not found or already deleted.' }
     }
-
-    console.log(`[deleteProductAction] Successfully deleted product: ${id}`)
 
     // Refresh SSR cache for public pages
     revalidatePath('/')

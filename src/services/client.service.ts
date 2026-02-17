@@ -2,7 +2,7 @@ import { createClient } from '../lib/supabase/client';
 import { Client as ClientType } from '../types/client';
 
 export class ClientService {
-    private static supabase = createClient();
+    private static get supabase() { return createClient(); }
     private static bucketName = 'client-profiles';
 
     static async getProfile(id: string): Promise<ClientType | null> {

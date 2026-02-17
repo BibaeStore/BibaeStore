@@ -168,7 +168,6 @@ export default function ProductsPage() {
     const confirmDelete = async () => {
         if (!deleteId) return
         const idToDelete = deleteId
-        console.log(`[DEBUG] Initiating delete for product: ${idToDelete}`)
         setDeleteId(null)
 
         // Keep local copy for rollback
@@ -190,7 +189,6 @@ export default function ProductsPage() {
                 console.error(`[DEBUG] Delete action failed: ${result.error}`)
                 throw new Error(result.error)
             }
-            console.log(`[DEBUG] Delete action successful for: ${idToDelete}`)
             toast.success("Product deleted successfully")
         } catch (error: any) {
             console.error('[DEBUG] Catching delete error:', error)
@@ -234,11 +232,8 @@ export default function ProductsPage() {
                 size_guide: data.size_guide || null,
             }
 
-            console.log('[DEBUG] Submitting productData:', JSON.stringify(productData))
-
             // Step 3: Create or update via server action
             if (editingProduct) {
-                console.log(`[DEBUG] Updating product with ID: ${editingProduct.id}`)
                 const result = await updateProductAction(editingProduct.id, productData)
                 if (result.error) throw Object.assign(new Error(result.error), { code: result.code })
                 setProducts(prev => prev.map(p => p.id === editingProduct.id ? (result.data as unknown as Product) : p))

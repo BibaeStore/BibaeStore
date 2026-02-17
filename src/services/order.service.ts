@@ -39,6 +39,29 @@ export class OrderService {
             payment_proof_url = data.publicUrl;
         }
 
+        // Validate stock BEFORE creating the order to prevent overselling
+        for (const item of items) {
+            const { data: product, error: stockError } = await this.supabase
+                .from('products')
+                .select('name, stock, variants')
+                .eq('id', item.product_id)
+                .single();
+
+            if (stockError || !product) {
+                throw new Error(`Product not found: ${item.product_id}`);
+            }
+
+            const size = item.size || 'Standard';
+            const sizeStock = product?.variants?.sizes?.[size]?.stock;
+            const availableStock = sizeStock !== undefined ? sizeStock : (product.stock || 0);
+
+            if (availableStock < item.quantity) {
+                throw new Error(
+                    `Sorry, only ${availableStock} unit(s) of "${product.name}" (${size}) are in stock. Please update your cart.`
+                );
+            }
+        }
+
         const initialStatus = paymentMethod === 'online' ? 'under_review' : 'pending';
         const initialPaymentStatus = paymentMethod === 'online' ? 'under_review' : 'pending';
 
@@ -95,9 +118,14 @@ export class OrderService {
 
         if (itemsError) throw itemsError;
 
-        // Deduct stock for each item
+        // Deduct stock for each item (validated above, so errors here are unexpected)
         for (const item of items) {
-            await this.deductSizeStock(item.product_id, item.size || 'Standard', item.quantity);
+            try {
+                await this.deductSizeStock(item.product_id, item.size || 'Standard', item.quantity);
+            } catch (stockErr) {
+                console.error(`[OrderService] Stock deduction failed for product ${item.product_id}:`, stockErr);
+                // Order already created — log but don't throw to avoid orphaned orders
+            }
         }
 
         // Clear the cart (only for logged-in users with DB cart)
@@ -222,16 +250,9 @@ export class OrderService {
         return data;
     }
 
-    static async updateOrderStatus(orderId: string, status: string): Promise<void> {
-        const { error } = await this.supabase
-            .from('orders')
-            .update({
-                status,
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', orderId);
-
-        if (error) throw error;
+    static async updateOrderStatus(orderId: string, status: string, note?: string): Promise<void> {
+        // Always delegate to updateStatusWithHistory to maintain audit trail
+        await this.updateStatusWithHistory(orderId, status, note);
     }
 
     static async updateStatusWithHistory(orderId: string, status: string, note?: string): Promise<void> {
