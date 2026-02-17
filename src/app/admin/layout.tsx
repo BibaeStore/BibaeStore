@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AdminSidebar } from "@/components/admin/AdminSidebar"
@@ -17,17 +17,20 @@ export default function AdminLayout({
     const router = useRouter()
     const [isLoading, setIsLoading] = useState(true)
     const [isAuthenticated, setIsAuthenticated] = useState(false)
-    const supabase = createClient()
+    const supabaseRef = useRef(createClient())
 
     const isLoginPage = !pathname || pathname.startsWith('/admin/login')
+    const isLoginPageRef = useRef(isLoginPage)
+    useEffect(() => { isLoginPageRef.current = isLoginPage }, [isLoginPage])
 
     useEffect(() => {
+        const supabase = supabaseRef.current
         const checkAuth = async () => {
             try {
                 const { data: { user } } = await supabase.auth.getUser()
                 setIsAuthenticated(!!user)
 
-                if (!user && !isLoginPage) {
+                if (!user && !isLoginPageRef.current) {
                     router.push('/admin/login')
                 }
             } catch (error) {
@@ -41,13 +44,13 @@ export default function AdminLayout({
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setIsAuthenticated(!!session?.user)
-            if (!session?.user && !isLoginPage) {
+            if (!session?.user && !isLoginPageRef.current) {
                 router.push('/admin/login')
             }
         })
 
         return () => subscription.unsubscribe()
-    }, [isLoginPage, router, supabase.auth])
+    }, [router])
 
     // While checking auth, show nothing or a small loader for non-login pages
     if (isLoading && !isLoginPage) {

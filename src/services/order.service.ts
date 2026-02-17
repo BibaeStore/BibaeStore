@@ -130,7 +130,12 @@ export class OrderService {
 
         // Clear the cart (only for logged-in users with DB cart)
         if (clientId) {
-            await CartService.clearCart(clientId);
+            try {
+                await CartService.clearCart(clientId);
+            } catch (cartErr) {
+                // Non-critical: order already placed, just log the error
+                console.error('[OrderService] Cart clear failed (order still successful):', cartErr);
+            }
         }
 
         return order;

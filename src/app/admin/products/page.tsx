@@ -186,12 +186,10 @@ export default function ProductsPage() {
         try {
             const result = await deleteProductAction(idToDelete)
             if (result.error) {
-                console.error(`[DEBUG] Delete action failed: ${result.error}`)
                 throw new Error(result.error)
             }
             toast.success("Product deleted successfully")
         } catch (error: any) {
-            console.error('[DEBUG] Catching delete error:', error)
             toast.error(error?.message || "Failed to delete product. Refreshing list...")
             // Rollback: use original products if delete failed
             setProducts(originalProducts)

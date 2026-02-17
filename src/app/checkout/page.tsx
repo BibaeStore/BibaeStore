@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
@@ -59,7 +59,8 @@ export default function CheckoutPage() {
   const [shippingData, setShippingData] = useState<ShippingFormData | null>(null);
   const [paymentData, setPaymentData] = useState<PaymentFormData | null>(null);
 
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -68,7 +69,6 @@ export default function CheckoutPage() {
     // Safety timeout to prevent infinite loading
     const timer = setTimeout(() => {
       if (isLoadingProfile) {
-        console.warn("Checkout initialization timed out, forcing load.");
         setIsLoadingProfile(false);
         toast.error("Slow network detected. Some data may not be pre-filled.");
       }
@@ -93,13 +93,11 @@ export default function CheckoutPage() {
     });
 
     return () => clearTimeout(timer);
-  }, [supabase]);
+  }, []);
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      console.log("Fetching user profile for:", userId);
       const data = await ClientService.getProfile(userId);
-      console.log("Profile fetched:", data ? "Found" : "Not Found");
       setProfile(data);
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -356,7 +354,7 @@ export default function CheckoutPage() {
                       <p className="text-xs text-muted-foreground">
                         {item.size} • {item.color} • Qty: {item.quantity}
                       </p>
-                      <p className="text-sm font-medium mt-1">{formatPrice(item.product.price * item.quantity)}</p>
+                      <p className="text-sm font-medium mt-1">{formatPrice((item.product.sale_price || item.product.price) * item.quantity)}</p>
                     </div>
                   </div>
                 ))}

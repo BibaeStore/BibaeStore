@@ -2,7 +2,7 @@ import { createClient } from '../lib/supabase/client';
 import { CartItem } from '../types/client';
 
 export class CartService {
-    private static supabase = createClient();
+    private static get supabase() { return createClient(); }
 
     static async getCart(clientId: string): Promise<CartItem[]> {
         const { data, error } = await this.supabase

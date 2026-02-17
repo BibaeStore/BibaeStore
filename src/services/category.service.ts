@@ -2,7 +2,7 @@ import { createClient } from '../lib/supabase/client';
 import { Category, CategoryFormData } from '../types/category';
 
 export class CategoryService {
-    private static supabase = createClient();
+    private static get supabase() { return createClient(); }
     private static bucketName = 'categories';
 
     static async getCategories(): Promise<Category[]> {

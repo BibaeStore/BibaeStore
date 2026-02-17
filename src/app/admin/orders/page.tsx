@@ -140,7 +140,10 @@ function sendStatusEmail(order: any, emailType: string, extraData?: Record<strin
 
     fetch('/api/send-email', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-secret': process.env.NEXT_PUBLIC_INTERNAL_API_SECRET || '',
+        },
         body: JSON.stringify({
             type: emailType,
             to: customerEmail,
@@ -716,7 +719,57 @@ export default function OrdersPage() {
                             <Loader2 className="w-8 h-8 text-primary animate-spin" />
                         </div>
                     ) : (
-                        <div className="overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+                        <>
+                        {/* Mobile Cards — visible on small screens */}
+                        <div className="sm:hidden divide-y divide-gray-100">
+                            {filteredOrders.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-48 text-gray-400 px-6">
+                                    <Package className="w-10 h-10 mb-3 opacity-20" />
+                                    <p className="text-sm font-body">No orders found.</p>
+                                </div>
+                            ) : filteredOrders.map((order) => (
+                                <div
+                                    key={order.id}
+                                    onClick={() => setSelectedOrder(order)}
+                                    className={`p-4 cursor-pointer active:bg-gray-50 transition-colors ${highlightedOrderIds.has(order.id) ? 'bg-amber-50' : ''}`}
+                                >
+                                    <div className="flex items-start justify-between gap-2 mb-2">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-mono text-sm font-semibold text-gray-900 truncate">
+                                                {order.tracking_number || `#${order.id.slice(0, 8).toUpperCase()}`}
+                                            </p>
+                                            <p className="text-xs text-gray-500 mt-0.5 truncate">
+                                                {order.client?.full_name || order.guest_name || 'Guest'}
+                                                {!order.client && <span className="ml-1 text-amber-600 font-bold">(Guest)</span>}
+                                            </p>
+                                        </div>
+                                        <Badge className={`${getStatusColor(order.status)} border px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 shadow-none`}>
+                                            {formatStatusLabel(order.status)}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-2 text-xs text-gray-500">
+                                        <span>{order.created_at ? format(new Date(order.created_at), 'MMM dd, yyyy') : 'N/A'}</span>
+                                        <span className="font-bold text-gray-900">{formatPrice(order.total_amount)}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-2 mt-2">
+                                        <Badge variant="outline" className={`border text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 ${order.payment_method === 'online' ? 'border-violet-200 bg-violet-50 text-violet-600' : 'border-gray-200 bg-gray-50 text-gray-600'}`}>
+                                            {order.payment_method === 'online' ? 'Bank' : 'COD'}
+                                        </Badge>
+                                        <Badge className={`${getPaymentStatusColor(order.payment_status || 'pending')} border px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase shadow-none`}>
+                                            {formatStatusLabel(order.payment_status || 'pending')}
+                                        </Badge>
+                                        {order.cancellation_requested && (
+                                            <Badge className="bg-red-50 text-red-600 border-red-200 border px-1.5 py-0.5 rounded-full text-[9px] font-bold">
+                                                <AlertTriangle className="w-2.5 h-2.5 mr-0.5 inline" />Cancel Req
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Desktop Table — hidden on mobile */}
+                        <div className="hidden sm:block overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
                             <Table className="min-w-[900px]">
                                 <TableHeader className="bg-gray-50/50 border-b border-gray-200">
                                     <TableRow className="hover:bg-transparent border-gray-200">
@@ -924,6 +977,7 @@ export default function OrdersPage() {
                                 </TableBody>
                             </Table>
                         </div>
+                        </>
                     )}
                 </CardContent>
             </Card>
