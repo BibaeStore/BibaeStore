@@ -180,6 +180,9 @@ export default function OrdersPage() {
     const [highlightedOrderIds, setHighlightedOrderIds] = useState<Set<string>>(new Set())
     const { resetCount } = useAdminNotifications()
 
+    // Use ref for selectedOrder in realtime callbacks to avoid channel recreation
+    const selectedOrderRef = useRef<any>(null)
+
     // ─── Data fetching ───
     useEffect(() => {
         fetchOrders()
@@ -189,6 +192,11 @@ export default function OrdersPage() {
     useEffect(() => {
         resetCount()
     }, [resetCount])
+
+    // Keep ref in sync so realtime callbacks use latest selectedOrder without recreating channel
+    useEffect(() => {
+        selectedOrderRef.current = selectedOrder
+    }, [selectedOrder])
 
     useEffect(() => {
         const supabase = createClient()
@@ -204,7 +212,7 @@ export default function OrdersPage() {
                 // Reset notification count since user is viewing orders
                 resetCount()
 
-                // Wait for order_items to be inserted (if necessary), then fetch full order
+                // Wait for order_items to be inserted, then fetch full order
                 setTimeout(async () => {
                     try {
                         const fullOrder = await OrderService.getOrderDetails(newOrderId)
@@ -213,7 +221,7 @@ export default function OrdersPage() {
                             return [fullOrder, ...prev]
                         })
 
-                        // Highlight the new row
+                        // Highlight the new row briefly
                         setHighlightedOrderIds(prev => new Set(prev).add(newOrderId))
                         setTimeout(() => {
                             setHighlightedOrderIds(prev => {
@@ -237,8 +245,8 @@ export default function OrdersPage() {
                     const fullOrder = await OrderService.getOrderDetails(updatedOrderId)
                     setOrders(prev => prev.map(o => o.id === updatedOrderId ? fullOrder : o))
 
-                    // Update selected order if it's the one being viewed
-                    if (selectedOrder?.id === updatedOrderId) {
+                    // Use ref to avoid stale closure — no channel recreation needed
+                    if (selectedOrderRef.current?.id === updatedOrderId) {
                         setSelectedOrder(fullOrder)
                     }
                 } catch (err) {
@@ -252,17 +260,21 @@ export default function OrdersPage() {
             }, (payload) => {
                 const deletedOrderId = payload.old.id as string
                 setOrders(prev => prev.filter(o => o.id !== deletedOrderId))
-                if (selectedOrder?.id === deletedOrderId) {
+                if (selectedOrderRef.current?.id === deletedOrderId) {
                     setSelectedOrder(null)
                     toast.info('The order you were viewing was deleted.')
                 }
             })
-            .subscribe()
+            .subscribe((status, err) => {
+                if (err) {
+                    console.error('[Orders] Realtime subscription error:', err)
+                }
+            })
 
         return () => {
             supabase.removeChannel(channel)
         }
-    }, [resetCount, selectedOrder?.id])
+    }, [resetCount])
 
     // Sync admin note when selected order changes
     useEffect(() => {
