@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle2 } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 import { createClient } from '@/lib/supabase/client';
 
@@ -15,6 +16,10 @@ export default function RecentSalesPopup() {
     const [currentSale, setCurrentSale] = useState<any>(null);
     const [isDismissed, setIsDismissed] = useState(false);
     const [products, setProducts] = useState<any[]>([]);
+    const pathname = usePathname();
+
+    // Do not show popup on admin pages
+    const isAdminPage = pathname?.startsWith('/admin');
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -107,7 +112,7 @@ export default function RecentSalesPopup() {
         };
     }, [isVisible, isDismissed, products]);
 
-    if (isDismissed || !currentSale) return null;
+    if (isDismissed || !currentSale || isAdminPage) return null;
 
     return (
         <AnimatePresence>
