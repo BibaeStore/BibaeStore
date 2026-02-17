@@ -6,6 +6,7 @@ import ClientLayout from '@/components/layout/ClientLayout'
 import TopLoadingBar from '@/components/TopLoadingBar'
 import PageTransition from '@/components/PageTransition'
 import Script from 'next/script'
+import RecentSalesPopup from '@/components/RecentSalesPopup'
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://bibaestore.com'),
@@ -121,6 +122,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <PageTransition>
               {children}
             </PageTransition>
+            <RecentSalesPopup />
           </ClientLayout>
         </Providers>
       </body>

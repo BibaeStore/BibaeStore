@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ShoppingBag, Heart, Minus, Plus, Check, Ruler } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCart } from '@/lib/cart';
+import { useWishlist } from '@/lib/wishlist';
 import { toast } from 'sonner';
 
 interface ProductActionsProps {
@@ -12,6 +13,7 @@ interface ProductActionsProps {
 
 export default function ProductActions({ product }: ProductActionsProps) {
     const { addItem } = useCart();
+    const { toggleWishlist, isInWishlist } = useWishlist();
     const [quantity, setQuantity] = useState(1);
     const [selectedSize, setSelectedSize] = useState<string>("");
     const [selectedColor, setSelectedColor] = useState<string>("");
@@ -88,10 +90,10 @@ export default function ProductActions({ product }: ProductActionsProps) {
                                     }}
                                     disabled={isOutOfStock}
                                     className={`min-w-[50px] px-4 py-2.5 text-sm font-body border transition-all duration-200 relative ${isOutOfStock
-                                            ? "border-border text-muted-foreground/30 cursor-not-allowed bg-gray-50"
-                                            : selectedSize === size
-                                                ? "bg-foreground text-background border-foreground"
-                                                : "border-border hover:border-foreground"
+                                        ? "border-border text-muted-foreground/30 cursor-not-allowed bg-gray-50"
+                                        : selectedSize === size
+                                            ? "bg-foreground text-background border-foreground"
+                                            : "border-border hover:border-foreground"
                                         }`}
                                 >
                                     <span className={isOutOfStock ? "line-through" : ""}>{size}</span>
@@ -186,8 +188,21 @@ export default function ProductActions({ product }: ProductActionsProps) {
                     >
                         Buy Now
                     </button>
-                    <button className="border border-gray-200 hover:border-red-500 text-gray-500 hover:text-red-500 py-3 rounded-sm transition-colors text-sm flex items-center justify-center gap-2">
-                        <Heart className="w-4 h-4" /> Add to Wishlist
+                    <button
+                        onClick={() => toggleWishlist({
+                            ...product,
+                            image: product.image || product.images?.[0] || '/assets/placeholder.jpg',
+                            price: product.sale_price || product.price,
+                            originalPrice: product.sale_price ? product.price : null,
+                            category: typeof product.category === 'object' && product.category !== null ? (product.category as any).name || 'Uncategorized' : (product.category || 'Uncategorized')
+                        })}
+                        className={`border py-3 rounded-sm transition-colors text-sm flex items-center justify-center gap-2 ${isInWishlist(product.id)
+                            ? "border-red-500 text-red-500 bg-red-50"
+                            : "border-gray-200 hover:border-red-500 text-gray-400 hover:text-red-500"
+                            }`}
+                    >
+                        <Heart className={`w-4 h-4 ${isInWishlist(product.id) ? "fill-current" : ""}`} />
+                        {isInWishlist(product.id) ? "Wishlisted" : "Add to Wishlist"}
                     </button>
                 </div>
             </div>

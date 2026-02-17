@@ -88,4 +88,15 @@ export class ClientService {
         if (error) throw error;
         return data;
     }
+    static async deleteClient(id: string): Promise<void> {
+        const { error } = await this.supabase
+            .from('clients')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error deleting client:', error);
+            throw error;
+        }
+    }
 }

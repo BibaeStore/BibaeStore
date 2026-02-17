@@ -31,18 +31,19 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {products.map((product, i) => (
-             <ProductCard
-                key={product.id}
-                product={{
-                  ...product,
-                  price: product.sale_price || product.price,
-                  originalPrice: product.sale_price ? product.price : null,
-                  image: product.images?.[0] || '/assets/placeholder.jpg',
-                  category: product.category?.name || 'Uncategorized',
-                  isNew: product.created_at ? (new Date().getTime() - new Date(product.created_at).getTime()) < 30 * 24 * 60 * 60 * 1000 : false
-                }}
-                index={i}
-              />
+            <ProductCard
+              key={product.id}
+              product={{
+                ...product,
+                price: product.sale_price || product.price,
+                originalPrice: product.sale_price ? product.price : null,
+                image: product.images?.[0] || '/assets/placeholder.jpg',
+                category: product.category?.name || 'Uncategorized',
+                isNew: product.created_at ? (new Date().getTime() - new Date(product.created_at).getTime()) < 30 * 24 * 60 * 60 * 1000 : false
+              }}
+              index={i}
+              priority={i < 2}
+            />
           ))}
         </div>
 

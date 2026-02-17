@@ -14,20 +14,25 @@ import { Product } from "@/types/product";
 
 interface ShopContentProps {
   initialProducts: Product[];
+  initialTitle?: string;
 }
 
-export default function ShopContent({ initialProducts }: ShopContentProps) {
+export default function ShopContent({ initialProducts, initialTitle }: ShopContentProps) {
   const searchParams = useSearchParams();
   const categoryFilter = searchParams.get("category") || "";
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(categoryFilter);
+  const [selectedCategory, setSelectedCategory] = useState(initialTitle || categoryFilter);
   const [sortBy, setSortBy] = useState("default");
   const [showFilters, setShowFilters] = useState(false);
   const [gridCols, setGridCols] = useState(4);
   const [isFiltering, setIsFiltering] = useState(false);
 
   useEffect(() => {
-    setSelectedCategory(categoryFilter);
+    // Only overwrite if it's a real change from the filter UI/URL
+    // If we have an initialTitle from the server, don't overwrite it with empty categoryFilter on mount
+    if (categoryFilter) {
+      setSelectedCategory(categoryFilter);
+    }
   }, [categoryFilter]);
 
   // Use server-fetched data as initial state (no loading spinner needed)
@@ -47,7 +52,7 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
           try {
             const data = await ProductService.getProducts();
             setProducts(data);
-            toast.info("Product list updated");
+            // toast.info("Product list updated"); // Removed noisy toast
           } catch (error) {
             console.error("Failed to refresh products:", error);
           }
@@ -66,7 +71,14 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
 
     const timer = setTimeout(() => {
       let result = products;
-      if (selectedCategory) result = result.filter((p) => p.category?.name === selectedCategory);
+      if (selectedCategory) {
+        result = result.filter((p) => {
+          const productCategoryName = typeof p.category === 'object' && p.category !== null && 'name' in p.category
+            ? (p.category as any).name
+            : (typeof p.category === 'string' ? p.category : '');
+          return productCategoryName === selectedCategory;
+        });
+      }
       if (search) result = result.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
       if (sortBy === "price-asc") result = [...result].sort((a, b) => a.price - b.price);
       if (sortBy === "price-desc") result = [...result].sort((a, b) => b.price - a.price);
@@ -118,14 +130,14 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
             animate={{ opacity: 1 }}
             className="text-primary font-body text-xs tracking-[0.3em] uppercase mb-3"
           >
-            {selectedCategory ? `${selectedCategory} Collection` : "All Collections"}
+            {selectedCategory ? `${selectedCategory} Collection` : "All Shop Collection"}
           </motion.p>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="font-heading text-4xl md:text-6xl font-light mb-3"
           >
-            {selectedCategory || "Shop All"}
+            {selectedCategory || "All Shop Collection"}
           </motion.h1>
           <p className="text-gray-500 font-body text-sm tracking-wider">
             {filtered.length} {filtered.length === 1 ? "product" : "products"} available
@@ -210,15 +222,25 @@ export default function ShopContent({ initialProducts }: ShopContentProps) {
                 >
                   All
                 </button>
-                {categories.map((cat) => (
+                {/* Dynamically extract unique categories from products to ensure integration */}
+                {Array.from(new Set(products.map(p => {
+                  return typeof p.category === 'object' && p.category !== null && 'name' in p.category
+                    ? (p.category as any).name
+                    : (typeof p.category === 'string' ? p.category : 'Uncategorized');
+                }))).sort().map((catName) => (
                   <button
-                    key={cat.name}
-                    onClick={() => setSelectedCategory(cat.name)}
-                    className={`px-5 py-2.5 text-xs font-body tracking-wider border transition-colors ${selectedCategory === cat.name ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary"}`}
+                    key={catName}
+                    onClick={() => setSelectedCategory(catName)}
+                    className={`px-5 py-2.5 text-xs font-body tracking-wider border transition-colors ${selectedCategory === catName ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary"}`}
                   >
-                    {cat.name}
+                    {catName}
                     <span className="ml-1 text-muted-foreground">
-                      ({products.filter(p => p.category?.name === cat.name).length})
+                      ({products.filter(p => {
+                        const pCatName = typeof p.category === 'object' && p.category !== null && 'name' in p.category
+                          ? (p.category as any).name
+                          : (typeof p.category === 'string' ? p.category : 'Uncategorized');
+                        return pCatName === catName;
+                      }).length})
                     </span>
                   </button>
                 ))}

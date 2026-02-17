@@ -67,12 +67,12 @@ export default function CheckoutPage() {
   useEffect(() => {
     // Safety timeout to prevent infinite loading
     const timer = setTimeout(() => {
-        if (isLoadingProfile) {
-            console.warn("Checkout initialization timed out, forcing load.");
-            setIsLoadingProfile(false);
-            toast.error("Slow network detected. Some data may not be pre-filled.");
-        }
-    }, 8000); // 8 seconds timeout
+      if (isLoadingProfile) {
+        console.warn("Checkout initialization timed out, forcing load.");
+        setIsLoadingProfile(false);
+        toast.error("Slow network detected. Some data may not be pre-filled.");
+      }
+    }, 15000); // 15 seconds timeout
 
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
@@ -80,7 +80,7 @@ export default function CheckoutPage() {
         setIsLoadingProfile(false);
         return;
       }
-      
+
       setSession(session);
       if (session?.user) {
         fetchUserProfile(session.user.id);
@@ -88,8 +88,8 @@ export default function CheckoutPage() {
         setIsLoadingProfile(false);
       }
     }).catch(err => {
-        console.error("Unexpected session error:", err);
-        setIsLoadingProfile(false);
+      console.error("Unexpected session error:", err);
+      setIsLoadingProfile(false);
     });
 
     return () => clearTimeout(timer);
@@ -170,41 +170,41 @@ export default function CheckoutPage() {
       );
 
       toast.promise(promise, {
-          loading: 'Creating your order...',
-          success: (order) => {
-              setOrderPlaced(true);
-              clearCart();
-              if (isGuest) {
-                localStorage.removeItem('bibae_cart');
+        loading: 'Creating your order...',
+        success: (order) => {
+          setOrderPlaced(true);
+          clearCart();
+          if (isGuest) {
+            localStorage.removeItem('bibae_cart');
+          }
+
+          // Send order confirmation email (fire-and-forget)
+          const customerEmail = contactData!.email;
+          const customerName = `${shippingData!.firstName} ${shippingData!.lastName}`;
+          fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'order_placed',
+              to: customerEmail,
+              data: {
+                name: customerName,
+                trackingNumber: order.tracking_number || order.id.slice(0, 8).toUpperCase(),
+                totalAmount: finalTotal,
+                paymentMethod: paymentData!.method === 'cod' ? 'Cash on Delivery' : `Bank Transfer (${paymentData!.onlineMethod || 'Online'})`,
+                items: items.map(item => ({
+                  name: item.product.name,
+                  quantity: item.quantity,
+                  price: item.product.sale_price || item.product.price
+                }))
               }
+            })
+          }).catch(err => console.error('Email send failed:', err));
 
-              // Send order confirmation email (fire-and-forget)
-              const customerEmail = contactData!.email;
-              const customerName = `${shippingData!.firstName} ${shippingData!.lastName}`;
-              fetch('/api/send-email', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  type: 'order_placed',
-                  to: customerEmail,
-                  data: {
-                    name: customerName,
-                    trackingNumber: order.tracking_number || order.id.slice(0, 8).toUpperCase(),
-                    totalAmount: finalTotal,
-                    paymentMethod: paymentData!.method === 'cod' ? 'Cash on Delivery' : `Bank Transfer (${paymentData!.onlineMethod || 'Online'})`,
-                    items: items.map(item => ({
-                      name: item.product.name,
-                      quantity: item.quantity,
-                      price: item.product.sale_price || item.product.price
-                    }))
-                  }
-                })
-              }).catch(err => console.error('Email send failed:', err));
-
-              router.push(`/checkout/success?id=${order.id}&method=${paymentData!.method}`);
-              return 'Order placed successfully!';
-          },
-          error: (err) => `Order failed: ${err.message}`
+          router.push(`/checkout/success?id=${order.id}&method=${paymentData!.method}`);
+          return 'Order placed successfully!';
+        },
+        error: (err) => `Order failed: ${err.message}`
       });
 
       await promise;
@@ -769,13 +769,13 @@ function PaymentForm({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error("File size must be less than 5MB");
-            e.target.value = "";
-            return;
-        }
-        setFileName(file.name);
-        setValue("proofFile", file);
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("File size must be less than 5MB");
+        e.target.value = "";
+        return;
+      }
+      setFileName(file.name);
+      setValue("proofFile", file);
     }
   };
 
@@ -836,120 +836,120 @@ function PaymentForm({
 
         {/* Payment Method Selection */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col gap-3 transition-all ${method === 'cod' ? 'border-primary bg-primary/5' : 'border-border hover:border-gray-300'}`}>
-                <div className="flex justify-between items-start">
-                    <Truck className={`w-6 h-6 ${method === 'cod' ? 'text-primary' : 'text-muted-foreground'}`} />
-                    <input type="radio" value="cod" {...register("method")} className="accent-primary w-4 h-4" />
-                </div>
-                <div>
-                    <span className={`block font-body font-medium ${method === 'cod' ? 'text-primary' : 'text-foreground'}`}>Cash on Delivery</span>
-                    <span className="text-xs text-muted-foreground">Pay with cash upon delivery</span>
-                </div>
-            </label>
+          <label className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col gap-3 transition-all ${method === 'cod' ? 'border-primary bg-primary/5' : 'border-border hover:border-gray-300'}`}>
+            <div className="flex justify-between items-start">
+              <Truck className={`w-6 h-6 ${method === 'cod' ? 'text-primary' : 'text-muted-foreground'}`} />
+              <input type="radio" value="cod" {...register("method")} className="accent-primary w-4 h-4" />
+            </div>
+            <div>
+              <span className={`block font-body font-medium ${method === 'cod' ? 'text-primary' : 'text-foreground'}`}>Cash on Delivery</span>
+              <span className="text-xs text-muted-foreground">Pay with cash upon delivery</span>
+            </div>
+          </label>
 
-            <label className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col gap-3 transition-all ${method === 'online' ? 'border-primary bg-primary/5' : 'border-border hover:border-gray-300'}`}>
-                <div className="flex justify-between items-start">
-                    <CreditCard className={`w-6 h-6 ${method === 'online' ? 'text-primary' : 'text-muted-foreground'}`} />
-                    <input type="radio" value="online" {...register("method")} className="accent-primary w-4 h-4" />
-                </div>
-                <div>
-                    <span className={`block font-body font-medium ${method === 'online' ? 'text-primary' : 'text-foreground'}`}>Bank Transfer</span>
-                    <span className="text-xs text-muted-foreground">Sadapay / JazzCash / Easypaisa / Askari</span>
-                </div>
-            </label>
+          <label className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col gap-3 transition-all ${method === 'online' ? 'border-primary bg-primary/5' : 'border-border hover:border-gray-300'}`}>
+            <div className="flex justify-between items-start">
+              <CreditCard className={`w-6 h-6 ${method === 'online' ? 'text-primary' : 'text-muted-foreground'}`} />
+              <input type="radio" value="online" {...register("method")} className="accent-primary w-4 h-4" />
+            </div>
+            <div>
+              <span className={`block font-body font-medium ${method === 'online' ? 'text-primary' : 'text-foreground'}`}>Bank Transfer</span>
+              <span className="text-xs text-muted-foreground">Sadapay / JazzCash / Easypaisa / Askari</span>
+            </div>
+          </label>
         </div>
         {errors.method && <p className="text-sm text-destructive">{errors.method.message}</p>}
 
         {/* Bank Transfer Options */}
         <AnimatePresence>
-            {method === 'online' && (
-                <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-6 overflow-hidden"
+          {method === 'online' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-6 overflow-hidden"
+            >
+              <div className="bg-muted/50 p-4 rounded-xl space-y-3">
+                <h3 className="font-medium text-sm">Select Account to Transfer:</h3>
+
+                {bankAccounts.map((account) => (
+                  <label key={account.id} className={`flex items-center gap-4 p-4 rounded-xl border bg-background cursor-pointer transition-all ${onlineMethod === account.id ? 'border-primary ring-1 ring-primary shadow-sm' : 'border-border hover:border-gray-300'}`}>
+                    <input type="radio" value={account.id} {...register("onlineMethod")} className="accent-primary" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-bold" style={{ color: account.color }}>{account.name}</span>
+                        {account.badge && (
+                          <span className={`text-[10px] ${account.badgeColor} px-2 py-0.5 rounded-full font-medium`}>{account.badge}</span>
+                        )}
+                      </div>
+                      <p className="text-sm font-medium">{account.accountName}</p>
+                      <p className="text-sm text-muted-foreground font-mono">{account.accountNumber}</p>
+                      {account.iban && (
+                        <p className="text-xs text-muted-foreground font-mono mt-0.5">IBAN: {account.iban}</p>
+                      )}
+                    </div>
+                  </label>
+                ))}
+                {errors.onlineMethod && <p className="text-sm text-destructive">{errors.onlineMethod.message}</p>}
+              </div>
+
+              {/* Info message */}
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800">
+                After uploading your payment proof, our team will verify and confirm your order within 24 hours.
+              </div>
+
+              {/* File Upload */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">
+                  Upload Transaction Screenshot <span className="text-destructive">*</span>
+                </label>
+                <div
+                  className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${dragActive ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
+                  onDragEnter={() => setDragActive(true)}
+                  onDragLeave={() => setDragActive(false)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragActive(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) {
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast.error("File size must be less than 5MB");
+                        return;
+                      }
+                      setFileName(file.name);
+                      setValue("proofFile", file);
+                    }
+                  }}
                 >
-                    <div className="bg-muted/50 p-4 rounded-xl space-y-3">
-                        <h3 className="font-medium text-sm">Select Account to Transfer:</h3>
-
-                        {bankAccounts.map((account) => (
-                            <label key={account.id} className={`flex items-center gap-4 p-4 rounded-xl border bg-background cursor-pointer transition-all ${onlineMethod === account.id ? 'border-primary ring-1 ring-primary shadow-sm' : 'border-border hover:border-gray-300'}`}>
-                                <input type="radio" value={account.id} {...register("onlineMethod")} className="accent-primary" />
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="font-bold" style={{ color: account.color }}>{account.name}</span>
-                                        {account.badge && (
-                                            <span className={`text-[10px] ${account.badgeColor} px-2 py-0.5 rounded-full font-medium`}>{account.badge}</span>
-                                        )}
-                                    </div>
-                                    <p className="text-sm font-medium">{account.accountName}</p>
-                                    <p className="text-sm text-muted-foreground font-mono">{account.accountNumber}</p>
-                                    {account.iban && (
-                                        <p className="text-xs text-muted-foreground font-mono mt-0.5">IBAN: {account.iban}</p>
-                                    )}
-                                </div>
-                            </label>
-                        ))}
-                        {errors.onlineMethod && <p className="text-sm text-destructive">{errors.onlineMethod.message}</p>}
+                  <input
+                    type="file"
+                    id="proof-upload"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                  />
+                  <label htmlFor="proof-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                    <div className="bg-muted p-3 rounded-full">
+                      <Check className={`w-6 h-6 ${fileName ? 'text-green-500' : 'text-muted-foreground'}`} />
                     </div>
-
-                    {/* Info message */}
-                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800">
-                        After uploading your payment proof, our team will verify and confirm your order within 24 hours.
-                    </div>
-
-                    {/* File Upload */}
-                    <div className="space-y-2">
-                        <label className="block text-sm font-medium">
-                            Upload Transaction Screenshot <span className="text-destructive">*</span>
-                        </label>
-                        <div
-                            className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${dragActive ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
-                            onDragEnter={() => setDragActive(true)}
-                            onDragLeave={() => setDragActive(false)}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => {
-                                e.preventDefault();
-                                setDragActive(false);
-                                const file = e.dataTransfer.files?.[0];
-                                if (file) {
-                                    if (file.size > 5 * 1024 * 1024) {
-                                        toast.error("File size must be less than 5MB");
-                                        return;
-                                    }
-                                    setFileName(file.name);
-                                    setValue("proofFile", file);
-                                }
-                            }}
-                        >
-                            <input
-                                type="file"
-                                id="proof-upload"
-                                className="hidden"
-                                accept="image/*"
-                                onChange={handleFileChange}
-                            />
-                            <label htmlFor="proof-upload" className="cursor-pointer flex flex-col items-center gap-2">
-                                <div className="bg-muted p-3 rounded-full">
-                                    <Check className={`w-6 h-6 ${fileName ? 'text-green-500' : 'text-muted-foreground'}`} />
-                                </div>
-                                {fileName ? (
-                                    <>
-                                        <p className="text-sm font-medium text-green-600">{fileName}</p>
-                                        <p className="text-xs text-muted-foreground">Click to change</p>
-                                    </>
-                                ) : (
-                                    <>
-                                        <p className="text-sm font-medium">Click to upload or drag & drop</p>
-                                        <p className="text-xs text-muted-foreground">JPG, PNG up to 5MB</p>
-                                    </>
-                                )}
-                            </label>
-                        </div>
-                        {errors.proofFile && <p className="text-sm text-destructive">{errors.proofFile.message as string}</p>}
-                    </div>
-                </motion.div>
-            )}
+                    {fileName ? (
+                      <>
+                        <p className="text-sm font-medium text-green-600">{fileName}</p>
+                        <p className="text-xs text-muted-foreground">Click to change</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm font-medium">Click to upload or drag & drop</p>
+                        <p className="text-xs text-muted-foreground">JPG, PNG up to 5MB</p>
+                      </>
+                    )}
+                  </label>
+                </div>
+                {errors.proofFile && <p className="text-sm text-destructive">{errors.proofFile.message as string}</p>}
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
 
         <motion.button
@@ -1026,23 +1026,23 @@ function ReviewStep({
           </h3>
           <div className="text-sm text-muted-foreground">
             {paymentData.method === 'cod' ? (
-                <div className="flex items-center gap-2">
-                    <Truck className="w-4 h-4" />
-                    <span>Cash on Delivery</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <Truck className="w-4 h-4" />
+                <span>Cash on Delivery</span>
+              </div>
             ) : (
-                <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4" />
-                        <span className="capitalize">Online Transfer - {paymentData.onlineMethod}</span>
-                    </div>
-                    {paymentData.proofFile && (
-                         <div className="flex items-center gap-2 text-green-600 bg-green-50 p-2 rounded text-xs">
-                            <Check className="w-3 h-3" />
-                            <span>Slip Uploaded: {paymentData.proofFile.name}</span>
-                        </div>
-                    )}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4" />
+                  <span className="capitalize">Online Transfer - {paymentData.onlineMethod}</span>
                 </div>
+                {paymentData.proofFile && (
+                  <div className="flex items-center gap-2 text-green-600 bg-green-50 p-2 rounded text-xs">
+                    <Check className="w-3 h-3" />
+                    <span>Slip Uploaded: {paymentData.proofFile.name}</span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

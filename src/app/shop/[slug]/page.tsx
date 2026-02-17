@@ -8,8 +8,10 @@ import { Metadata } from 'next';
 import { ChevronRight, Star, ShoppingBag, Truck, ShieldCheck, Heart, HelpCircle } from 'lucide-react';
 import { formatPrice } from '@/lib/products';
 import ProductActions from '@/components/ProductActions';
+import ProductGallery from '@/components/ProductGallery';
 import ProductCard from '@/components/ProductCard';
 import { getRelatedProducts } from '@/lib/server-queries';
+import FAQAccordion from '@/components/FAQAccordion';
 
 // -----------------------------------------------------------------------------
 // 1. Generate Metadata + Schematic Markup (JSON-LD)
@@ -234,7 +236,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                         <ChevronRight className="w-4 h-4" />
                         {product.category && (
                             <>
-                                <Link href={`/shop?category=${product.category.name}`} className="hover:text-primary transition-colors">
+                                <Link
+                                    href={`/shop/category/${product.category.slug || encodeURIComponent(product.category.name.toLowerCase().replace(/\s+/g, '-'))}`}
+                                    className="hover:text-primary transition-colors"
+                                >
                                     {product.category.name}
                                 </Link>
                                 <ChevronRight className="w-4 h-4" />
@@ -248,34 +253,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <div className="container mx-auto px-4 py-12">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-16">
                     {/* Left: Image Gallery */}
-                    <div className="space-y-4">
-                        <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-100">
-                            {product.images?.[0] ? (
-                                <Image
-                                    src={product.images[0]}
-                                    alt={product.name}
-                                    fill
-                                    className="object-cover"
-                                    priority
-                                />
-                            ) : (
-                                <div className="flex items-center justify-center h-full text-gray-400">No Image</div>
-                            )}
-                            {product.sale_price && (
-                                <span className="absolute top-4 left-4 bg-red-500 text-white text-xs font-bold px-3 py-1 uppercase tracking-wider rounded-sm">
-                                    Sale
-                                </span>
-                            )}
-                        </div>
-                        {/* Thumbnails (Placeholder) */}
-                        <div className="grid grid-cols-4 gap-4">
-                            {product.images?.slice(0, 4).map((img: string, i: number) => (
-                                <div key={i} className="aspect-square relative rounded-md overflow-hidden border border-gray-200 cursor-pointer hover:border-primary transition-colors">
-                                    <Image src={img} alt={`${product.name} ${i}`} fill className="object-cover" />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    <ProductGallery
+                        images={product.images || []}
+                        name={product.name}
+                        salePrice={product.sale_price}
+                    />
 
                     {/* Right: Product Details */}
                     <div>
@@ -332,13 +314,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                             <HelpCircle className="w-6 h-6 text-primary" />
                             <h2 className="text-2xl font-heading font-light text-gray-900">Frequently Asked Questions</h2>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {faqs.map((faq, i) => (
-                                <div key={i} className="bg-gray-50 p-6 rounded-2xl">
-                                    <h3 className="font-bold text-gray-900 mb-2">{faq.q}</h3>
-                                    <p className="text-sm text-gray-600 leading-relaxed">{faq.a}</p>
-                                </div>
-                            ))}
+                        <div className="grid grid-cols-1">
+                            <FAQAccordion
+                                items={faqs.map(faq => ({
+                                    question: faq.q,
+                                    answer: faq.a
+                                }))}
+                            />
                         </div>
                     </div>
                 </div>

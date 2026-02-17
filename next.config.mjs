@@ -47,6 +47,10 @@ const nextConfig = {
             key: 'X-XSS-Protection',
             value: '1; mode=block',
           },
+          {
+            key: 'Content-Signal',
+            value: 'search=yes,ai-train=no',
+          },
         ],
       },
     ];

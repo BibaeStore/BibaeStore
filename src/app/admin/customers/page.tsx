@@ -9,7 +9,10 @@ import {
     Calendar,
     MoreHorizontal,
     MailWarning,
-    ExternalLink
+    ExternalLink,
+    Pencil,
+    Trash2,
+    Loader2
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -34,11 +37,41 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ClientService } from '@/services/client.service'
 import { Client as ClientType } from '@/types/client'
 import { format } from 'date-fns'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Label } from "@/components/ui/label"
+import { toast } from 'sonner' // Assuming sonner or similar toast lib is used, otherwise I'll use simple alert or console
 
 export default function CustomersPage() {
     const [customers, setCustomers] = useState<ClientType[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
+
+    // Edit State
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+    const [editingCustomer, setEditingCustomer] = useState<ClientType | null>(null)
+    const [isSaving, setIsSaving] = useState(false)
+
+    // Delete State
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+    const [customerToDelete, setCustomerToDelete] = useState<string | null>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
 
     useEffect(() => {
         fetchCustomers()
@@ -52,6 +85,58 @@ export default function CustomersPage() {
             console.error('Failed to fetch customers:', error)
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleEditClick = (customer: ClientType) => {
+        setEditingCustomer({ ...customer }) // Create a copy
+        setIsEditDialogOpen(true)
+    }
+
+    const handleDeleteClick = (customerId: string) => {
+        setCustomerToDelete(customerId)
+        setIsDeleteDialogOpen(true)
+    }
+
+    const handleUpdate = async () => {
+        if (!editingCustomer) return;
+
+        setIsSaving(true)
+        try {
+            // Only send fields that mock the partial update expectation
+            await ClientService.updateProfile(editingCustomer.id, {
+                full_name: editingCustomer.full_name,
+                phone_number: editingCustomer.phone_number
+            })
+
+            // Update local state
+            setCustomers(prev => prev.map(c => c.id === editingCustomer.id ? editingCustomer : c))
+            setIsEditDialogOpen(false)
+            // toast.success('Customer updated successfully') 
+        } catch (error) {
+            console.error('Failed to update customer:', error)
+            // toast.error('Failed to update customer')
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    const handleDelete = async () => {
+        if (!customerToDelete) return;
+
+        setIsDeleting(true)
+        try {
+            await ClientService.deleteClient(customerToDelete)
+            // Update local state
+            setCustomers(prev => prev.filter(c => c.id !== customerToDelete))
+            setIsDeleteDialogOpen(false)
+            // toast.success('Customer deleted successfully')
+        } catch (error) {
+            console.error('Failed to delete customer:', error)
+            // toast.error('Failed to delete customer')
+        } finally {
+            setIsDeleting(false)
+            setCustomerToDelete(null)
         }
     }
 
@@ -153,17 +238,24 @@ export default function CustomersPage() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-48 rounded-xl border-gray-100 shadow-xl p-2">
                                                 <DropdownMenuLabel className="text-xs font-bold text-gray-400 uppercase tracking-widest px-2 py-1.5">Options</DropdownMenuLabel>
+                                                <DropdownMenuItem
+                                                    className="rounded-lg gap-2 cursor-pointer focus:bg-gray-50"
+                                                    onClick={() => handleEditClick(customer)}
+                                                >
+                                                    <Pencil className="w-4 h-4 text-gray-500" />
+                                                    Edit Details
+                                                </DropdownMenuItem>
                                                 <DropdownMenuItem className="rounded-lg gap-2 cursor-pointer focus:bg-gray-50">
                                                     <ExternalLink className="w-4 h-4 text-gray-400" />
                                                     View Profile
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="rounded-lg gap-2 cursor-pointer focus:bg-gray-50">
-                                                    <MailWarning className="w-4 h-4 text-gray-400" />
-                                                    Send Message
-                                                </DropdownMenuItem>
                                                 <DropdownMenuSeparator className="bg-gray-100 my-1" />
-                                                <DropdownMenuItem className="rounded-lg text-red-600 gap-2 cursor-pointer focus:bg-red-50 focus:text-red-700">
-                                                    Archive User
+                                                <DropdownMenuItem
+                                                    className="rounded-lg text-red-600 gap-2 cursor-pointer focus:bg-red-50 focus:text-red-700"
+                                                    onClick={() => handleDeleteClick(customer.id)}
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                    Delete User
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -174,6 +266,80 @@ export default function CustomersPage() {
                     </TableBody>
                 </Table>
             </Card>
+
+            {/* Edit Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Edit Customer</DialogTitle>
+                        <DialogDescription>
+                            Make changes to the customer's profile here. Click save when you're done.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {editingCustomer && (
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="name">Full Name</Label>
+                                <Input
+                                    id="name"
+                                    value={editingCustomer.full_name}
+                                    onChange={(e) => setEditingCustomer({ ...editingCustomer, full_name: e.target.value })}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="email">Email (Read-only)</Label>
+                                <Input
+                                    id="email"
+                                    value={editingCustomer.email}
+                                    disabled
+                                    className="bg-gray-50"
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="phone">Phone Number</Label>
+                                <Input
+                                    id="phone"
+                                    value={editingCustomer.phone_number || ''}
+                                    onChange={(e) => setEditingCustomer({ ...editingCustomer, phone_number: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleUpdate} disabled={isSaving} className="bg-[#C5A059] hover:bg-[#b08d4b]">
+                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Save Changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Alert */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the customer account
+                            and remove their data from our servers.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleDelete();
+                            }}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? 'Deleting...' : 'Delete Account'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

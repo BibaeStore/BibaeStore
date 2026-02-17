@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Plus, Pencil, Trash2, Box, ImageIcon, Loader2, Eye, Tag, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Pencil, Trash2, Box, ImageIcon, Loader2, Eye, Tag, ChevronLeft, ChevronRight, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { ProductService } from '@/services/product.service'
@@ -12,6 +12,7 @@ import { ProductFormValues } from '@/lib/validations/product'
 import { ProductForm } from './ProductForm'
 import { uploadProductImage, createProductAction, updateProductAction, deleteProductAction } from './actions'
 import { toast } from 'sonner'
+import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import {
     Table,
@@ -39,6 +40,14 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 
 const PRODUCTS_PER_PAGE = 20
 
@@ -52,12 +61,52 @@ export default function ProductsPage() {
     const [deleteId, setDeleteId] = useState<string | null>(null)
     const [currentPage, setCurrentPage] = useState(1)
 
+    // Filter states
+    const [searchTerm, setSearchTerm] = useState('')
+    const [categoryFilter, setCategoryFilter] = useState('all')
+    const [stockFilter, setStockFilter] = useState('all')
+    const [priceFilter, setPriceFilter] = useState('all')
+    const [statusFilter, setStatusFilter] = useState('all')
+
+    // Reset page when filters change
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [searchTerm, categoryFilter, stockFilter, priceFilter, statusFilter])
+
+    const filteredProducts = useMemo(() => {
+        return products.filter(product => {
+            const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                product.sku.toLowerCase().includes(searchTerm.toLowerCase())
+
+            // Handle both object category (DB) and string category (hardcoded)
+            const productCategoryName = typeof product.category === 'object' && product.category !== null && 'name' in product.category
+                ? product.category.name
+                : (typeof product.category === 'string' ? product.category : '');
+
+            const matchesCategory = categoryFilter === 'all' || (product.category_id === categoryFilter) || (productCategoryName === categoryFilter)
+            const matchesStatus = statusFilter === 'all' || product.status === statusFilter
+            const matchesStock = stockFilter === 'all' || (
+                stockFilter === 'in-stock' ? product.stock > 0 :
+                    stockFilter === 'low-stock' ? (product.stock > 0 && product.stock <= 5) :
+                        product.stock === 0
+            )
+
+            let matchesPrice = true
+            if (priceFilter === 'under-2000') matchesPrice = product.price < 2000
+            else if (priceFilter === '2000-5000') matchesPrice = product.price >= 2000 && product.price <= 5000
+            else if (priceFilter === '5000-10000') matchesPrice = product.price > 5000 && product.price <= 10000
+            else if (priceFilter === 'over-10000') matchesPrice = product.price > 10000
+
+            return matchesSearch && matchesCategory && matchesStatus && matchesStock && matchesPrice
+        })
+    }, [products, searchTerm, categoryFilter, stockFilter, priceFilter, statusFilter])
+
     // Pagination
-    const totalPages = Math.ceil(products.length / PRODUCTS_PER_PAGE)
+    const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE)
     const paginatedProducts = useMemo(() => {
         const start = (currentPage - 1) * PRODUCTS_PER_PAGE
-        return products.slice(start, start + PRODUCTS_PER_PAGE)
-    }, [products, currentPage])
+        return filteredProducts.slice(start, start + PRODUCTS_PER_PAGE)
+    }, [filteredProducts, currentPage])
 
     const fetchData = async () => {
         try {
@@ -78,6 +127,24 @@ export default function ProductsPage() {
 
     useEffect(() => {
         fetchData()
+
+        // Set up Realtime subscription
+        const supabase = createClient()
+        const channel = supabase
+            .channel('admin-products-updates')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'products' },
+                () => {
+                    // Refetch data when any change happens in the products table
+                    fetchData()
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
     }, [])
 
     const handleCreate = () => {
@@ -177,7 +244,11 @@ export default function ProductsPage() {
             if (error?.code === 'PGRST205') {
                 toast.error("Database table missing. Please apply the SQL script.")
             } else if (error?.code === '23505') {
-                toast.error("A product with this SKU already exists.")
+                if (message.includes('slug')) {
+                    toast.error("A product with this URL slug already exists.")
+                } else {
+                    toast.error("A product with this SKU already exists.")
+                }
             } else if (message.includes('Upload')) {
                 toast.error(message)
             } else if (message.includes('authenticated')) {
@@ -225,43 +296,132 @@ export default function ProductsPage() {
                 </Card>
             ) : (
                 <div className="grid grid-cols-1 gap-6">
-                    {/* Desktop Table */}
-                    <Card className="hidden md:block bg-white border-gray-200 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                        <CardHeader className="px-8 pt-8 pb-4">
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-1.5">
-                                    <CardTitle className="font-heading text-xl text-gray-900">All Products</CardTitle>
-                                    <CardDescription className="text-gray-500 text-xs uppercase tracking-widest font-bold">
-                                        {products.length} Total Products
-                                    </CardDescription>
+                    {/* Filters Card - Visible on all devices */}
+                    <Card className="bg-white border-gray-200 rounded-2xl md:rounded-[2.5rem] overflow-visible shadow-sm hover:shadow-md transition-shadow">
+                        <CardHeader className="px-4 sm:px-8 pt-4 sm:pt-8 pb-4">
+                            <div className="flex flex-col gap-4 sm:gap-6">
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-1">
+                                        <CardTitle className="font-heading text-lg sm:text-xl text-gray-900">All Products</CardTitle>
+                                        <CardDescription className="text-gray-500 text-[10px] sm:text-xs uppercase tracking-widest font-bold">
+                                            {filteredProducts.length} filtered out of {products.length} Total
+                                        </CardDescription>
+                                    </div>
+                                    <div className="hidden sm:flex items-center gap-2">
+                                        {totalPages > 1 && (
+                                            <>
+                                                <span className="text-xs text-gray-400 font-medium">
+                                                    Page {currentPage} of {totalPages}
+                                                </span>
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="h-8 w-8 border-gray-200"
+                                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                                    disabled={currentPage === 1}
+                                                >
+                                                    <ChevronLeft className="w-4 h-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="h-8 w-8 border-gray-200"
+                                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                                    disabled={currentPage === totalPages}
+                                                >
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </Button>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
-                                {totalPages > 1 && (
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs text-gray-400 font-medium">
-                                            Page {currentPage} of {totalPages}
-                                        </span>
+
+                                {/* Filters Grid */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                        <Input
+                                            placeholder="Search name or SKU..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="pl-9 h-10 border-gray-200 text-sm"
+                                        />
+                                    </div>
+
+                                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                                        <SelectTrigger className="h-10 border-gray-200 text-sm">
+                                            <SelectValue placeholder="Category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Categories</SelectItem>
+                                            {categories.map((cat) => (
+                                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+
+                                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                        <SelectTrigger className="h-10 border-gray-200 text-sm">
+                                            <SelectValue placeholder="Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Status</SelectItem>
+                                            <SelectItem value="active">Active</SelectItem>
+                                            <SelectItem value="draft">Draft</SelectItem>
+                                            <SelectItem value="archived">Archived</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    <Select value={stockFilter} onValueChange={setStockFilter}>
+                                        <SelectTrigger className="h-10 border-gray-200 text-sm">
+                                            <SelectValue placeholder="Stock Level" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Stock</SelectItem>
+                                            <SelectItem value="in-stock">In Stock</SelectItem>
+                                            <SelectItem value="low-stock">Low Stock (≤5)</SelectItem>
+                                            <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    <Select value={priceFilter} onValueChange={setPriceFilter}>
+                                        <SelectTrigger className="h-10 border-gray-200 text-sm">
+                                            <SelectValue placeholder="Price Range" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Prices</SelectItem>
+                                            <SelectItem value="under-2000">Under $2,000</SelectItem>
+                                            <SelectItem value="2000-5000">$2,000 - $5,000</SelectItem>
+                                            <SelectItem value="5000-10000">$5,000 - $10,000</SelectItem>
+                                            <SelectItem value="over-10000">Over $10,000</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {(searchTerm || categoryFilter !== 'all' || statusFilter !== 'all' || stockFilter !== 'all' || priceFilter !== 'all') && (
+                                    <div className="flex justify-end">
                                         <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="h-8 w-8 border-gray-200"
-                                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                            disabled={currentPage === 1}
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                setSearchTerm('')
+                                                setCategoryFilter('all')
+                                                setStatusFilter('all')
+                                                setStockFilter('all')
+                                                setPriceFilter('all')
+                                            }}
+                                            className="text-[10px] sm:text-xs text-gray-500 hover:text-gray-900 h-8"
                                         >
-                                            <ChevronLeft className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="h-8 w-8 border-gray-200"
-                                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                            disabled={currentPage === totalPages}
-                                        >
-                                            <ChevronRight className="w-4 h-4" />
+                                            <X className="w-3 h-3 mr-1" /> Clear all filters
                                         </Button>
                                     </div>
                                 )}
                             </div>
                         </CardHeader>
+                    </Card>
+
+                    {/* Desktop Table */}
+                    <Card className="hidden md:block bg-white border-gray-200 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                         <CardContent className="px-0 pb-0">
                             <Table>
                                 <TableHeader className="bg-gray-50/50 border-b border-gray-200">
@@ -345,7 +505,7 @@ export default function ProductsPage() {
                             {totalPages > 1 && (
                                 <div className="flex items-center justify-between px-8 py-4 border-t border-gray-200 bg-gray-50/30">
                                     <p className="text-xs text-gray-400">
-                                        Showing {((currentPage - 1) * PRODUCTS_PER_PAGE) + 1}–{Math.min(currentPage * PRODUCTS_PER_PAGE, products.length)} of {products.length}
+                                        Showing {((currentPage - 1) * PRODUCTS_PER_PAGE) + 1}–{Math.min(currentPage * PRODUCTS_PER_PAGE, filteredProducts.length)} of {filteredProducts.length}
                                     </p>
                                     <div className="flex items-center gap-1">
                                         {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
@@ -353,8 +513,8 @@ export default function ProductsPage() {
                                                 key={page}
                                                 onClick={() => setCurrentPage(page)}
                                                 className={`h-8 min-w-[32px] px-2 rounded-lg text-xs font-medium transition-all ${currentPage === page
-                                                        ? 'bg-gray-900 text-white shadow-sm'
-                                                        : 'text-gray-500 hover:bg-gray-100'
+                                                    ? 'bg-gray-900 text-white shadow-sm'
+                                                    : 'text-gray-500 hover:bg-gray-100'
                                                     }`}
                                             >
                                                 {page}

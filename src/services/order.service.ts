@@ -95,11 +95,9 @@ export class OrderService {
 
         if (itemsError) throw itemsError;
 
-        // Deduct stock for each item's size
+        // Deduct stock for each item
         for (const item of items) {
-            if (item.size) {
-                await this.deductSizeStock(item.product_id, item.size, item.quantity);
-            }
+            await this.deductSizeStock(item.product_id, item.size || 'Standard', item.quantity);
         }
 
         // Clear the cart (only for logged-in users with DB cart)
@@ -237,16 +235,25 @@ export class OrderService {
     }
 
     static async updateStatusWithHistory(orderId: string, status: string, note?: string): Promise<void> {
-        // Get current status history
+        // Get current status history and items (in case we need to restore stock)
         const { data: order, error: selectError } = await this.supabase
             .from('orders')
-            .select('status_history')
+            .select('status, status_history, items:order_items(*)')
             .eq('id', orderId)
             .single();
 
         if (selectError) {
             console.error('Failed to read order for status update:', selectError.message, selectError.code);
             throw new Error(`Cannot read order: ${selectError.message}`);
+        }
+
+        // If status is changing to cancelled, restore stock
+        if (status === 'cancelled' && order.status !== 'cancelled') {
+            if (order.items) {
+                for (const item of order.items) {
+                    await this.restoreSizeStock(item.product_id, item.size || 'Standard', item.quantity);
+                }
+            }
         }
 
         const currentHistory: StatusHistoryEntry[] = order?.status_history || [];

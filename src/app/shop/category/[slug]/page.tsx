@@ -139,7 +139,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
             />
 
-            <ShopContent initialProducts={products || []} />
+            <ShopContent initialProducts={products || []} initialTitle={category.name} />
 
             {/* SEO Rich Text Section for MOFU Ranking */}
             {category.description && (

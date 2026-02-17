@@ -16,7 +16,12 @@ export async function uploadProductImage(
     if (!user) return { error: 'Not authenticated. Please log in again.' }
 
     const file = formData.get('file') as File
-    if (!file || file.size === 0) return { error: 'No file provided' }
+    if (!file || file.size === 0) {
+        console.error('[uploadProductImage] No file provided or file is empty')
+        return { error: 'No file provided' }
+    }
+
+    console.log(`[uploadProductImage] Uploading file: ${file.name} (${file.size} bytes)`)
 
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
     const filePath = `${Date.now()}-${Math.random().toString(36).substring(7)}-${sanitizedName}`
@@ -25,7 +30,12 @@ export async function uploadProductImage(
         .from('products')
         .upload(filePath, file, { cacheControl: '3600', upsert: false })
 
-    if (error) return { error: `Upload "${file.name}" failed: ${error.message}` }
+    if (error) {
+        console.error(`[uploadProductImage] Upload failed for ${file.name}:`, error)
+        return { error: `Upload "${file.name}" failed: ${error.message}` }
+    }
+
+    console.log(`[uploadProductImage] Successfully uploaded ${file.name} to ${filePath}`)
 
     const { data } = supabase.storage.from('products').getPublicUrl(filePath)
     return { url: data.publicUrl }
@@ -39,7 +49,12 @@ export async function createProductAction(
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { error: 'Not authenticated. Please log in again.' }
+    if (!user) {
+        console.error('[createProductAction] Not authenticated')
+        return { error: 'Not authenticated. Please log in again.' }
+    }
+
+    console.log('[createProductAction] Inserting productData:', JSON.stringify(productData))
 
     const { data, error } = await supabase
         .from('products')
@@ -47,7 +62,12 @@ export async function createProductAction(
         .select(`*, category:categories(name)`)
         .single()
 
-    if (error) return { error: error.message, code: error.code }
+    if (error) {
+        console.error('[createProductAction] Supabase error:', error)
+        return { error: error.message, code: error.code }
+    }
+
+    console.log('[createProductAction] Successfully created product:', data.id)
 
     // Refresh SSR cache for public pages
     revalidatePath('/')
