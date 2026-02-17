@@ -8,8 +8,6 @@ import {
     Phone,
     Calendar,
     MoreHorizontal,
-    MailWarning,
-    ExternalLink,
     Pencil,
     Trash2,
     Loader2
@@ -103,19 +101,16 @@ export default function CustomersPage() {
 
         setIsSaving(true)
         try {
-            // Only send fields that mock the partial update expectation
             await ClientService.updateProfile(editingCustomer.id, {
                 full_name: editingCustomer.full_name,
                 phone_number: editingCustomer.phone_number
             })
-
-            // Update local state
             setCustomers(prev => prev.map(c => c.id === editingCustomer.id ? editingCustomer : c))
             setIsEditDialogOpen(false)
-            // toast.success('Customer updated successfully') 
+            toast.success('Customer updated successfully')
         } catch (error) {
             console.error('Failed to update customer:', error)
-            // toast.error('Failed to update customer')
+            toast.error('Failed to update customer')
         } finally {
             setIsSaving(false)
         }
@@ -127,13 +122,12 @@ export default function CustomersPage() {
         setIsDeleting(true)
         try {
             await ClientService.deleteClient(customerToDelete)
-            // Update local state
             setCustomers(prev => prev.filter(c => c.id !== customerToDelete))
             setIsDeleteDialogOpen(false)
-            // toast.success('Customer deleted successfully')
+            toast.success('Customer deleted successfully')
         } catch (error) {
             console.error('Failed to delete customer:', error)
-            // toast.error('Failed to delete customer')
+            toast.error('Failed to delete customer')
         } finally {
             setIsDeleting(false)
             setCustomerToDelete(null)
@@ -172,11 +166,12 @@ export default function CustomersPage() {
                 </div>
             </div>
 
-            <Card className="border-gray-200 rounded-[2rem] overflow-hidden shadow-sm bg-white">
+            {/* Desktop Table */}
+            <Card className="hidden md:block border-gray-200 rounded-[2rem] overflow-hidden shadow-sm bg-white">
                 <Table>
                     <TableHeader className="bg-gray-50/50">
                         <TableRow className="hover:bg-transparent border-gray-100">
-                            <TableHead className="w-[300px] font-semibold text-gray-900 py-5">Customer</TableHead>
+                            <TableHead className="font-semibold text-gray-900 py-5 pl-8">Customer</TableHead>
                             <TableHead className="font-semibold text-gray-900">Contact</TableHead>
                             <TableHead className="font-semibold text-gray-900">Joined Date</TableHead>
                             <TableHead className="text-right font-semibold text-gray-900 px-8">Actions</TableHead>
@@ -195,7 +190,7 @@ export default function CustomersPage() {
                         ) : (
                             filteredCustomers.map((customer) => (
                                 <TableRow key={customer.id} className="hover:bg-gray-50/50 border-gray-100 transition-colors">
-                                    <TableCell className="py-4">
+                                    <TableCell className="py-4 pl-8">
                                         <div className="flex items-center gap-4">
                                             <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
                                                 <AvatarImage src={customer.profile_image_url || undefined} />
@@ -238,24 +233,12 @@ export default function CustomersPage() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-48 rounded-xl border-gray-100 shadow-xl p-2">
                                                 <DropdownMenuLabel className="text-xs font-bold text-gray-400 uppercase tracking-widest px-2 py-1.5">Options</DropdownMenuLabel>
-                                                <DropdownMenuItem
-                                                    className="rounded-lg gap-2 cursor-pointer focus:bg-gray-50"
-                                                    onClick={() => handleEditClick(customer)}
-                                                >
-                                                    <Pencil className="w-4 h-4 text-gray-500" />
-                                                    Edit Details
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem className="rounded-lg gap-2 cursor-pointer focus:bg-gray-50">
-                                                    <ExternalLink className="w-4 h-4 text-gray-400" />
-                                                    View Profile
+                                                <DropdownMenuItem className="rounded-lg gap-2 cursor-pointer focus:bg-gray-50" onClick={() => handleEditClick(customer)}>
+                                                    <Pencil className="w-4 h-4 text-gray-500" /> Edit Details
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator className="bg-gray-100 my-1" />
-                                                <DropdownMenuItem
-                                                    className="rounded-lg text-red-600 gap-2 cursor-pointer focus:bg-red-50 focus:text-red-700"
-                                                    onClick={() => handleDeleteClick(customer.id)}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                    Delete User
+                                                <DropdownMenuItem className="rounded-lg text-red-600 gap-2 cursor-pointer focus:bg-red-50 focus:text-red-700" onClick={() => handleDeleteClick(customer.id)}>
+                                                    <Trash2 className="w-4 h-4" /> Delete User
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -266,6 +249,69 @@ export default function CustomersPage() {
                     </TableBody>
                 </Table>
             </Card>
+
+            {/* Mobile Cards */}
+            <div className="grid grid-cols-1 gap-3 md:hidden">
+                {filteredCustomers.length === 0 ? (
+                    <Card className="border-gray-200 rounded-2xl shadow-sm bg-white p-8 text-center">
+                        <div className="flex flex-col items-center text-gray-400">
+                            <Users className="w-10 h-10 mb-3 opacity-20" />
+                            <p className="text-sm">No customers found.</p>
+                        </div>
+                    </Card>
+                ) : filteredCustomers.map((customer) => (
+                    <Card key={customer.id} className="border-gray-200 rounded-2xl shadow-sm bg-white overflow-hidden">
+                        <div className="p-4">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <Avatar className="h-11 w-11 border-2 border-white shadow-sm shrink-0">
+                                        <AvatarImage src={customer.profile_image_url || undefined} />
+                                        <AvatarFallback className="bg-[#fcf9f2] text-[#C5A059] font-bold text-sm">
+                                            {customer.full_name.charAt(0).toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="min-w-0">
+                                        <p className="font-bold text-gray-900 text-sm truncate">{customer.full_name}</p>
+                                        <p className="text-[10px] text-gray-400 font-mono">ID: {customer.id.slice(0, 8)}</p>
+                                    </div>
+                                </div>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="h-8 w-8 p-0 shrink-0">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-44 rounded-xl border-gray-100 shadow-xl p-2">
+                                        <DropdownMenuItem className="rounded-lg gap-2 cursor-pointer" onClick={() => handleEditClick(customer)}>
+                                            <Pencil className="w-4 h-4 text-gray-500" /> Edit Details
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator className="bg-gray-100 my-1" />
+                                        <DropdownMenuItem className="rounded-lg text-red-600 gap-2 cursor-pointer focus:bg-red-50" onClick={() => handleDeleteClick(customer.id)}>
+                                            <Trash2 className="w-4 h-4" /> Delete User
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                            <div className="mt-3 space-y-1.5 border-t border-gray-100 pt-3">
+                                <div className="flex items-center gap-2 text-xs text-gray-600">
+                                    <Mail className="w-3 h-3 text-gray-400 shrink-0" />
+                                    <span className="truncate">{customer.email}</span>
+                                </div>
+                                {customer.phone_number && (
+                                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                                        <Phone className="w-3 h-3 text-gray-400 shrink-0" />
+                                        {customer.phone_number}
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    <Calendar className="w-3 h-3 text-gray-400 shrink-0" />
+                                    Joined {customer.created_at ? format(new Date(customer.created_at), 'MMM dd, yyyy') : 'N/A'}
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+                ))}
+            </div>
 
             {/* Edit Dialog */}
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
