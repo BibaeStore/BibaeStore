@@ -199,6 +199,13 @@ export default function ProductsPage() {
 
     const handleSubmit = async (data: ProductFormValues, newFiles: File[], existingImages: string[]) => {
         try {
+            // Validate session before hitting server actions
+            const { data: { session } } = await createClient().auth.getSession()
+            if (!session) {
+                toast.error("Session expired. Please refresh the page and log in again.")
+                return
+            }
+
             // Step 1: Upload new images via server action (one at a time)
             const imageUrls = [...existingImages]
             for (const file of newFiles) {

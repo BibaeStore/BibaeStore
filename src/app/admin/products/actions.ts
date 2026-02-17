@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { SupabaseClient } from '@supabase/supabase-js'
 
@@ -13,15 +13,14 @@ async function verifyAdminUser(supabase: SupabaseClient): Promise<{ error?: stri
 }
 
 // ─── Image Upload ────────────────────────────────────────────────────────────
-// Uploads a single product image via server-side Supabase client.
-// Receives a FormData with a 'file' field.
+// Verify admin via session client, then upload using admin client (bypasses RLS).
 
 export async function uploadProductImage(
     formData: FormData
 ): Promise<{ url?: string; error?: string }> {
-    const supabase = await createClient()
-
-    const authCheck = await verifyAdminUser(supabase)
+    // 1. Verify admin identity using session-based client
+    const sessionClient = await createClient()
+    const authCheck = await verifyAdminUser(sessionClient)
     if (authCheck.error) return { error: authCheck.error }
 
     const file = formData.get('file') as File
@@ -30,10 +29,12 @@ export async function uploadProductImage(
         return { error: 'No file provided' }
     }
 
+    // 2. Use admin client for storage upload (bypasses bucket RLS policies)
+    const adminClient = createAdminClient()
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
     const filePath = `${Date.now()}-${Math.random().toString(36).substring(7)}-${sanitizedName}`
 
-    const { error } = await supabase.storage
+    const { error } = await adminClient.storage
         .from('products')
         .upload(filePath, file, { cacheControl: '3600', upsert: false })
 
@@ -42,7 +43,7 @@ export async function uploadProductImage(
         return { error: `Upload "${file.name}" failed: ${error.message}` }
     }
 
-    const { data } = supabase.storage.from('products').getPublicUrl(filePath)
+    const { data } = adminClient.storage.from('products').getPublicUrl(filePath)
     return { url: data.publicUrl }
 }
 
@@ -51,12 +52,12 @@ export async function uploadProductImage(
 export async function createProductAction(
     productData: Record<string, unknown>
 ): Promise<{ data?: Record<string, unknown>; error?: string; code?: string }> {
-    const supabase = await createClient()
-
-    const authCheck = await verifyAdminUser(supabase)
+    const sessionClient = await createClient()
+    const authCheck = await verifyAdminUser(sessionClient)
     if (authCheck.error) return { error: authCheck.error }
 
-    const { data, error } = await supabase
+    const adminClient = createAdminClient()
+    const { data, error } = await adminClient
         .from('products')
         .insert(productData)
         .select(`*, category:categories(name)`)
@@ -67,7 +68,6 @@ export async function createProductAction(
         return { error: error.message, code: error.code }
     }
 
-    // Refresh SSR cache for public pages
     revalidatePath('/')
     revalidatePath('/shop')
 
@@ -80,12 +80,12 @@ export async function updateProductAction(
     id: string,
     updateData: Record<string, unknown>
 ): Promise<{ data?: Record<string, unknown>; error?: string; code?: string }> {
-    const supabase = await createClient()
-
-    const authCheck = await verifyAdminUser(supabase)
+    const sessionClient = await createClient()
+    const authCheck = await verifyAdminUser(sessionClient)
     if (authCheck.error) return { error: authCheck.error }
 
-    const { data, error } = await supabase
+    const adminClient = createAdminClient()
+    const { data, error } = await adminClient
         .from('products')
         .update(updateData)
         .eq('id', id)
@@ -97,18 +97,14 @@ export async function updateProductAction(
     }
 
     if (!data || data.length === 0) {
-        console.error(`[updateProductAction] Product with ID ${id} not found for update`)
         return { error: 'Product not found. It may have been deleted.' }
     }
 
-    const updatedProduct = data[0]
-
-    // Refresh SSR cache for public pages
     revalidatePath('/')
     revalidatePath('/shop')
     revalidatePath(`/product/${id}`)
 
-    return { data: updatedProduct }
+    return { data: data[0] }
 }
 
 // ─── Delete Product ──────────────────────────────────────────────────────────
@@ -116,12 +112,12 @@ export async function updateProductAction(
 export async function deleteProductAction(
     id: string
 ): Promise<{ error?: string; code?: string }> {
-    const supabase = await createClient()
-
-    const authCheck = await verifyAdminUser(supabase)
+    const sessionClient = await createClient()
+    const authCheck = await verifyAdminUser(sessionClient)
     if (authCheck.error) return { error: authCheck.error }
 
-    const { error, count } = await supabase
+    const adminClient = createAdminClient()
+    const { error, count } = await adminClient
         .from('products')
         .delete({ count: 'exact' })
         .eq('id', id)
@@ -132,11 +128,9 @@ export async function deleteProductAction(
     }
 
     if (count === 0) {
-        console.error(`[deleteProductAction] No product found with ID ${id} to delete`)
         return { error: 'Product not found or already deleted.' }
     }
 
-    // Refresh SSR cache for public pages
     revalidatePath('/')
     revalidatePath('/shop')
 

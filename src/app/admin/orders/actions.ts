@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { SupabaseClient } from '@supabase/supabase-js'
 
@@ -16,12 +16,12 @@ export async function updateOrderAction(
     id: string,
     updateData: Record<string, any>
 ): Promise<{ data?: any; error?: string }> {
-    const supabase = await createClient()
-
-    const authCheck = await verifyAdminUser(supabase)
+    const sessionClient = await createClient()
+    const authCheck = await verifyAdminUser(sessionClient)
     if (authCheck.error) return { error: authCheck.error }
 
-    const { data, error } = await supabase
+    const adminClient = createAdminClient()
+    const { data, error } = await adminClient
         .from('orders')
         .update(updateData)
         .eq('id', id)
@@ -40,12 +40,12 @@ export async function updateOrderAction(
 export async function deleteOrderAction(
     id: string
 ): Promise<{ error?: string }> {
-    const supabase = await createClient()
-
-    const authCheck = await verifyAdminUser(supabase)
+    const sessionClient = await createClient()
+    const authCheck = await verifyAdminUser(sessionClient)
     if (authCheck.error) return { error: authCheck.error }
 
-    const { error } = await supabase
+    const adminClient = createAdminClient()
+    const { error } = await adminClient
         .from('orders')
         .delete()
         .eq('id', id)

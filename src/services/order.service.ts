@@ -116,7 +116,7 @@ export class OrderService {
             .from('order_items')
             .insert(orderItems);
 
-        if (itemsError) throw itemsError;
+        if (itemsError) throw new Error(`Failed to save order items: ${itemsError.message} (code: ${itemsError.code})`);
 
         // Deduct stock for each item (validated above, so errors here are unexpected)
         for (const item of items) {
