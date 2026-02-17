@@ -28,7 +28,7 @@ import {
     Trash2,
 } from 'lucide-react'
 import { OrderEditForm } from './OrderEditForm'
-import { deleteOrderAction } from './actions'
+import { deleteOrderAction, updateOrderAction } from './actions'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -178,6 +178,9 @@ export default function OrdersPage() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [editingOrder, setEditingOrder] = useState<any>(null)
     const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null)
+
+    // Loading state for status/payment updates (prevents double-clicks)
+    const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null)
 
     // Realtime highlight state
     const [highlightedOrderIds, setHighlightedOrderIds] = useState<Set<string>>(new Set())
@@ -352,7 +355,9 @@ export default function OrdersPage() {
 
     // ─── Status update with history ───
     const handleStatusUpdate = useCallback(async (orderId: string, newStatus: string, note?: string) => {
+        if (updatingOrderId) return
         try {
+            setUpdatingOrderId(orderId)
             await OrderService.updateStatusWithHistory(orderId, newStatus, note)
             toast.success(`Order status updated to ${formatStatusLabel(newStatus)}`)
             const order = orders.find(o => o.id === orderId)
@@ -374,12 +379,16 @@ export default function OrdersPage() {
         } catch (error) {
             console.error('Status update failed:', error)
             toast.error('Failed to update order status')
+        } finally {
+            setUpdatingOrderId(null)
         }
-    }, [selectedOrder, orders])
+    }, [selectedOrder, orders, updatingOrderId])
 
     // ─── Payment status update ───
     const handlePaymentStatusUpdate = useCallback(async (orderId: string, paymentStatus: string, orderStatus?: string) => {
+        if (updatingOrderId) return
         try {
+            setUpdatingOrderId(orderId)
             await OrderService.updatePaymentStatus(orderId, paymentStatus, orderStatus)
             toast.success(`Payment ${paymentStatus === 'verified' ? 'verified' : 'rejected'} successfully`)
             const order = orders.find(o => o.id === orderId)
@@ -411,8 +420,10 @@ export default function OrdersPage() {
         } catch (error) {
             console.error('Payment status update failed:', error)
             toast.error('Failed to update payment status')
+        } finally {
+            setUpdatingOrderId(null)
         }
-    }, [selectedOrder, orders])
+    }, [selectedOrder, orders, updatingOrderId])
 
     // ─── Admin notes ───
     const handleSaveAdminNote = useCallback(async () => {
@@ -435,7 +446,9 @@ export default function OrdersPage() {
 
     // ─── Cancellation approval ───
     const handleApproveCancellation = useCallback(async (orderId: string) => {
+        if (updatingOrderId) return
         try {
+            setUpdatingOrderId(orderId)
             await OrderService.approveCancellation(orderId)
             toast.success('Cancellation approved')
             const order = orders.find(o => o.id === orderId)
@@ -453,14 +466,19 @@ export default function OrdersPage() {
         } catch (error) {
             console.error('Cancellation approval failed:', error)
             toast.error('Failed to approve cancellation')
+        } finally {
+            setUpdatingOrderId(null)
         }
-    }, [selectedOrder, orders])
+    }, [selectedOrder, orders, updatingOrderId])
 
     const handleRejectCancellation = useCallback(async (orderId: string) => {
+        if (updatingOrderId) return
         try {
-            await OrderService.updateStatusWithHistory(orderId, orders.find(o => o.id === orderId)?.status || 'processing', 'Cancellation request rejected by admin')
-            // Clear cancellation flag locally (the updateStatusWithHistory doesn't do this, so we call updateOrderStatus for the flag)
-            // We'll just update local state since the DB doesn't have a specific rejectCancellation method
+            setUpdatingOrderId(orderId)
+            const currentOrder = orders.find(o => o.id === orderId)
+            await OrderService.updateStatusWithHistory(orderId, currentOrder?.status || 'processing', 'Cancellation request rejected by admin')
+            // Also persist cancellation_requested: false to DB so it doesn't reappear on refresh
+            await updateOrderAction(orderId, { cancellation_requested: false })
             toast.success('Cancellation request rejected')
             setOrders(prev => prev.map(o =>
                 o.id === orderId ? { ...o, cancellation_requested: false } : o
@@ -471,8 +489,10 @@ export default function OrdersPage() {
         } catch (error) {
             console.error('Cancellation rejection failed:', error)
             toast.error('Failed to reject cancellation')
+        } finally {
+            setUpdatingOrderId(null)
         }
-    }, [selectedOrder, orders])
+    }, [selectedOrder, orders, updatingOrderId])
 
     // ─── Mark shipped with dispatch note ───
     const openDispatchDialog = useCallback((orderId: string) => {
@@ -910,9 +930,10 @@ export default function OrdersPage() {
                                                                 {order.status === 'pending' && (
                                                                     <DropdownMenuItem
                                                                         onClick={() => handleStatusUpdate(order.id, 'processing', 'Order confirmed by admin')}
+                                                                        disabled={!!updatingOrderId}
                                                                         className="rounded-lg text-sm text-emerald-600 bg-emerald-50 hover:bg-emerald-100 cursor-pointer px-2 py-2 mb-0.5 font-bold"
                                                                     >
-                                                                        <CheckCircle2 className="w-3.5 h-3.5 mr-2" /> Confirm Order
+                                                                        {updatingOrderId === order.id ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-2" />} Confirm Order
                                                                     </DropdownMenuItem>
                                                                 )}
 
@@ -921,6 +942,7 @@ export default function OrdersPage() {
 
                                                                 <DropdownMenuItem
                                                                     onClick={() => handleStatusUpdate(order.id, 'processing', 'Moved to processing')}
+                                                                    disabled={!!updatingOrderId}
                                                                     className="rounded-lg text-sm text-blue-600 hover:bg-blue-50 cursor-pointer px-2 py-2"
                                                                 >
                                                                     <Package className="w-3.5 h-3.5 mr-2" /> Mark Processing
@@ -928,6 +950,7 @@ export default function OrdersPage() {
 
                                                                 <DropdownMenuItem
                                                                     onClick={() => openDispatchDialog(order.id)}
+                                                                    disabled={!!updatingOrderId}
                                                                     className="rounded-lg text-sm text-indigo-600 hover:bg-indigo-50 cursor-pointer px-2 py-2"
                                                                 >
                                                                     <Truck className="w-3.5 h-3.5 mr-2" /> Mark Shipped
@@ -935,6 +958,7 @@ export default function OrdersPage() {
 
                                                                 <DropdownMenuItem
                                                                     onClick={() => handleStatusUpdate(order.id, 'delivered', 'Order delivered')}
+                                                                    disabled={!!updatingOrderId}
                                                                     className="rounded-lg text-sm text-emerald-600 hover:bg-emerald-50 cursor-pointer px-2 py-2"
                                                                 >
                                                                     <CheckCircle2 className="w-3.5 h-3.5 mr-2" /> Mark Delivered
@@ -944,6 +968,7 @@ export default function OrdersPage() {
 
                                                                 <DropdownMenuItem
                                                                     onClick={() => handleStatusUpdate(order.id, 'cancelled', 'Order cancelled by admin')}
+                                                                    disabled={!!updatingOrderId}
                                                                     className="rounded-lg text-sm text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer px-2 py-2 font-bold"
                                                                 >
                                                                     <Ban className="w-3.5 h-3.5 mr-2" /> Cancel Order
@@ -955,12 +980,14 @@ export default function OrdersPage() {
                                                                         <DropdownMenuLabel className="text-[9px] text-red-400 uppercase tracking-widest px-2 py-1 font-bold">Cancellation Request</DropdownMenuLabel>
                                                                         <DropdownMenuItem
                                                                             onClick={() => handleApproveCancellation(order.id)}
+                                                                            disabled={!!updatingOrderId}
                                                                             className="rounded-lg text-sm text-red-600 bg-red-50 hover:bg-red-100 cursor-pointer px-2 py-2 font-bold"
                                                                         >
                                                                             <CheckCircle2 className="w-3.5 h-3.5 mr-2" /> Approve Cancel
                                                                         </DropdownMenuItem>
                                                                         <DropdownMenuItem
                                                                             onClick={() => handleRejectCancellation(order.id)}
+                                                                            disabled={!!updatingOrderId}
                                                                             className="rounded-lg text-sm text-gray-600 hover:bg-gray-100 cursor-pointer px-2 py-2"
                                                                         >
                                                                             <XCircle className="w-3.5 h-3.5 mr-2" /> Reject Cancel
@@ -1025,14 +1052,16 @@ export default function OrdersPage() {
                                     <div className="flex gap-2 ml-8">
                                         <Button
                                             size="sm"
+                                            disabled={!!updatingOrderId}
                                             onClick={() => handleApproveCancellation(selectedOrder.id)}
                                             className="bg-red-600 hover:bg-red-700 text-white text-[10px] uppercase tracking-widest font-bold h-8 rounded-lg px-4"
                                         >
-                                            <CheckCircle2 className="w-3 h-3 mr-1.5" /> Approve
+                                            {updatingOrderId === selectedOrder.id ? <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> : <CheckCircle2 className="w-3 h-3 mr-1.5" />} Approve
                                         </Button>
                                         <Button
                                             size="sm"
                                             variant="outline"
+                                            disabled={!!updatingOrderId}
                                             onClick={() => handleRejectCancellation(selectedOrder.id)}
                                             className="border-red-200 text-red-600 hover:bg-red-50 text-[10px] uppercase tracking-widest font-bold h-8 rounded-lg px-4"
                                         >
@@ -1143,13 +1172,15 @@ export default function OrdersPage() {
                                                 <div className="flex gap-2 pt-2">
                                                     <Button
                                                         size="sm"
+                                                        disabled={!!updatingOrderId}
                                                         onClick={() => handlePaymentStatusUpdate(selectedOrder.id, 'verified', 'processing')}
                                                         className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] uppercase tracking-widest font-bold h-9 rounded-lg px-5 shadow-sm"
                                                     >
-                                                        <ShieldCheck className="w-3.5 h-3.5 mr-1.5" /> Verify Payment
+                                                        {updatingOrderId === selectedOrder.id ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />} Verify Payment
                                                     </Button>
                                                     <Button
                                                         size="sm"
+                                                        disabled={!!updatingOrderId}
                                                         onClick={() => handlePaymentStatusUpdate(selectedOrder.id, 'rejected')}
                                                         className="bg-red-600 hover:bg-red-700 text-white text-[10px] uppercase tracking-widest font-bold h-9 rounded-lg px-5 shadow-sm"
                                                     >
@@ -1261,22 +1292,25 @@ export default function OrdersPage() {
                             <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 pt-2">
                                 {selectedOrder.status === 'pending' && (
                                     <Button
+                                        disabled={!!updatingOrderId}
                                         onClick={() => handleStatusUpdate(selectedOrder.id, 'processing', 'Order confirmed by admin')}
                                         className="flex-1 min-w-[140px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 rounded-xl shadow-lg shadow-emerald-200 transition-all border-0 uppercase tracking-widest text-xs"
                                     >
-                                        <CheckCircle2 className="w-4 h-4 mr-2" /> Confirm Order
+                                        {updatingOrderId === selectedOrder.id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />} Confirm Order
                                     </Button>
                                 )}
                                 {selectedOrder.status === 'under_review' && selectedOrder.payment_method === 'online' && (selectedOrder.payment_status === 'under_review' || selectedOrder.payment_status === 'pending') && (
                                     <Button
+                                        disabled={!!updatingOrderId}
                                         onClick={() => handlePaymentStatusUpdate(selectedOrder.id, 'verified', 'processing')}
                                         className="flex-1 min-w-[140px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 rounded-xl shadow-lg shadow-emerald-200 transition-all border-0 uppercase tracking-widest text-xs"
                                     >
-                                        <ShieldCheck className="w-4 h-4 mr-2" /> Verify & Process
+                                        {updatingOrderId === selectedOrder.id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ShieldCheck className="w-4 h-4 mr-2" />} Verify & Process
                                     </Button>
                                 )}
                                 {selectedOrder.status === 'processing' && (
                                     <Button
+                                        disabled={!!updatingOrderId}
                                         onClick={() => openDispatchDialog(selectedOrder.id)}
                                         className="flex-1 min-w-[140px] bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-xl shadow-lg shadow-indigo-200 transition-all border-0 uppercase tracking-widest text-xs"
                                     >
@@ -1285,10 +1319,11 @@ export default function OrdersPage() {
                                 )}
                                 {selectedOrder.status === 'shipped' && (
                                     <Button
+                                        disabled={!!updatingOrderId}
                                         onClick={() => handleStatusUpdate(selectedOrder.id, 'delivered', 'Order delivered')}
                                         className="flex-1 min-w-[140px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 rounded-xl shadow-lg shadow-emerald-200 transition-all border-0 uppercase tracking-widest text-xs"
                                     >
-                                        <CheckCircle2 className="w-4 h-4 mr-2" /> Mark Delivered
+                                        {updatingOrderId === selectedOrder.id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />} Mark Delivered
                                     </Button>
                                 )}
                                 <Button

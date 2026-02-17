@@ -40,7 +40,7 @@ export default function AdminLoginPage() {
                 toast.success('Admin access granted!')
                 // For now, redirect only if it's the admin email, 
                 // but usually you'd check roles in a real app
-                if (data.user.email === 'bibaestore@gmail.com') {
+                if (data.user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
                     router.push('/admin')
                 } else {
                     toast.error('Unauthorized access. Admin only.')
