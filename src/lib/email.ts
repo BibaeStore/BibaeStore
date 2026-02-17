@@ -11,6 +11,9 @@ import {
   paymentRejectedTemplate,
   cancellationApprovedTemplate,
   cancellationRequestAdminTemplate,
+  newOrderAdminTemplate,
+  newUserAdminTemplate,
+  welcomeTemplate,
 } from './email-templates';
 
 // --------------------------------------------------
@@ -122,16 +125,8 @@ export async function sendOrderPlacedEmail(to: string, data: OrderPlacedData) {
   // 2. To Admin
   await sendMail({
     to: ADMIN_EMAIL,
-    subject: `🔔 NEW ORDER PLACED: ${data.trackingNumber}`,
-    html: `
-      <h2>New Order Received</h2>
-      <p><strong>Customer:</strong> ${data.name} (${to})</p>
-      <p><strong>Order ID:</strong> ${data.trackingNumber}</p>
-      <p><strong>Total:</strong> Rs. ${data.totalAmount}</p>
-      <p><strong>Payment Method:</strong> ${data.paymentMethod.toUpperCase()}</p>
-      <hr/>
-      <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/orders">View in Admin Dashboard</a></p>
-    `,
+    subject: `🔔 NEW ORDER: ${data.trackingNumber} — ${data.name}`,
+    html: newOrderAdminTemplate({ ...data, customerEmail: to }),
   });
 
   return customerMail;
@@ -192,12 +187,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
   return await sendMail({
     to,
     subject: `Welcome to Bibaé Store, ${name}!`,
-    html: `
-      <h2>Welcome aboard, ${name}!</h2>
-      <p>Thank you for joining the Bibaé community. We are excited to have you with us.</p>
-      <p>Explore our latest collections and find something unique for yourself.</p>
-      <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/shop">Start Shopping</a></p>
-    `,
+    html: welcomeTemplate({ name }),
   });
 }
 
@@ -208,13 +198,6 @@ export async function sendAdminNewUserEmail(data: { email: string; name: string;
   return await sendMail({
     to: ADMIN_EMAIL,
     subject: `✨ New Client Registered: ${data.name}`,
-    html: `
-      <h2>New Client Registration</h2>
-      <p><strong>Name:</strong> ${data.name}</p>
-      <p><strong>Email:</strong> ${data.email}</p>
-      <p><strong>Phone:</strong> ${data.phone}</p>
-      <hr/>
-      <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/customers">View in Dashboard</a></p>
-    `,
+    html: newUserAdminTemplate(data),
   });
 }

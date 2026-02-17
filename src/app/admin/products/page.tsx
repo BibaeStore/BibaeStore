@@ -168,11 +168,16 @@ export default function ProductsPage() {
     const confirmDelete = async () => {
         if (!deleteId) return
         const idToDelete = deleteId
+        console.log(`[DEBUG] Initiating delete for product: ${idToDelete}`)
         setDeleteId(null)
+
+        // Keep local copy for rollback
+        const originalProducts = [...products]
 
         // Optimistic: remove from state immediately
         setProducts(prev => prev.filter(p => p.id !== idToDelete))
-        // Adjust page if the current page is now empty
+
+        // Adjust page if current page becomes empty
         const remainingCount = products.length - 1
         const newTotalPages = Math.ceil(remainingCount / PRODUCTS_PER_PAGE)
         if (currentPage > newTotalPages && newTotalPages > 0) {
@@ -181,12 +186,17 @@ export default function ProductsPage() {
 
         try {
             const result = await deleteProductAction(idToDelete)
-            if (result.error) throw new Error(result.error)
+            if (result.error) {
+                console.error(`[DEBUG] Delete action failed: ${result.error}`)
+                throw new Error(result.error)
+            }
+            console.log(`[DEBUG] Delete action successful for: ${idToDelete}`)
             toast.success("Product deleted successfully")
-        } catch (error) {
-            console.error(error)
-            toast.error("Failed to delete product. Refreshing list...")
-            // Rollback: re-fetch if delete failed
+        } catch (error: any) {
+            console.error('[DEBUG] Catching delete error:', error)
+            toast.error(error?.message || "Failed to delete product. Refreshing list...")
+            // Rollback: use original products if delete failed
+            setProducts(originalProducts)
             fetchData()
         }
     }
@@ -224,8 +234,11 @@ export default function ProductsPage() {
                 size_guide: data.size_guide || null,
             }
 
+            console.log('[DEBUG] Submitting productData:', JSON.stringify(productData))
+
             // Step 3: Create or update via server action
             if (editingProduct) {
+                console.log(`[DEBUG] Updating product with ID: ${editingProduct.id}`)
                 const result = await updateProductAction(editingProduct.id, productData)
                 if (result.error) throw Object.assign(new Error(result.error), { code: result.code })
                 setProducts(prev => prev.map(p => p.id === editingProduct.id ? (result.data as unknown as Product) : p))
@@ -253,6 +266,8 @@ export default function ProductsPage() {
                 toast.error(message)
             } else if (message.includes('authenticated')) {
                 toast.error("Session expired. Please refresh the page and log in again.")
+            } else if (message) {
+                toast.error(message)
             } else {
                 toast.error(editingProduct ? "Failed to update product" : "Failed to create product")
             }
@@ -643,8 +658,21 @@ export default function ProductsPage() {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 hover:border-gray-400 font-bold shadow-sm hover:shadow-md transition-all">Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-white hover:bg-destructive/90 transition-colors">Delete</AlertDialogAction>
+                        <AlertDialogCancel className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 hover:border-gray-400 font-bold shadow-sm hover:shadow-md transition-all">
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction asChild>
+                            <Button
+                                variant="destructive"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    confirmDelete();
+                                }}
+                                className="bg-red-600 hover:bg-red-700 text-white font-bold"
+                            >
+                                Delete Product
+                            </Button>
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

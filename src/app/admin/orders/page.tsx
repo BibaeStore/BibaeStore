@@ -24,7 +24,21 @@ import {
     ShieldX,
     XCircle,
     FileText,
+    Pencil,
+    Trash2,
 } from 'lucide-react'
+import { OrderEditForm } from './OrderEditForm'
+import { deleteOrderAction } from './actions'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -157,6 +171,11 @@ export default function OrdersPage() {
     const [dispatchOrderId, setDispatchOrderId] = useState<string | null>(null)
     const [dispatchLoading, setDispatchLoading] = useState(false)
 
+    // Edit and Delete state
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+    const [editingOrder, setEditingOrder] = useState<any>(null)
+    const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null)
+
     // Realtime highlight state
     const [highlightedOrderIds, setHighlightedOrderIds] = useState<Set<string>>(new Set())
     const { resetCount } = useAdminNotifications()
@@ -264,6 +283,43 @@ export default function OrdersPage() {
             setLoading(false)
         }
     }
+
+    // ─── Edit & Delete Handlers ───
+    const handleEdit = useCallback((order: any) => {
+        setEditingOrder(order)
+        setIsEditModalOpen(true)
+    }, [])
+
+    const handleUpdateSuccess = useCallback((updatedOrder: any) => {
+        setOrders(prev => prev.map(o => o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o))
+        if (selectedOrder?.id === updatedOrder.id) {
+            setSelectedOrder((prev: any) => ({ ...prev, ...updatedOrder }))
+        }
+    }, [selectedOrder])
+
+    const handleDelete = useCallback((id: string) => {
+        setDeleteOrderId(id)
+    }, [])
+
+    const confirmDelete = useCallback(async () => {
+        if (!deleteOrderId) return
+
+        try {
+            const result = await deleteOrderAction(deleteOrderId)
+            if (result.error) throw new Error(result.error)
+
+            toast.success("Order deleted successfully")
+            setOrders(prev => prev.filter(o => o.id !== deleteOrderId))
+            if (selectedOrder?.id === deleteOrderId) {
+                setSelectedOrder(null)
+            }
+        } catch (error: any) {
+            console.error('Delete failed:', error)
+            toast.error(error.message || "Failed to delete order")
+        } finally {
+            setDeleteOrderId(null)
+        }
+    }, [deleteOrderId, selectedOrder])
 
     // ─── Filtering ───
     const filteredOrders = useMemo(() => {
@@ -774,8 +830,17 @@ export default function OrdersPage() {
                                                                 <DropdownMenuLabel className="text-xs text-gray-400 uppercase tracking-widest px-2 py-1.5 font-bold">Manage</DropdownMenuLabel>
 
                                                                 <DropdownMenuItem onClick={() => setSelectedOrder(order)} className="rounded-lg text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 cursor-pointer px-2 py-2 mb-0.5">
-                                                                    <Eye className="w-3.5 h-3.5 mr-2" /> View Details
+                                                                    <Eye className="w-3.5 h-3.5 mr-2 text-gray-400" /> View Details
                                                                 </DropdownMenuItem>
+
+                                                                <DropdownMenuItem onClick={() => handleEdit(order)} className="rounded-lg text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 cursor-pointer px-2 py-2 mb-0.5">
+                                                                    <Pencil className="w-3.5 h-3.5 mr-2 text-gray-400" /> Edit Info
+                                                                </DropdownMenuItem>
+
+                                                                <DropdownMenuItem onClick={() => handleDelete(order.id)} className="rounded-lg text-sm text-red-600 hover:bg-red-50 cursor-pointer px-2 py-2 mb-0.5">
+                                                                    <Trash2 className="w-3.5 h-3.5 mr-2 text-red-400" /> Delete Order
+                                                                </DropdownMenuItem>
+
 
                                                                 {order.status === 'pending' && (
                                                                     <DropdownMenuItem
@@ -1161,6 +1226,12 @@ export default function OrdersPage() {
                                     </Button>
                                 )}
                                 <Button
+                                    onClick={() => handleEdit(selectedOrder)}
+                                    className="flex-1 min-w-[140px] bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 hover:border-gray-400 font-bold h-11 rounded-xl shadow-sm hover:shadow-md transition-all uppercase tracking-widest text-xs"
+                                >
+                                    <Pencil className="w-4 h-4 mr-2" /> Edit Details
+                                </Button>
+                                <Button
                                     onClick={() => handlePrintShippingLabel(selectedOrder)}
                                     className="flex-1 min-w-[140px] bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 hover:border-gray-400 font-bold h-11 rounded-xl shadow-sm hover:shadow-md transition-all uppercase tracking-widest text-xs"
                                 >
@@ -1212,6 +1283,32 @@ export default function OrdersPage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {/* Edit Order Modal */}
+            <OrderEditForm
+                open={isEditModalOpen}
+                onOpenChange={setIsEditModalOpen}
+                order={editingOrder}
+                onSuccess={handleUpdateSuccess}
+            />
+
+            {/* Delete Confirmation */}
+            <AlertDialog open={!!deleteOrderId} onOpenChange={(open) => !open && setDeleteOrderId(null)}>
+                <AlertDialogContent className="bg-white border-gray-200">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the order from the database.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700 text-white">
+                            Delete Order
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

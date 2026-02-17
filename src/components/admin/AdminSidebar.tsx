@@ -155,12 +155,12 @@ export function AdminSidebar() {
                     <div className="relative shrink-0">
                         <Avatar className="w-9 h-9 border border-white shadow-sm">
                             <AvatarImage src="/admin-avatar.jpg" />
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">DK</AvatarFallback>
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">BS</AvatarFallback>
                         </Avatar>
                         <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" />
                     </div>
                     <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden transition-all duration-200">
-                        <p className="text-sm font-medium text-gray-900 truncate">Dilawar Khan</p>
+                        <p className="text-sm font-medium text-gray-900 truncate">Bibae Store</p>
                         <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Super Admin</p>
                     </div>
                 </div>

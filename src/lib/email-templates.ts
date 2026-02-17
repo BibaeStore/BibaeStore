@@ -18,77 +18,82 @@ function baseLayout(bodyContent: string): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; line-height: 1.6; color: ${BRAND_BLACK}; margin: 0; padding: 0; background-color: #f7f7f7; }
-    .wrapper { max-width: 800px; margin: 20px auto; background: #ffffff; border-radius: 0; overflow: hidden; border: 1px solid #e0e0e0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    .header { background-color: ${BRAND_BLACK}; padding: 40px 20px; text-align: center; border-bottom: 4px solid ${BRAND_GOLD}; }
-    .brand { font-size: 28px; font-weight: 800; letter-spacing: 6px; text-transform: uppercase; margin: 0; color: #ffffff; }
-    .brand-sub { font-size: 11px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; margin-top: 8px; color: ${BRAND_GOLD}; }
-    .content { padding: 40px 30px; }
-    .title { font-size: 26px; font-weight: 700; color: ${BRAND_BLACK}; margin: 0 0 12px 0; line-height: 1.3; text-align: center; }
-    .subtitle { font-size: 16px; color: #666; margin: 0 0 32px 0; text-align: center; }
-    .text { font-size: 15px; color: #444; margin-bottom: 24px; line-height: 1.7; }
-    .highlight-box { background: #faf8f3; border: 1px solid #f0ead8; border-radius: 8px; padding: 24px; margin-bottom: 28px; }
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap');
     
-    /* Table-based layout for reliability in Outlook/Gmail */
-    .info-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-    .info-table td { padding: 8px 0; vertical-align: top; border-bottom: 1px solid #f0f0f0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: ${BRAND_BLACK}; margin: 0; padding: 0; background-color: #fcfcfc; }
+    .wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 0; overflow: hidden; }
+    .header { padding: 50px 20px; text-align: center; border-bottom: 1px solid #f0f0f0; }
+    .brand { font-family: 'Playfair Display', serif; font-size: 38px; font-weight: 700; letter-spacing: 8px; text-transform: uppercase; margin: 0; color: ${BRAND_BLACK}; }
+    .brand-sub { font-size: 10px; font-weight: 700; letter-spacing: 5px; text-transform: uppercase; margin-top: 10px; color: ${BRAND_GOLD}; }
+    
+    .content { padding: 45px 35px; }
+    .title { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: ${BRAND_BLACK}; margin: 0 0 15px 0; line-height: 1.2; text-align: center; }
+    .subtitle { font-size: 15px; color: #777; margin: 0 0 35px 0; text-align: center; letter-spacing: 0.5px; }
+    .text { font-size: 14px; color: #555; margin-bottom: 25px; line-height: 1.8; text-align: center; }
+    
+    .highlight-box { background: #fafafa; border: 1px solid #f1f1f1; border-radius: 12px; padding: 25px; margin-bottom: 30px; }
+    
+    .info-table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+    .info-table td { padding: 10px 0; vertical-align: top; border-bottom: 1px solid #f5f5f5; }
     .info-table tr:last-child td { border-bottom: none; }
     
-    .label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
-    .value { font-size: 15px; font-weight: 700; color: ${BRAND_BLACK}; text-align: right; }
+    .label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; }
+    .value { font-size: 14px; font-weight: 600; color: ${BRAND_BLACK}; text-align: right; }
     
-    .item-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px; }
-    .item-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; padding: 12px 0; border-bottom: 2px solid #ddd; font-weight: 600; }
-    .item-table td { padding: 16px 0; border-bottom: 1px solid #f0f0f0; color: ${BRAND_BLACK}; }
-    .item-table .item-name { font-weight: 600; }
-    .item-table .item-qty { color: #666; text-align: center; }
-    .item-table .item-price { font-weight: 700; text-align: right; }
+    .item-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 13px; }
+    .item-table th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #999; padding: 15px 0; border-bottom: 1px solid #f0f0f0; font-weight: 600; }
+    .item-table td { padding: 20px 0; border-bottom: 1px solid #f9f9f9; color: ${BRAND_BLACK}; }
+    .item-name { font-weight: 600; font-size: 14px; }
+    .item-qty { color: #888; text-align: center; }
+    .item-price { font-weight: 600; text-align: right; color: ${BRAND_GOLD}; }
     
-    .total-table { width: 100%; border-collapse: collapse; margin-top: 12px; border-top: 2px solid ${BRAND_GOLD}; }
-    .total-table td { padding: 16px 0; }
-    .total-label { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: ${BRAND_BLACK}; }
-    .total-value { font-size: 24px; font-weight: 800; color: ${BRAND_GOLD}; text-align: right; }
+    .total-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    .total-table td { padding: 20px 0; border-top: 1px solid #000; }
+    .total-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: ${BRAND_BLACK}; }
+    .total-value { font-size: 22px; font-weight: 700; color: ${BRAND_BLACK}; text-align: right; }
     
-    .btn-container { text-align: center; margin: 32px 0; }
-    .btn-primary { display: inline-block; padding: 14px 32px; background-color: ${BRAND_BLACK}; color: #ffffff !important; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin: 0 6px 12px 0; }
-    .btn-whatsapp { display: inline-block; padding: 14px 32px; background-color: #25D366; color: #ffffff !important; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 12px 6px; }
+    .btn-container { text-align: center; margin: 40px 0; }
+    .btn-primary { display: inline-block; padding: 16px 36px; background-color: ${BRAND_BLACK}; color: #ffffff !important; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin: 0 6px 15px 0; transition: all 0.3s ease; }
+    .btn-whatsapp { display: inline-block; padding: 16px 36px; background-color: #ffffff; color: #25D366 !important; text-decoration: none; border: 2px solid #25D366; border-radius: 4px; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 15px 6px; }
     
-    .divider { height: 1px; background: #eeeeee; margin: 32px 0; }
-    .note { font-size: 13px; color: #999; font-style: italic; margin-top: 24px; text-align: center; }
+    .divider { height: 1px; background: #eeeeee; margin: 35px 0; }
+    .note { font-size: 12px; color: #aaa; font-style: italic; margin-top: 25px; text-align: center; line-height: 1.6; }
     
-    .status-badge { display: block; width: fit-content; margin: 0 auto 16px auto; padding: 6px 16px; border-radius: 100px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; text-align: center; }
-    .badge-success { background: #e8f8ef; color: #1b9e4b; }
-    .badge-warning { background: #fef6e8; color: #c48a12; }
-    .badge-error { background: #fde8e8; color: #c41212; }
-    .badge-info { background: #e8f0fe; color: #1256c4; }
+    .status-badge { display: block; width: fit-content; margin: 0 auto 20px auto; padding: 6px 18px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; text-align: center; }
+    .badge-success { background: #000000; color: #ffffff; }
+    .badge-warning { background: #fff8e6; color: ${BRAND_GOLD}; }
+    .badge-error { background: #fff5f5; color: #e53e3e; }
+    .badge-info { background: #f0f7ff; color: #0066cc; }
     
-    .footer { padding: 40px 20px; text-align: center; font-size: 12px; color: #999; background: #f9f9f9; border-top: 1px solid #eee; }
-    .footer a { color: ${BRAND_GOLD}; text-decoration: none; margin: 0 8px; }
-    .footer-links { margin-bottom: 20px; }
+    .footer { padding: 60px 40px; text-align: center; font-size: 11px; color: #aaa; background: #ffffff; border-top: 1px solid #f5f5f5; }
+    .footer a { color: #000; text-decoration: none; margin: 0 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+    .footer-links { margin-bottom: 25px; }
     
     @media only screen and (max-width: 600px) {
-      .wrapper { width: 100% !important; margin: 0 !important; border-radius: 0 !important; border: none !important; }
-      .content { padding: 24px !important; }
-      .header { padding: 32px 20px !important; }
-      .btn-primary, .btn-whatsapp { display: block !important; width: 100% !important; margin: 0 0 12px 0 !important; box-sizing: border-box !important; text-align: center !important; }
+      .content { padding: 30px 20px !important; }
+      .brand { font-size: 32px !important; }
+      .btn-primary, .btn-whatsapp { display: block !important; width: 100% !important; margin: 0 0 15px 0 !important; box-sizing: border-box !important; }
     }
   </style>
 </head>
 <body>
   <div class="wrapper">
     <div class="header">
-      <h1 class="brand">BIBAE</h1>
-      <p class="brand-sub">Premium Boutique</p>
+      <h1 class="brand">BIBAÉ</h1>
+      <p class="brand-sub">Est. 2026</p>
     </div>
     ${bodyContent}
     <div class="footer">
       <div class="footer-links">
-        <a href="${WEBSITE_URL}/terms">Terms & Conditions</a> |
-        <a href="${WEBSITE_URL}/privacy-policy">Privacy Policy</a> |
-        <a href="${WHATSAPP_LINK}">Support</a>
+        <a href="${WEBSITE_URL}">Store</a>
+        <a href="${WHATSAPP_LINK}">WhatsApp</a>
+        <a href="${WEBSITE_URL}/terms">Privacy</a>
       </div>
-      <p>&copy; ${new Date().getFullYear()} BIBAE STORE. All rights reserved.</p>
-      <p style="margin-top:8px; font-size: 11px; color: #ccc;">You are receiving this email because you made a purchase or signed up at Bibae Store.</p>
+      <p style="letter-spacing: 1px; margin-bottom: 20px;">&copy; ${new Date().getFullYear()} BIBAÉ STORE. LUXURY COLLECTIONS.</p>
+      <div style="border-top: 1px solid #f5f5f5; padding-top: 20px;">
+        <p>This is an automated notification from Bibaé Store.</p>
+        <p>Please do not reply directly to this email addresses.</p>
+      </div>
     </div>
   </div>
 </body>
@@ -429,7 +434,7 @@ export function cancellationRequestAdminTemplate(data: CancellationRequestAdminD
       <h2 class="title">Cancellation Request</h2>
       <p class="subtitle">A customer wants to cancel their order.</p>
 
-      <div class="highlight-box" style="border-color: #fde0e0; background: #fef5f5;">
+      <div class="highlight-box">
         <table class="info-table">
            ${renderInfoRow('Customer', customerName)}
            ${renderInfoRow('Order ID', trackingNumber)}
@@ -437,12 +442,115 @@ export function cancellationRequestAdminTemplate(data: CancellationRequestAdminD
       </div>
 
       <div class="highlight-box">
-        <p style="margin:0 0 8px 0; font-size: 11px; text-transform: uppercase; color: #888;">Reason Given</p>
-        <p style="margin:0; font-size: 15px; font-weight: 500;">${reason}</p>
+        <p style="margin:0 0 10px 0; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #999; font-weight: 600;">Reason Given</p>
+        <p style="margin:0; font-size: 14px; font-weight: 500; line-height: 1.6; color: ${BRAND_BLACK};">${reason}</p>
       </div>
 
       <div class="btn-container">
         <a href="${WEBSITE_URL}/admin/orders" class="btn-primary">Manage Order</a>
+      </div>
+    </div>`;
+
+  return baseLayout(body);
+}
+
+// ============================================================
+// 8. New Order Admin Notification
+// ============================================================
+
+export function newOrderAdminTemplate(data: OrderPlacedData & { customerEmail: string }): string {
+  const { name, customerEmail, trackingNumber, totalAmount, paymentMethod, items } = data;
+
+  const body = `
+    <div class="content">
+      <span class="status-badge badge-success">Admin Alert</span>
+      <h2 class="title">New Order Received</h2>
+      <p class="subtitle">A new order has been placed on the store.</p>
+      
+      <div class="highlight-box">
+        <table class="info-table">
+           ${renderInfoRow('Customer', `${name} (${customerEmail})`)}
+           ${renderInfoRow('Order ID', trackingNumber)}
+           ${renderInfoRow('Payment', paymentMethod.toUpperCase())}
+           ${renderInfoRow('Total', `${Number(totalAmount).toLocaleString()} PKR`, BRAND_GOLD)}
+        </table>
+      </div>
+
+      <div style="margin-bottom: 25px;">
+        <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #999; margin-bottom: 15px; font-weight: 600;">Items Summary</p>
+        ${renderItemsTable(items)}
+      </div>
+
+      <div class="btn-container">
+        <a href="${WEBSITE_URL}/admin/orders" class="btn-primary">View in Dashboard</a>
+      </div>
+    </div>`;
+
+  return baseLayout(body);
+}
+
+// ============================================================
+// 9. New User Admin Notification
+// ============================================================
+
+interface NewUserData {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+export function newUserAdminTemplate(data: NewUserData): string {
+  const { name, email, phone } = data;
+
+  const body = `
+    <div class="content">
+      <span class="status-badge badge-info">Admin Alert</span>
+      <h2 class="title">New Client Registered</h2>
+      <p class="subtitle">A new customer has created an account.</p>
+      
+      <div class="highlight-box">
+        <table class="info-table">
+           ${renderInfoRow('Name', name)}
+           ${renderInfoRow('Email', email)}
+           ${renderInfoRow('Phone', phone)}
+        </table>
+      </div>
+
+      <div class="btn-container">
+        <a href="${WEBSITE_URL}/admin/customers" class="btn-primary">View Customer List</a>
+      </div>
+    </div>`;
+
+  return baseLayout(body);
+}
+
+// ============================================================
+// 10. Welcome Email
+// ============================================================
+
+interface WelcomeData {
+  name: string;
+}
+
+export function welcomeTemplate(data: WelcomeData): string {
+  const { name } = data;
+
+  const body = `
+    <div class="content">
+      <span class="status-badge badge-success">Welcome</span>
+      <h2 class="title">Welcome to Bibaé, ${name}!</h2>
+      <p class="subtitle">We're delighted to have you join our community of fashion enthusiasts.</p>
+      
+      <p class="text">At Bibaé, we believe in the art of handcrafted fashion. Every piece in our collection is designed with a focus on premium quality, elegance, and timeless style.</p>
+
+      <div class="btn-container">
+        <a href="${WEBSITE_URL}/shop" class="btn-primary">Explore Collections</a>
+      </div>
+
+      <p class="note">Follow us on WhatsApp for exclusive early access to our 2026 drops.</p>
+      
+      <div style="text-align:center; margin-top: 10px;">
+         <a href="${WHATSAPP_LINK}" style="color: #25D366; font-weight: 700; text-decoration: none; font-size: 13px; letter-spacing: 1px;">JOIN WHATSAPP CHANNEL</a>
       </div>
     </div>`;
 
