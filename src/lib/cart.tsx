@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { createClient } from "./supabase/client";
-import { CartService } from "@/services/cart.service";
+import { getCartAction, addToCartAction, removeFromCartAction, updateCartQuantityAction, clearCartAction } from "@/lib/cart-actions";
 import { toast } from "sonner";
 
 export interface CartProduct {
@@ -50,8 +50,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (session?.user?.id) {
         // Fetch from DB
         try {
-          const dbItems = await CartService.getCart(session.user.id);
-          const mappedItems: CartItem[] = dbItems.map(item => ({
+          const cartResult = await getCartAction(session.user.id);
+          const mappedItems: CartItem[] = (cartResult.data || []).map((item: any) => ({
             product: {
               ...item.product,
               image: item.product.images?.[0] || '/assets/placeholder.jpg'
@@ -103,8 +103,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
           try { localItems = JSON.parse(localData); } catch (e) { /* ignore */ }
         }
 
-        const dbItems = await CartService.getCart(session.user.id);
-        const mappedDbItems: CartItem[] = dbItems.map(item => ({
+        const cartResult = await getCartAction(session.user.id);
+        const mappedDbItems: CartItem[] = (cartResult.data || []).map((item: any) => ({
           product: {
             ...item.product,
             image: item.product.images?.[0] || '/assets/placeholder.jpg'
@@ -132,7 +132,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           const inDb = mappedDbItems.find(d => d.product.id === localItem.product.id);
           if (!inDb) {
             try {
-              await CartService.addToCart(session.user.id, localItem.product.id, localItem.quantity);
+              await addToCartAction(session.user.id, localItem.product.id, localItem.quantity);
             } catch (e) {
               console.error("Failed to sync local item to DB:", e);
             }
@@ -176,7 +176,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     // Update DB if logged in
     if (userId) {
       try {
-        await CartService.addToCart(userId, product.id, newQuantity);
+        await addToCartAction(userId, product.id, newQuantity);
       } catch (error) {
         console.error("Failed to sync cart to DB:", error);
         toast.error("Cloud sync failed. Cart saved locally.");
@@ -189,7 +189,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     if (userId) {
       try {
-        await CartService.removeFromCart(userId, productId);
+        await removeFromCartAction(userId, productId);
       } catch (error) {
         console.error("Failed to sync removal to DB:", error);
       }
@@ -206,7 +206,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     if (userId) {
       try {
-        await CartService.updateQuantity(userId, productId, quantity);
+        await updateCartQuantityAction(userId, productId, quantity);
       } catch (error) {
         console.error("Failed to sync quantity to DB:", error);
       }
@@ -217,7 +217,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
     if (userId) {
       try {
-        await CartService.clearCart(userId);
+        await clearCartAction(userId);
       } catch (error) {
         console.error("Failed to clear DB cart:", error);
       }

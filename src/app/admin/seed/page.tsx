@@ -5,9 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
 import { products, categories } from '@/lib/products'
-import { CategoryService } from '@/services/category.service'
 import { uploadProductImage, createProductAction } from '@/app/admin/products/actions'
-import { formatDate } from '@/lib/utils'
+import { createCategoryAction } from '@/app/admin/categories/actions'
 
 export default function SeedPage() {
     const [isLoading, setIsLoading] = useState(false)
@@ -43,26 +42,29 @@ export default function SeedPage() {
 
                 // Create Main Category
                 log(`Creating category: ${cat.name}`)
-                const newCat = await CategoryService.createCategory({
+                const catResult = await createCategoryAction({
                     name: cat.name,
                     parent_id: null,
-                    image_url: null, // Could map an image if available
+                    image_url: null,
                     status: 'active',
                     sort_order: 0
                 })
+                if (catResult.error) throw new Error(catResult.error)
+                const newCat = catResult.data!
                 categoryMap.set(cat.name, newCat.id)
 
                 // Create Subcategories
                 if (cat.subcategories) {
                     for (const sub of cat.subcategories) {
                          log(`Creating subcategory: ${sub.name} (Parent: ${cat.name})`)
-                         await CategoryService.createCategory({
+                         const subResult = await createCategoryAction({
                             name: sub.name,
                             parent_id: newCat.id,
                             image_url: null,
                             status: sub.active ? 'active' : 'inactive',
                             sort_order: 0
                         })
+                        if (subResult.error) throw new Error(subResult.error)
                         // We might need subcategory ID mapping too if products use subcategories
                         // But currently products link to Main Category for filtering simplicity
                     }

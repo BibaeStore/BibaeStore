@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
-import { ClientService } from "@/services/client.service";
+import { submitRatingAction, getRatingsAction } from "@/app/product/[id]/actions";
 import { createClient } from "@/lib/supabase/client";
 import { useCart } from "@/lib/cart";
 import { toast } from "sonner";
@@ -77,17 +77,18 @@ export default function ProductContent({ product, relatedProducts, initialReview
     }
     setSubmittingReview(true);
     try {
-      await ClientService.submitRating({
+      const submitResult = await submitRatingAction({
         product_id: product.id,
         client_id: userSession.user.id,
         rating: userRating,
         comment: userComment
       });
+      if (submitResult.error) throw new Error(submitResult.error);
       toast.success("Thank you for your review!");
       setUserComment("");
       setUserRating(0);
-      const reviewsData = await ClientService.getRatings(product.id);
-      setReviews(reviewsData);
+      const ratingsResult = await getRatingsAction(product.id);
+      setReviews(ratingsResult.data);
     } catch (error) {
       console.error(error);
       toast.error("Failed to submit review. You might have already rated this product.");

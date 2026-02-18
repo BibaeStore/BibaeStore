@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle2 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
-import { createClient } from '@/lib/supabase/client';
+import { getActiveProductsForPopupAction } from '@/app/shop/actions';
 
 const MOCK_NAMES = ['Ayesha K.', 'Fatima R.', 'Zainab A.', 'Maryam S.', 'Hina B.', 'Sana M.', 'Zara T.', 'Bushra P.', 'Nida Y.', 'Rabia H.'];
 const MOCK_CITIES = ['Karachi', 'Lahore', 'Islamabad', 'Rawalpindi', 'Faisalabad', 'Multan', 'Peshawar', 'Quetta', 'Sialkot', 'Gujranwala'];
@@ -23,15 +23,9 @@ export default function RecentSalesPopup() {
 
     useEffect(() => {
         const fetchProducts = async () => {
-            const supabase = createClient();
-            const { data } = await supabase
-                .from('products')
-                .select('id, name, images')
-                .eq('status', 'active')
-                .limit(20);
-
-            if (data && data.length > 0) {
-                setProducts(data);
+            const result = await getActiveProductsForPopupAction();
+            if (result.data && result.data.length > 0) {
+                setProducts(result.data);
             }
         };
 

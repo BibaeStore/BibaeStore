@@ -25,8 +25,7 @@ import {
     ExternalLink,
     RefreshCw,
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-import { OrderService } from '@/services/order.service'
+import { getMyOrdersAction, requestCancellationAction } from '@/app/account/orders/actions'
 import { Order } from '@/types/client'
 import { formatPrice } from '@/lib/products'
 import {
@@ -114,18 +113,15 @@ export default function MyOrdersPage() {
     const [submittingCancellation, setSubmittingCancellation] = useState(false)
 
     useEffect(() => {
-        const checkAuthAndFetch = async () => {
-            const supabase = createClient()
-            const { data: { user } } = await supabase.auth.getUser()
-
-            if (!user) {
-                router.push('/login')
-                return
-            }
-
+        const fetchOrders = async () => {
             try {
-                const data = await OrderService.getOrders(user.id)
-                setOrders(data)
+                const result = await getMyOrdersAction()
+                if (result.error === 'Not authenticated') {
+                    router.push('/login')
+                    return
+                }
+                if (result.error) throw new Error(result.error)
+                setOrders(result.data as Order[])
             } catch (error) {
                 console.error('Failed to fetch orders:', error)
                 toast.error('Failed to load your orders')
@@ -134,7 +130,7 @@ export default function MyOrdersPage() {
             }
         }
 
-        checkAuthAndFetch()
+        fetchOrders()
     }, [router])
 
     const toggleExpand = (orderId: string) => {
@@ -154,7 +150,8 @@ export default function MyOrdersPage() {
 
         setSubmittingCancellation(true)
         try {
-            await OrderService.requestCancellation(orderId, cancellationReason.trim())
+            const result = await requestCancellationAction(orderId, cancellationReason.trim())
+            if (result.error) throw new Error(result.error)
             toast.success('Cancellation request submitted')
             setOrders(prev =>
                 prev.map(o =>

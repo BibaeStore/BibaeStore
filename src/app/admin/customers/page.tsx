@@ -32,8 +32,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ClientService } from '@/services/client.service'
 import { Client as ClientType } from '@/types/client'
+import { getCustomersAction, updateCustomerAction, deleteCustomerAction } from './actions'
 import { format } from 'date-fns'
 import {
     Dialog,
@@ -77,8 +77,9 @@ export default function CustomersPage() {
 
     const fetchCustomers = async () => {
         try {
-            const data = await ClientService.getAllClients()
-            setCustomers(data)
+            const result = await getCustomersAction()
+            if (result.error) throw new Error(result.error)
+            setCustomers(result.data as ClientType[])
         } catch (error) {
             console.error('Failed to fetch customers:', error)
         } finally {
@@ -101,16 +102,17 @@ export default function CustomersPage() {
 
         setIsSaving(true)
         try {
-            await ClientService.updateProfile(editingCustomer.id, {
+            const result = await updateCustomerAction(editingCustomer.id, {
                 full_name: editingCustomer.full_name,
                 phone_number: editingCustomer.phone_number
             })
+            if (result.error) throw new Error(result.error)
             setCustomers(prev => prev.map(c => c.id === editingCustomer.id ? editingCustomer : c))
             setIsEditDialogOpen(false)
             toast.success('Customer updated successfully')
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to update customer:', error)
-            toast.error('Failed to update customer')
+            toast.error(error?.message || 'Failed to update customer')
         } finally {
             setIsSaving(false)
         }
@@ -121,13 +123,14 @@ export default function CustomersPage() {
 
         setIsDeleting(true)
         try {
-            await ClientService.deleteClient(customerToDelete)
+            const result = await deleteCustomerAction(customerToDelete)
+            if (result.error) throw new Error(result.error)
             setCustomers(prev => prev.filter(c => c.id !== customerToDelete))
             setIsDeleteDialogOpen(false)
             toast.success('Customer deleted successfully')
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to delete customer:', error)
-            toast.error('Failed to delete customer')
+            toast.error(error?.message || 'Failed to delete customer')
         } finally {
             setIsDeleting(false)
             setCustomerToDelete(null)

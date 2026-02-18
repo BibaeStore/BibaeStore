@@ -108,6 +108,49 @@ export async function updateProductAction(
     return { data }
 }
 
+// ─── Read Products (admin) ───────────────────────────────────────────────────
+
+export async function getProductsAction(): Promise<{ data: Record<string, unknown>[]; error?: string }> {
+    const sessionClient = await createClient()
+    const authCheck = await verifyAdminUser(sessionClient)
+    if (authCheck.error) return { data: [], error: authCheck.error }
+
+    const adminClient = createAdminClient()
+    const { data, error } = await adminClient
+        .from('products')
+        .select('*, category:categories(id, name)')
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        console.error('[getProductsAction] Supabase error:', error)
+        return { data: [], error: error.message }
+    }
+
+    return { data: data || [] }
+}
+
+// ─── Read Categories (for product form dropdown) ────────────────────────────
+
+export async function getCategoriesForProductsAction(): Promise<{ data: Record<string, unknown>[]; error?: string }> {
+    const sessionClient = await createClient()
+    const authCheck = await verifyAdminUser(sessionClient)
+    if (authCheck.error) return { data: [], error: authCheck.error }
+
+    const adminClient = createAdminClient()
+    const { data, error } = await adminClient
+        .from('categories')
+        .select('*')
+        .order('sort_order', { ascending: true })
+        .order('name')
+
+    if (error) {
+        console.error('[getCategoriesForProductsAction] Supabase error:', error)
+        return { data: [], error: error.message }
+    }
+
+    return { data: data || [] }
+}
+
 // ─── Delete Product ──────────────────────────────────────────────────────────
 
 export async function deleteProductAction(

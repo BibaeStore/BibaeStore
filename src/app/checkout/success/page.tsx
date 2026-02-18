@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { Check, Package, ArrowRight, Home, Copy, MessageCircle, Clock } from "lucide-react";
 import { scaleVariants, fadeVariants, staggerContainer, staggerItem } from "@/lib/animations";
 import confetti from "canvas-confetti";
-import { OrderService } from "@/services/order.service";
+import { getOrderSuccessDetailsAction } from "@/app/checkout/success/actions";
 import { Order } from "@/types/client";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/products";
@@ -29,8 +29,8 @@ function CheckoutSuccessContent() {
 
     const fetchOrder = async () => {
       try {
-        const data = await OrderService.getOrderDetails(orderId);
-        setOrder(data);
+        const result = await getOrderSuccessDetailsAction(orderId);
+        if (result.data) setOrder(result.data);
       } catch (error) {
         console.error("Failed to fetch order:", error);
       } finally {

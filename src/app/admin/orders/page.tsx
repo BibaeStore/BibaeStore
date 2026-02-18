@@ -28,7 +28,16 @@ import {
     Trash2,
 } from 'lucide-react'
 import { OrderEditForm } from './OrderEditForm'
-import { deleteOrderAction, updateOrderAction } from './actions'
+import {
+    getOrdersAction,
+    getOrderDetailsAction,
+    updateOrderStatusAction,
+    updatePaymentStatusAction,
+    addAdminNoteAction,
+    approveCancellationAction,
+    deleteOrderAction,
+    updateOrderAction
+} from './actions'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -68,7 +77,6 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { format } from 'date-fns'
-import { OrderService } from '@/services/order.service'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import { formatPrice } from '@/lib/products'
@@ -224,7 +232,7 @@ export default function OrdersPage() {
 
             for (const orderId of idsToUpdate) {
                 try {
-                    const fullOrder = await OrderService.getOrderDetails(orderId)
+                    const fullOrder = await getOrderDetailsAction(orderId).then(r => { if (r.error) throw new Error(r.error); return r.data })
                     setOrders(prev => prev.map(o => o.id === orderId ? fullOrder : o))
 
                     if (selectedOrderRef.current?.id === orderId) {
@@ -251,7 +259,7 @@ export default function OrdersPage() {
                 // Wait for order_items to be inserted, then fetch full order
                 setTimeout(async () => {
                     try {
-                        const fullOrder = await OrderService.getOrderDetails(newOrderId)
+                        const fullOrder = await getOrderDetailsAction(newOrderId).then(r => { if (r.error) throw new Error(r.error); return r.data })
                         setOrders(prev => {
                             if (prev.some(o => o.id === newOrderId)) return prev
                             return [fullOrder, ...prev]
@@ -321,10 +329,11 @@ export default function OrdersPage() {
     const fetchOrders = async () => {
         try {
             setLoading(true)
-            const data = await OrderService.getAllOrders()
-            setOrders(data)
+            const result = await getOrdersAction()
+            if (result.error) throw new Error(result.error)
+            setOrders(result.data)
         } catch (error: any) {
-            console.error('Failed to fetch orders:', JSON.stringify(error, null, 2), error?.message, error?.code)
+            console.error('Failed to fetch orders:', error?.message)
             toast.error(error?.message || 'Failed to load orders')
         } finally {
             setLoading(false)
@@ -387,7 +396,8 @@ export default function OrdersPage() {
         if (updatingOrderId) return
         try {
             setUpdatingOrderId(orderId)
-            await OrderService.updateStatusWithHistory(orderId, newStatus, note)
+            const statusResult = await updateOrderStatusAction(orderId, newStatus, note)
+            if (statusResult.error) throw new Error(statusResult.error)
             toast.success(`Order status updated to ${formatStatusLabel(newStatus)}`)
             const order = orders.find(o => o.id === orderId)
             setOrders(prev => prev.map(o =>
@@ -418,7 +428,8 @@ export default function OrdersPage() {
         if (updatingOrderId) return
         try {
             setUpdatingOrderId(orderId)
-            await OrderService.updatePaymentStatus(orderId, paymentStatus, orderStatus)
+            const payResult = await updatePaymentStatusAction(orderId, paymentStatus, orderStatus)
+            if (payResult.error) throw new Error(payResult.error)
             toast.success(`Payment ${paymentStatus === 'verified' ? 'verified' : 'rejected'} successfully`)
             const order = orders.find(o => o.id === orderId)
             setOrders(prev => prev.map(o =>
@@ -459,7 +470,8 @@ export default function OrdersPage() {
         if (!selectedOrder) return
         try {
             setSavingNote(true)
-            await OrderService.addAdminNote(selectedOrder.id, adminNote)
+            const noteResult = await addAdminNoteAction(selectedOrder.id, adminNote)
+            if (noteResult.error) throw new Error(noteResult.error)
             toast.success('Admin note saved')
             setOrders(prev => prev.map(o =>
                 o.id === selectedOrder.id ? { ...o, admin_notes: adminNote } : o
@@ -478,7 +490,8 @@ export default function OrdersPage() {
         if (updatingOrderId) return
         try {
             setUpdatingOrderId(orderId)
-            await OrderService.approveCancellation(orderId)
+            const cancelResult = await approveCancellationAction(orderId)
+            if (cancelResult.error) throw new Error(cancelResult.error)
             toast.success('Cancellation approved')
             const order = orders.find(o => o.id === orderId)
             setOrders(prev => prev.map(o =>
@@ -505,8 +518,8 @@ export default function OrdersPage() {
         try {
             setUpdatingOrderId(orderId)
             const currentOrder = orders.find(o => o.id === orderId)
-            await OrderService.updateStatusWithHistory(orderId, currentOrder?.status || 'processing', 'Cancellation request rejected by admin')
-            // Also persist cancellation_requested: false to DB so it doesn't reappear on refresh
+            const rejectResult = await updateOrderStatusAction(orderId, currentOrder?.status || 'processing', 'Cancellation request rejected by admin')
+            if (rejectResult.error) throw new Error(rejectResult.error)
             await updateOrderAction(orderId, { cancellation_requested: false })
             toast.success('Cancellation request rejected')
             setOrders(prev => prev.map(o =>
@@ -535,7 +548,8 @@ export default function OrdersPage() {
         try {
             setDispatchLoading(true)
             const note = dispatchNote.trim() ? `Shipped: ${dispatchNote.trim()}` : 'Order shipped'
-            await OrderService.updateStatusWithHistory(dispatchOrderId, 'shipped', note)
+            const dispatchResult = await updateOrderStatusAction(dispatchOrderId, 'shipped', note)
+            if (dispatchResult.error) throw new Error(dispatchResult.error)
             toast.success('Order marked as shipped')
             const order = orders.find(o => o.id === dispatchOrderId)
             setOrders(prev => prev.map(o =>
@@ -563,7 +577,24 @@ export default function OrdersPage() {
     // ─── CSV export ───
     const handleExportCSV = useCallback(() => {
         try {
-            const csvContent = OrderService.exportOrdersCSV(filteredOrders)
+            const headers = ['Order ID', 'Tracking #', 'Customer', 'Email', 'Phone', 'Total', 'Status', 'Payment', 'Payment Status', 'Address', 'Date']
+            const rows = filteredOrders.map((order: any) => [
+                order.id.slice(0, 8).toUpperCase(),
+                order.tracking_number || '',
+                order.client?.full_name || order.guest_name || 'Unknown',
+                order.client?.email || order.guest_email || '',
+                order.client?.phone_number || order.guest_phone || '',
+                order.total_amount,
+                order.status,
+                order.payment_method || 'cod',
+                order.payment_status || 'pending',
+                (order.shipping_address || '').replace(/,/g, ';'),
+                order.created_at ? new Date(order.created_at).toLocaleDateString() : ''
+            ])
+            const csvContent = [
+                headers.join(','),
+                ...rows.map((row: any[]) => row.map(cell => `"${cell}"`).join(','))
+            ].join('\n')
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
             const url = URL.createObjectURL(blob)
             const link = document.createElement('a')

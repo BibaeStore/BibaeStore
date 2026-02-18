@@ -1,20 +1,16 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Plus, Pencil, Trash2, Box, ImageIcon, Loader2, Eye, Tag, ChevronLeft, ChevronRight, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { ProductService } from '@/services/product.service'
-import { CategoryService } from '@/services/category.service'
 import { Product } from '@/types/product'
 import { Category } from '@/types/category'
 import { ProductFormValues } from '@/lib/validations/product'
 import { ProductForm } from './ProductForm'
-import { uploadProductImage, createProductAction, updateProductAction, deleteProductAction } from './actions'
+import { getProductsAction, getCategoriesForProductsAction, uploadProductImage, createProductAction, updateProductAction, deleteProductAction } from './actions'
 import { toast } from 'sonner'
-import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
-import type { SupabaseClient } from '@supabase/supabase-js'
 import {
     Table,
     TableBody,
@@ -59,11 +55,6 @@ export default function ProductsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [viewProduct, setViewProduct] = useState<Product | null>(null)
-    // Single stable client instance — never recreate it
-    const supabaseRef = useRef<SupabaseClient | null>(null)
-    if (!supabaseRef.current) {
-        supabaseRef.current = createClient()
-    }
     const [deleteId, setDeleteId] = useState<string | null>(null)
     const [currentPage, setCurrentPage] = useState(1)
 
@@ -117,15 +108,28 @@ export default function ProductsPage() {
     const fetchData = useCallback(async () => {
         try {
             setIsLoading(true)
-            const [productsData, categoriesData] = await Promise.all([
-                ProductService.getProducts(),
-                CategoryService.getCategories()
+
+            // Race against a 10s timeout to prevent infinite loading loop 
+            const timeoutPromise = new Promise<{ error: string }>((_, reject) =>
+                setTimeout(() => reject(new Error("Request timed out. Please check your connection.")), 10000)
+            )
+
+            const dataPromise = Promise.all([
+                getProductsAction(),
+                getCategoriesForProductsAction()
             ])
-            setProducts(productsData)
-            setCategories(categoriesData)
-        } catch (error) {
+
+            // @ts-ignore - complex union type with timeout
+            const [productsResult, categoriesResult] = await Promise.race([dataPromise, timeoutPromise])
+
+            if (productsResult.error) throw new Error(productsResult.error)
+            if (categoriesResult.error) throw new Error(categoriesResult.error)
+
+            setProducts(productsResult.data as unknown as Product[])
+            setCategories(categoriesResult.data as unknown as Category[])
+        } catch (error: any) {
             console.error('[Products] fetchData error:', error)
-            toast.error("Failed to load products. Please refresh the page.")
+            toast.error(error?.message || "Failed to load products. Please refresh.")
         } finally {
             setIsLoading(false)
         }
@@ -189,13 +193,6 @@ export default function ProductsPage() {
 
     const handleSubmit = async (data: ProductFormValues, newFiles: File[], existingImages: string[]) => {
         try {
-            // Validate session before hitting server actions
-            const { data: { session } } = await supabaseRef.current!.auth.getSession()
-            if (!session) {
-                toast.error("Session expired. Please refresh the page and log in again.")
-                return
-            }
-
             // Step 1: Upload new images via server action (one at a time)
             const imageUrls = [...existingImages]
             for (const file of newFiles) {
@@ -395,10 +392,10 @@ export default function ProductsPage() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">All Prices</SelectItem>
-                                            <SelectItem value="under-2000">Under $2,000</SelectItem>
-                                            <SelectItem value="2000-5000">$2,000 - $5,000</SelectItem>
-                                            <SelectItem value="5000-10000">$5,000 - $10,000</SelectItem>
-                                            <SelectItem value="over-10000">Over $10,000</SelectItem>
+                                            <SelectItem value="under-2000">Under Rs. 2,000</SelectItem>
+                                            <SelectItem value="2000-5000">Rs. 2,000 - 5,000</SelectItem>
+                                            <SelectItem value="5000-10000">Rs. 5,000 - 10,000</SelectItem>
+                                            <SelectItem value="over-10000">Over Rs. 10,000</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>

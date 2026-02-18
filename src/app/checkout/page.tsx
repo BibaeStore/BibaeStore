@@ -7,8 +7,7 @@ import { formatPrice } from "@/lib/products";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { OrderService } from "@/services/order.service";
-import { ClientService } from "@/services/client.service";
+import { getProfileForCheckoutAction, uploadPaymentProofAction, placeOrderAction } from "@/app/checkout/actions";
 import { createClient } from "@/lib/supabase/client";
 import {
   contactSchema,
@@ -97,8 +96,8 @@ export default function CheckoutPage() {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const data = await ClientService.getProfile(userId);
-      setProfile(data);
+      const result = await getProfileForCheckoutAction(userId);
+      if (result.data) setProfile(result.data);
     } catch (error) {
       console.error("Error fetching profile:", error);
       toast.error("Failed to load profile data");
@@ -156,24 +155,35 @@ export default function CheckoutPage() {
         phone: contactData.phone
       } : undefined;
 
-      const promise = OrderService.placeOrder(
-        session?.user?.id || null,
-        finalTotal,
-        orderItems,
-        addressString,
-        paymentData.method,
-        paymentData.proofFile,
-        paymentData.onlineMethod,
-        guestInfo
-      );
+      // Upload payment proof if online payment
+      let paymentProofUrl: string | null = null;
+      if (paymentData.method === 'online' && paymentData.proofFile) {
+        const fd = new FormData();
+        fd.append('file', paymentData.proofFile);
+        fd.append('clientId', session?.user?.id || 'guest');
+        const uploadResult = await uploadPaymentProofAction(fd);
+        if (uploadResult.error) throw new Error(uploadResult.error);
+        paymentProofUrl = uploadResult.url || null;
+      }
 
-      toast.promise(promise, {
-        loading: 'Creating your order...',
-        success: () => 'Order placed successfully!',
-        error: (err) => `Order failed: ${err.message}`
+      toast.loading('Creating your order...');
+
+      const result = await placeOrderAction({
+        clientId: session?.user?.id || null,
+        totalAmount: finalTotal,
+        items: orderItems,
+        shippingAddress: addressString,
+        paymentMethod: paymentData.method,
+        paymentProofUrl,
+        onlineMethod: paymentData.onlineMethod,
+        guestInfo,
       });
 
-      const order = await promise;
+      toast.dismiss();
+      if (result.error) throw new Error(result.error);
+      toast.success('Order placed successfully!');
+
+      const order = result.data;
 
       setOrderPlaced(true);
       clearCart();
@@ -427,8 +437,9 @@ function ContactForm({
 
       if (data.session?.user) {
         // Fetch profile to auto-fill fields
-        const profile = await ClientService.getProfile(data.session.user.id);
-        if (profile) {
+        const profileResult = await getProfileForCheckoutAction(data.session.user.id);
+        if (profileResult.data) {
+          const profile = profileResult.data;
           setValue('email', profile.email || '');
           setValue('phone', profile.phone_number || '');
           onLoginSuccess(data.session, profile);

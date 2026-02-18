@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react'
 import { Plus, Pencil, Trash2, FolderTree, ImageIcon, Loader2, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { CategoryService } from '@/services/category.service'
-import { Category, CategoryFormData } from '@/types/category'
+import { Category } from '@/types/category'
 import { CategoryFormValues } from '@/lib/validations/category'
 import { CategoryForm } from './CategoryForm'
+import { getCategoriesAction, createCategoryAction, updateCategoryAction, deleteCategoryAction, uploadCategoryImageAction } from './actions'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import {
@@ -48,11 +48,12 @@ export default function CategoriesPage() {
     const fetchCategories = async () => {
         try {
             setIsLoading(true)
-            const data = await CategoryService.getCategories()
-            setCategories(data)
+            const result = await getCategoriesAction()
+            if (result.error) throw new Error(result.error)
+            setCategories(result.data as Category[])
         } catch (error) {
             console.error(error)
-            // toast.error("Failed to load categories")
+            toast.error("Failed to load categories")
         } finally {
             setIsLoading(false)
         }
@@ -84,12 +85,13 @@ export default function CategoriesPage() {
         if (!deleteId) return
 
         try {
-            await CategoryService.deleteCategory(deleteId)
+            const result = await deleteCategoryAction(deleteId)
+            if (result.error) throw new Error(result.error)
             toast.success("Category deleted successfully")
             fetchCategories()
-        } catch (error) {
+        } catch (error: any) {
             console.error(error)
-            toast.error("Failed to delete category")
+            toast.error(error?.message || "Failed to delete category")
         } finally {
             setDeleteId(null)
         }
@@ -97,31 +99,39 @@ export default function CategoriesPage() {
 
     const handleSubmit = async (data: CategoryFormValues, file: File | null) => {
         try {
-            const formData: CategoryFormData = {
+            let imageUrl = data.image_url || null
+
+            // Upload image via server action if a file was provided
+            if (file) {
+                const fd = new FormData()
+                fd.append('file', file)
+                const uploadResult = await uploadCategoryImageAction(fd)
+                if (uploadResult.error) throw new Error(uploadResult.error)
+                imageUrl = uploadResult.url!
+            }
+
+            const categoryData = {
                 name: data.name,
                 parent_id: data.parent_id || null,
-                image_url: data.image_url || null,
-                imageFile: file,
+                image_url: imageUrl,
                 status: data.status,
                 sort_order: data.sort_order
             }
 
             if (editingCategory) {
-                await CategoryService.updateCategory(editingCategory.id, formData)
+                const result = await updateCategoryAction(editingCategory.id, categoryData)
+                if (result.error) throw new Error(result.error)
                 toast.success("Category updated successfully")
             } else {
-                await CategoryService.createCategory(formData)
+                const result = await createCategoryAction(categoryData)
+                if (result.error) throw new Error(result.error)
                 toast.success("Category created successfully")
             }
             fetchCategories()
             setIsModalOpen(false)
         } catch (error: any) {
             console.error(error)
-            if (error.code === 'PGRST205') {
-                toast.error("Database table missing. Please look at the instructions provided to the assistant.")
-            } else {
-                toast.error(editingCategory ? "Failed to update category" : "Failed to create category")
-            }
+            toast.error(error?.message || (editingCategory ? "Failed to update category" : "Failed to create category"))
             throw error
         }
     }

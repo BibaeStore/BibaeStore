@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
-import { ClientService } from '@/services/client.service'
-import { OrderService } from '@/services/order.service'
+import { getProfileDataAction, updateProfileAction } from '@/app/profile/actions'
 import { Client, Order } from '@/types/client'
 import { toast } from 'sonner'
 import Image from 'next/image'
@@ -36,25 +35,20 @@ export default function ProfileClient() {
     useEffect(() => {
         const fetchUserAndProfile = async () => {
             try {
-                const { data: { user } } = await supabase.auth.getUser()
-                if (!user) {
+                const result = await getProfileDataAction()
+                if (result.error === 'Not authenticated') {
                     router.push('/login')
                     return
                 }
-                setUser(user)
+                setUser({ id: result.userId })
 
-                const [profileData, ordersData] = await Promise.all([
-                    ClientService.getProfile(user.id),
-                    OrderService.getOrders(user.id)
-                ])
-
-                if (profileData) {
-                    setProfile(profileData)
-                    setFullName(profileData.full_name)
-                    setPhone(profileData.phone_number || '')
-                    setPreviewUrl(profileData.profile_image_url || null)
+                if (result.profile) {
+                    setProfile(result.profile)
+                    setFullName(result.profile.full_name)
+                    setPhone(result.profile.phone_number || '')
+                    setPreviewUrl(result.profile.profile_image_url || null)
                 }
-                setOrders(ordersData)
+                setOrders(result.orders || [])
             } catch (error) {
                 console.error('Error fetching profile data:', error)
             } finally {
@@ -63,7 +57,7 @@ export default function ProfileClient() {
         }
 
         fetchUserAndProfile()
-    }, [supabase, router])
+    }, [router])
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -71,12 +65,15 @@ export default function ProfileClient() {
 
         setUpdating(true)
         try {
-            const updatedProfile = await ClientService.updateProfile(user.id, {
-                full_name: fullName,
-                phone_number: phone
-            }, profileImage || undefined)
+            const fd = new FormData()
+            fd.append('full_name', fullName)
+            fd.append('phone_number', phone)
+            if (profileImage) fd.append('image', profileImage)
 
-            setProfile(updatedProfile)
+            const result = await updateProfileAction(fd)
+            if (result.error) throw new Error(result.error)
+
+            setProfile(result.data)
             toast.success('Profile updated successfully!')
         } catch (error) {
             console.error(error)

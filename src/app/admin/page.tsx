@@ -15,13 +15,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { formatPrice } from '@/lib/products'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAdminNotifications } from '@/contexts/AdminNotificationContext'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { getDashboardDataAction } from './actions'
 
 interface DashboardStats {
     totalRevenue: number
@@ -45,90 +44,20 @@ export default function AdminDashboard() {
         todayOrders: 0,
         todayRevenue: 0
     })
+    const [statusCounts, setStatusCounts] = useState<Record<string, number>>({})
     const { newOrderCount, resetCount, lastNewOrderId } = useAdminNotifications()
-    // Single stable client instance
-    const supabaseRef = useRef<SupabaseClient | null>(null)
     const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-    if (!supabaseRef.current) {
-        supabaseRef.current = createClient()
-    }
-
     const fetchData = useCallback(async () => {
-        const supabase = supabaseRef.current!
         setError(null)
 
         try {
-            // Fetch recent orders (last 5) with client info
-            const { data: ordersData, error: ordersError } = await supabase
-                .from('orders')
-                .select('*, client:clients(full_name, email, phone_number)')
-                .order('created_at', { ascending: false })
-                .limit(5)
+            const result = await getDashboardDataAction()
+            if (result.error) throw new Error(result.error)
 
-            if (ordersError) {
-                console.error('[Dashboard] Orders fetch error:', ordersError)
-                throw new Error(`Failed to load orders: ${ordersError.message}`)
-            }
-
-            setOrders(ordersData || [])
-
-            // ── Stats queries ────────────────────────────────────────────────
-            const [
-                { data: deliveredOrders },
-                { count: activeOrders },
-                { count: totalCustomers },
-                { data: allOrders },
-                { data: todayOrdersData }
-            ] = await Promise.all([
-                supabase
-                    .from('orders')
-                    .select('total_amount')
-                    .eq('status', 'delivered'),
-
-                supabase
-                    .from('orders')
-                    .select('*', { count: 'exact', head: true })
-                    .not('status', 'in', '(delivered,cancelled)'),
-
-                supabase
-                    .from('clients')
-                    .select('*', { count: 'exact', head: true }),
-
-                supabase
-                    .from('orders')
-                    .select('total_amount')
-                    .neq('status', 'cancelled'),
-
-                supabase
-                    .from('orders')
-                    .select('total_amount')
-                    .gte('created_at', (() => {
-                        const d = new Date()
-                        d.setHours(0, 0, 0, 0)
-                        return d.toISOString()
-                    })())
-            ])
-
-            const totalRevenue = (deliveredOrders || []).reduce(
-                (sum, o) => sum + Number(o.total_amount), 0
-            )
-            const avgOrderValue = allOrders && allOrders.length > 0
-                ? allOrders.reduce((sum, o) => sum + Number(o.total_amount), 0) / allOrders.length
-                : 0
-            const todayOrders = todayOrdersData?.length || 0
-            const todayRevenue = (todayOrdersData || []).reduce(
-                (sum, o) => sum + Number(o.total_amount), 0
-            )
-
-            setStats({
-                totalRevenue,
-                activeOrders: activeOrders || 0,
-                totalCustomers: totalCustomers || 0,
-                avgOrderValue,
-                todayOrders,
-                todayRevenue
-            })
+            setOrders(result.orders)
+            setStats(result.stats)
+            setStatusCounts(result.statusCounts)
         } catch (err: any) {
             console.error('[Dashboard] fetchData error:', err)
             setError(err?.message || 'Failed to load dashboard data')
@@ -360,13 +289,13 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent className="px-8 pb-8 space-y-7">
                         {!isLoading && (() => {
-                            const total = orders.length
+                            const total = Object.values(statusCounts).reduce((sum, c) => sum + c, 0)
                             return [
-                                { label: "Pending", count: orders.filter((o: any) => o.status === 'pending').length, color: "bg-orange-500" },
-                                { label: "Under Review", count: orders.filter((o: any) => o.status === 'under_review').length, color: "bg-amber-500" },
-                                { label: "Processing", count: orders.filter((o: any) => o.status === 'processing').length, color: "bg-blue-500" },
-                                { label: "Shipped", count: orders.filter((o: any) => o.status === 'shipped').length, color: "bg-indigo-500" },
-                                { label: "Delivered", count: orders.filter((o: any) => o.status === 'delivered').length, color: "bg-emerald-500" },
+                                { label: "Pending", count: statusCounts['pending'] || 0, color: "bg-orange-500" },
+                                { label: "Under Review", count: statusCounts['under_review'] || 0, color: "bg-amber-500" },
+                                { label: "Processing", count: statusCounts['processing'] || 0, color: "bg-blue-500" },
+                                { label: "Shipped", count: statusCounts['shipped'] || 0, color: "bg-indigo-500" },
+                                { label: "Delivered", count: statusCounts['delivered'] || 0, color: "bg-emerald-500" },
                             ].map((item) => (
                                 <div key={item.label} className="space-y-2.5 group cursor-default">
                                     <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.15em]">

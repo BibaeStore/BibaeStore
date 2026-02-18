@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { categories } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
 import { createClient } from "@/lib/supabase/client";
-import { ProductService } from "@/services/product.service";
+import { getShopProductsAction } from "@/app/shop/actions";
 import { toast } from "sonner";
 import { ProductGridSkeleton } from "@/components/SkeletonLoader";
 import { motion, AnimatePresence } from "framer-motion";
@@ -48,11 +48,10 @@ export default function ShopContent({ initialProducts, initialTitle }: ShopConte
         'postgres_changes',
         { event: '*', schema: 'public', table: 'products' },
         async () => {
-          // Re-fetch via client service for realtime updates
+          // Re-fetch via server action for realtime updates
           try {
-            const data = await ProductService.getProducts();
-            setProducts(data);
-            // toast.info("Product list updated"); // Removed noisy toast
+            const result = await getShopProductsAction();
+            if (!result.error) setProducts(result.data as Product[]);
           } catch (error) {
             console.error("Failed to refresh products:", error);
           }

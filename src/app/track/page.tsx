@@ -18,7 +18,7 @@ import {
     ArrowRight,
     AlertCircle,
 } from 'lucide-react'
-import { OrderService } from '@/services/order.service'
+import { getOrderByTrackingAction } from '@/app/track/actions'
 import { Order, StatusHistoryEntry } from '@/types/client'
 import {
     staggerContainer,
@@ -132,11 +132,13 @@ function TrackingContent() {
         setIsCancelled(false)
 
         try {
-            const data = await OrderService.getOrderByTracking(query)
-            if (data) {
-                setOrder(data)
+            const result = await getOrderByTrackingAction(query)
+            if (result.error) {
+                toast.error('Something went wrong. Please try again.')
+            } else if (result.data) {
+                setOrder(result.data)
                 setTrackingNumber(query)
-                if (data.status === 'cancelled') {
+                if (result.data.status === 'cancelled') {
                     setIsCancelled(true)
                 }
             } else {
