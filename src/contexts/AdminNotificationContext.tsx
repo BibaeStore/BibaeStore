@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { createClient } from '@/lib/supabase/client'
 import { formatPrice } from '@/lib/products'
 import { toast } from 'sonner'
+import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js'
 
 interface AdminNotificationContextType {
     newOrderCount: number
@@ -22,57 +23,80 @@ export const useAdminNotifications = () => useContext(AdminNotificationContext)
 export function AdminNotificationProvider({ children }: { children: React.ReactNode }) {
     const [newOrderCount, setNewOrderCount] = useState(0)
     const [lastNewOrderId, setLastNewOrderId] = useState<string | null>(null)
-    const audioRef = useRef<HTMLAudioElement | null>(null)
+    // Keep a single stable client instance for the lifetime of this provider
+    const supabaseRef = useRef<SupabaseClient | null>(null)
+    const channelRef = useRef<RealtimeChannel | null>(null)
+    const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const retryCountRef = useRef(0)
+    const isMountedRef = useRef(true)
 
     useEffect(() => {
-        const supabase = createClient()
-        let retryTimeout: NodeJS.Timeout | null = null
+        isMountedRef.current = true
+
+        // Create a single client instance — never recreate it
+        if (!supabaseRef.current) {
+            supabaseRef.current = createClient()
+        }
+        const supabase = supabaseRef.current
 
         const setupChannel = () => {
+            // Remove any existing channel before creating a new one
+            if (channelRef.current) {
+                supabase.removeChannel(channelRef.current)
+                channelRef.current = null
+            }
+
             const channel = supabase
-                .channel('admin-notifications')
+                .channel('admin-order-notifications', {
+                    config: { broadcast: { self: false } }
+                })
                 .on('postgres_changes', {
                     event: 'INSERT',
                     schema: 'public',
                     table: 'orders'
                 }, (payload) => {
+                    if (!isMountedRef.current) return
                     setNewOrderCount(prev => prev + 1)
                     setLastNewOrderId(payload.new.id as string)
 
                     toast.success('New order received!', {
-                        description: `Order #${(payload.new.id as string)?.slice(0, 8).toUpperCase()} - ${formatPrice(payload.new.total_amount)}`,
+                        description: `Order #${(payload.new.id as string)?.slice(0, 8).toUpperCase()} — ${formatPrice(payload.new.total_amount)}`,
                         duration: 8000,
                     })
-
-                    try {
-                        audioRef.current?.play().catch(() => { })
-                    } catch { }
                 })
                 .subscribe((status, err) => {
-                    if (err) {
-                        console.error('[AdminNotifications] Realtime subscription error:', err)
+                    if (!isMountedRef.current) return
 
-                        // Handle rate limit errors
-                        if (err.message?.includes('429') || err.message?.includes('rate limit')) {
-                            console.warn('[AdminNotifications] Rate limit hit, retrying in 5s...')
-                            retryTimeout = setTimeout(() => {
-                                supabase.removeChannel(channel)
-                                setupChannel()
-                            }, 5000)
-                        }
+                    if (status === 'SUBSCRIBED') {
+                        retryCountRef.current = 0
+                        console.log('[AdminNotifications] Realtime connected')
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                        retryCountRef.current += 1
+                        const backoffMs = Math.min(10000 * Math.pow(2, retryCountRef.current - 1), 120000)
+                        console.warn(`[AdminNotifications] Channel error, retrying in ${backoffMs / 1000}s... (attempt ${retryCountRef.current})`, err)
+                        if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
+                        retryTimeoutRef.current = setTimeout(() => {
+                            if (isMountedRef.current) setupChannel()
+                        }, backoffMs)
+                    } else if (status === 'CLOSED') {
+                        console.log('[AdminNotifications] Channel closed')
                     }
                 })
 
-            return channel
+            channelRef.current = channel
         }
 
-        const channel = setupChannel()
+        setupChannel()
 
         return () => {
-            if (retryTimeout) clearTimeout(retryTimeout)
-            supabase.removeChannel(channel)
+            isMountedRef.current = false
+            if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
+            if (channelRef.current && supabaseRef.current) {
+                supabaseRef.current.removeChannel(channelRef.current)
+                channelRef.current = null
+            }
         }
-    }, [])
+    }, []) // Empty deps — only run once on mount
 
     const resetCount = useCallback(() => {
         setNewOrderCount(0)
@@ -80,10 +104,6 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
 
     return (
         <AdminNotificationContext.Provider value={{ newOrderCount, resetCount, lastNewOrderId }}>
-            {/* Hidden audio element for notification sound */}
-            <audio ref={audioRef} preload="auto">
-                <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGczIjmW2e7QeTkjQKPi8s1hKiM9lN7w0XQsHC+Gz+vXfzcnSaTh8tF0LBkrnfPRdCwZK53z0XQsGSud89F0LBkrg==" type="audio/wav" />
-            </audio>
             {children}
         </AdminNotificationContext.Provider>
     )

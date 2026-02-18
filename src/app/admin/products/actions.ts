@@ -90,13 +90,14 @@ export async function updateProductAction(
         .update(updateData)
         .eq('id', id)
         .select(`*, category:categories(name)`)
+        .single()
 
     if (error) {
         console.error(`[updateProductAction] Supabase error for ${id}:`, error)
         return { error: error.message, code: error.code }
     }
 
-    if (!data || data.length === 0) {
+    if (!data) {
         return { error: 'Product not found. It may have been deleted.' }
     }
 
@@ -104,7 +105,7 @@ export async function updateProductAction(
     revalidatePath('/shop')
     revalidatePath(`/product/${id}`)
 
-    return { data: data[0] }
+    return { data }
 }
 
 // ─── Delete Product ──────────────────────────────────────────────────────────

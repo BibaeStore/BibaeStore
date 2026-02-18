@@ -14,19 +14,30 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
-import { useEffect, useState, useCallback } from 'react'
-import { OrderService } from '@/services/order.service'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { formatPrice } from '@/lib/products'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { useAdminNotifications } from '@/contexts/AdminNotificationContext'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+interface DashboardStats {
+    totalRevenue: number
+    activeOrders: number
+    totalCustomers: number
+    avgOrderValue: number
+    todayOrders: number
+    todayRevenue: number
+}
 
 export default function AdminDashboard() {
     const router = useRouter()
     const [orders, setOrders] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [stats, setStats] = useState({
+    const [error, setError] = useState<string | null>(null)
+    const [stats, setStats] = useState<DashboardStats>({
         totalRevenue: 0,
         activeOrders: 0,
         totalCustomers: 0,
@@ -35,17 +46,92 @@ export default function AdminDashboard() {
         todayRevenue: 0
     })
     const { newOrderCount, resetCount, lastNewOrderId } = useAdminNotifications()
+    // Single stable client instance
+    const supabaseRef = useRef<SupabaseClient | null>(null)
+    const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+    if (!supabaseRef.current) {
+        supabaseRef.current = createClient()
+    }
 
     const fetchData = useCallback(async () => {
+        const supabase = supabaseRef.current!
+        setError(null)
+
         try {
-            const [ordersData, statsData] = await Promise.all([
-                OrderService.getAllOrders(),
-                OrderService.getOrderStats()
+            // Fetch recent orders (last 5) with client info
+            const { data: ordersData, error: ordersError } = await supabase
+                .from('orders')
+                .select('*, client:clients(full_name, email, phone_number)')
+                .order('created_at', { ascending: false })
+                .limit(5)
+
+            if (ordersError) {
+                console.error('[Dashboard] Orders fetch error:', ordersError)
+                throw new Error(`Failed to load orders: ${ordersError.message}`)
+            }
+
+            setOrders(ordersData || [])
+
+            // ── Stats queries ────────────────────────────────────────────────
+            const [
+                { data: deliveredOrders },
+                { count: activeOrders },
+                { count: totalCustomers },
+                { data: allOrders },
+                { data: todayOrdersData }
+            ] = await Promise.all([
+                supabase
+                    .from('orders')
+                    .select('total_amount')
+                    .eq('status', 'delivered'),
+
+                supabase
+                    .from('orders')
+                    .select('*', { count: 'exact', head: true })
+                    .not('status', 'in', '(delivered,cancelled)'),
+
+                supabase
+                    .from('clients')
+                    .select('*', { count: 'exact', head: true }),
+
+                supabase
+                    .from('orders')
+                    .select('total_amount')
+                    .neq('status', 'cancelled'),
+
+                supabase
+                    .from('orders')
+                    .select('total_amount')
+                    .gte('created_at', (() => {
+                        const d = new Date()
+                        d.setHours(0, 0, 0, 0)
+                        return d.toISOString()
+                    })())
             ])
-            setOrders(ordersData.slice(0, 5))
-            setStats(statsData)
-        } catch (error) {
-            console.error('Error fetching dashboard data:', error)
+
+            const totalRevenue = (deliveredOrders || []).reduce(
+                (sum, o) => sum + Number(o.total_amount), 0
+            )
+            const avgOrderValue = allOrders && allOrders.length > 0
+                ? allOrders.reduce((sum, o) => sum + Number(o.total_amount), 0) / allOrders.length
+                : 0
+            const todayOrders = todayOrdersData?.length || 0
+            const todayRevenue = (todayOrdersData || []).reduce(
+                (sum, o) => sum + Number(o.total_amount), 0
+            )
+
+            setStats({
+                totalRevenue,
+                activeOrders: activeOrders || 0,
+                totalCustomers: totalCustomers || 0,
+                avgOrderValue,
+                todayOrders,
+                todayRevenue
+            })
+        } catch (err: any) {
+            console.error('[Dashboard] fetchData error:', err)
+            setError(err?.message || 'Failed to load dashboard data')
         } finally {
             setIsLoading(false)
         }
@@ -55,10 +141,16 @@ export default function AdminDashboard() {
         fetchData()
     }, [fetchData])
 
-    // Refresh dashboard data when a new order comes in via the shared context
+    // Refresh when a new order arrives via realtime notification (debounced)
     useEffect(() => {
         if (lastNewOrderId) {
-            fetchData()
+            if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current)
+            refreshTimeoutRef.current = setTimeout(() => {
+                fetchData()
+            }, 2000)
+        }
+        return () => {
+            if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current)
         }
     }, [lastNewOrderId, fetchData])
 
@@ -131,6 +223,21 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
+            {/* Error Banner */}
+            {error && (
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center justify-between">
+                    <p className="text-sm text-red-600">{error}</p>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={fetchData}
+                        className="text-red-600 hover:bg-red-100 text-xs"
+                    >
+                        Retry
+                    </Button>
+                </div>
+            )}
+
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {statsCards.map((stat, i) => (
@@ -148,7 +255,9 @@ export default function AdminDashboard() {
                             </div>
                             <div className="mt-6 space-y-1">
                                 <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold">{stat.title}</p>
-                                <h3 className="text-2xl font-bold text-gray-900 tracking-tight">{isLoading ? '...' : stat.value}</h3>
+                                <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
+                                    {isLoading ? <span className="inline-block w-16 h-6 bg-gray-100 rounded animate-pulse" /> : stat.value}
+                                </h3>
                                 <p className="text-[10px] text-gray-400">{stat.subtitle}</p>
                             </div>
                         </div>
@@ -205,7 +314,7 @@ export default function AdminDashboard() {
                                                 </td>
                                                 <td className="py-5">
                                                     <div className="flex flex-col">
-                                                        <span className="font-medium text-gray-900">{order.client?.full_name || 'Guest'}</span>
+                                                        <span className="font-medium text-gray-900">{order.client?.full_name || order.guest_name || 'Guest'}</span>
                                                         <span className="text-[10px] text-gray-400 flex items-center gap-1.5 mt-1 font-bold">
                                                             <Clock className="w-3 h-3" /> {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}
                                                         </span>
@@ -213,24 +322,22 @@ export default function AdminDashboard() {
                                                 </td>
                                                 <td className="py-5 font-bold text-gray-900">{formatPrice(order.total_amount)}</td>
                                                 <td className="py-5">
-                                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${
-                                                        order.payment_method === 'online'
+                                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${order.payment_method === 'online'
                                                             ? 'bg-blue-50 text-blue-600'
                                                             : 'bg-gray-100 text-gray-600'
-                                                    }`}>
+                                                        }`}>
                                                         {order.payment_method === 'online' ? 'Bank' : 'COD'}
                                                     </span>
                                                 </td>
                                                 <td className="py-5 text-right">
-                                                    <span className={`inline-flex px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-[0.1em] ${
-                                                        order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
-                                                        order.status === 'processing' ? 'bg-primary/10 text-primary' :
-                                                        order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
-                                                        order.status === 'under_review' ? 'bg-amber-100 text-amber-600' :
-                                                        order.status === 'pending' ? 'bg-orange-100 text-orange-600' :
-                                                        order.status === 'cancelled' ? 'bg-red-100 text-red-600' :
-                                                        'bg-gray-100 text-gray-500'
-                                                    }`}>
+                                                    <span className={`inline-flex px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-[0.1em] ${order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
+                                                            order.status === 'processing' ? 'bg-primary/10 text-primary' :
+                                                                order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                                                                    order.status === 'under_review' ? 'bg-amber-100 text-amber-600' :
+                                                                        order.status === 'pending' ? 'bg-orange-100 text-orange-600' :
+                                                                            order.status === 'cancelled' ? 'bg-red-100 text-red-600' :
+                                                                                'bg-gray-100 text-gray-500'
+                                                        }`}>
                                                         {order.status === 'under_review' ? 'Review' : order.status}
                                                     </span>
                                                 </td>
@@ -253,13 +360,13 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent className="px-8 pb-8 space-y-7">
                         {!isLoading && (() => {
-                            const allOrders = orders.length > 5 ? orders : orders; // Use what we have
+                            const total = orders.length
                             return [
-                                { label: "Pending", count: allOrders.filter((o: any) => o.status === 'pending').length, color: "bg-orange-500" },
-                                { label: "Under Review", count: allOrders.filter((o: any) => o.status === 'under_review').length, color: "bg-amber-500" },
-                                { label: "Processing", count: allOrders.filter((o: any) => o.status === 'processing').length, color: "bg-blue-500" },
-                                { label: "Shipped", count: allOrders.filter((o: any) => o.status === 'shipped').length, color: "bg-indigo-500" },
-                                { label: "Delivered", count: allOrders.filter((o: any) => o.status === 'delivered').length, color: "bg-emerald-500" },
+                                { label: "Pending", count: orders.filter((o: any) => o.status === 'pending').length, color: "bg-orange-500" },
+                                { label: "Under Review", count: orders.filter((o: any) => o.status === 'under_review').length, color: "bg-amber-500" },
+                                { label: "Processing", count: orders.filter((o: any) => o.status === 'processing').length, color: "bg-blue-500" },
+                                { label: "Shipped", count: orders.filter((o: any) => o.status === 'shipped').length, color: "bg-indigo-500" },
+                                { label: "Delivered", count: orders.filter((o: any) => o.status === 'delivered').length, color: "bg-emerald-500" },
                             ].map((item) => (
                                 <div key={item.label} className="space-y-2.5 group cursor-default">
                                     <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.15em]">
@@ -269,13 +376,13 @@ export default function AdminDashboard() {
                                     <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                                         <motion.div
                                             initial={{ width: 0 }}
-                                            animate={{ width: allOrders.length > 0 ? `${Math.max(5, (item.count / allOrders.length) * 100)}%` : '0%' }}
+                                            animate={{ width: total > 0 ? `${Math.max(5, (item.count / total) * 100)}%` : '0%' }}
                                             transition={{ duration: 1.5, ease: "easeOut" }}
                                             className={`h-full ${item.color} shadow-sm`}
                                         />
                                     </div>
                                 </div>
-                            ));
+                            ))
                         })()}
 
                         <div className="mt-10 pt-8 border-t border-gray-200">

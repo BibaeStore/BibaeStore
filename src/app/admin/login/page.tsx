@@ -37,9 +37,11 @@ export default function AdminLoginPage() {
             }
 
             if (data.user) {
-                toast.success('Admin access granted!')
-                // Check if user is admin
-                if (data.user.email === 'bibaestore@gmail.com') {
+                const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'bibaestore@gmail.com'
+                if (data.user.email === adminEmail) {
+                    toast.success('Admin access granted!')
+                    // Force cookie sync before navigating so middleware sees the session
+                    router.refresh()
                     router.push('/admin')
                 } else {
                     toast.error('Unauthorized access. Admin only.')

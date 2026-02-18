@@ -122,7 +122,9 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
 
                 if (data.user) {
                     toast.success('Welcome back!')
-                    if (data.user.email === 'bibaestore@gmail.com') {
+                    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'bibaestore@gmail.com'
+                    if (data.user.email === adminEmail) {
+                        router.refresh()
                         router.push('/admin')
                     } else {
                         router.push('/')

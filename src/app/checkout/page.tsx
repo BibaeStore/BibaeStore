@@ -401,7 +401,8 @@ function ContactForm({
   const [loginLoading, setLoginLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
-  const supabaseLogin = createClient();
+  const supabaseLoginRef = useRef(createClient());
+  const supabaseLogin = supabaseLoginRef.current;
 
   const onSubmit = (data: ContactFormData) => {
     onComplete(data);

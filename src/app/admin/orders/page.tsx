@@ -73,6 +73,7 @@ import { toast } from 'sonner'
 import Image from 'next/image'
 import { formatPrice } from '@/lib/products'
 import { createClient } from '@/lib/supabase/client'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { useAdminNotifications } from '@/contexts/AdminNotificationContext'
 
 // ─── Status filter definitions ───
@@ -186,6 +187,12 @@ export default function OrdersPage() {
     const [highlightedOrderIds, setHighlightedOrderIds] = useState<Set<string>>(new Set())
     const { resetCount } = useAdminNotifications()
 
+    // Single stable client instance for realtime — never recreate it
+    const supabaseRef = useRef<SupabaseClient | null>(null)
+    if (!supabaseRef.current) {
+        supabaseRef.current = createClient()
+    }
+
     // Use ref for selectedOrder in realtime callbacks to avoid channel recreation
     const selectedOrderRef = useRef<any>(null)
 
@@ -205,7 +212,7 @@ export default function OrdersPage() {
     }, [selectedOrder])
 
     useEffect(() => {
-        const supabase = createClient()
+        const supabase = supabaseRef.current!
 
         // Throttle UPDATE events to prevent excessive API calls
         let updateTimeout: NodeJS.Timeout | null = null
@@ -302,7 +309,7 @@ export default function OrdersPage() {
             if (updateTimeout) clearTimeout(updateTimeout)
             supabase.removeChannel(channel)
         }
-    }, [resetCount])
+    }, [])
 
     // Sync admin note when selected order changes
     useEffect(() => {

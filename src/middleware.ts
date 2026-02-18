@@ -29,23 +29,37 @@ export async function middleware(request: NextRequest) {
         }
     )
 
+    const pathname = request.nextUrl.pathname
+
+    // Determine if this route needs an auth check.
+    // Skip getUser() on public pages to save Supabase API calls.
+    const protectedRoutes = ['/profile']
+    const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
+    const isAdminRoute = pathname.startsWith('/admin')
+    const isAdminLoginRoute = pathname.startsWith('/admin/login')
+    const authRoutes = ['/login', '/signup']
+    const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
+
+    const needsAuth = isProtectedRoute || isAdminRoute || isAuthRoute
+
+    // Only call getUser() when the route actually requires auth.
+    // This prevents burning Supabase tokens on every public page visit.
+    if (!needsAuth) {
+        supabaseResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        return supabaseResponse
+    }
+
     const { data: { user } } = await supabase.auth.getUser()
 
     // Protect sensitive routes (customer)
-    const protectedRoutes = ['/profile']
-    const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
-
     if (isProtectedRoute && !user) {
         const url = request.nextUrl.clone()
         url.pathname = '/login'
-        url.searchParams.set('redirectedFrom', request.nextUrl.pathname)
+        url.searchParams.set('redirectedFrom', pathname)
         return NextResponse.redirect(url)
     }
 
     // Protect admin routes — must be logged in AND must be the admin email
-    const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
-    const isAdminLoginRoute = request.nextUrl.pathname.startsWith('/admin/login')
-
     if (isAdminRoute && !isAdminLoginRoute) {
         if (!user) {
             const url = request.nextUrl.clone()
@@ -54,7 +68,6 @@ export async function middleware(request: NextRequest) {
         }
         const adminEmail = process.env.ADMIN_EMAIL
         if (adminEmail && user.email !== adminEmail) {
-            // Authenticated but not admin — redirect to home
             return NextResponse.redirect(new URL('/', request.url))
         }
     }
@@ -65,9 +78,6 @@ export async function middleware(request: NextRequest) {
     }
 
     // Redirect logged in users away from auth pages
-    const authRoutes = ['/login', '/signup']
-    const isAuthRoute = authRoutes.some(route => request.nextUrl.pathname.startsWith(route))
-
     if (isAuthRoute && user) {
         return NextResponse.redirect(new URL('/', request.url))
     }
@@ -85,8 +95,8 @@ export const config = {
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
-         * Feel free to modify this pattern to include more paths.
+         * - api/ routes (handled by their own auth)
          */
-        '/((?!_next/static|_next/image|favicon.ico).*)',
+        '/((?!_next/static|_next/image|favicon.ico|api/).*)',
     ],
 }

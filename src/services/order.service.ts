@@ -1,10 +1,20 @@
 import { createClient } from '../lib/supabase/client';
 import { Order, OrderItem, StatusHistoryEntry } from '../types/client';
 import { CartService } from './cart.service';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+// Singleton client — one instance per browser session
+let _supabaseClient: SupabaseClient | null = null;
+function getClient(): SupabaseClient {
+    if (!_supabaseClient) {
+        _supabaseClient = createClient();
+    }
+    return _supabaseClient;
+}
 
 export class OrderService {
     private static get supabase() {
-        return createClient();
+        return getClient();
     }
 
     static async placeOrder(
@@ -237,7 +247,10 @@ export class OrderService {
             .select('*, client:clients(full_name, email, phone_number), items:order_items(*, product:products(name, images))')
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.error('[OrderService.getAllOrders] Error:', error.message, error.code);
+            throw error;
+        }
         return data || [];
     }
 
@@ -422,7 +435,7 @@ export class OrderService {
         const { count: activeOrders } = await this.supabase
             .from('orders')
             .select('*', { count: 'exact', head: true })
-            .not('status', 'in', '("delivered","cancelled")');
+            .not('status', 'in', '(delivered,cancelled)');
 
         // Total customers
         const { count: totalCustomers } = await this.supabase
@@ -433,7 +446,7 @@ export class OrderService {
         const { data: allOrders } = await this.supabase
             .from('orders')
             .select('total_amount')
-            .not('status', 'eq', 'cancelled');
+            .neq('status', 'cancelled');
 
         const avgOrderValue = allOrders && allOrders.length > 0
             ? allOrders.reduce((sum, o) => sum + Number(o.total_amount), 0) / allOrders.length

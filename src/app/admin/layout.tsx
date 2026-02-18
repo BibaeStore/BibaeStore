@@ -7,6 +7,9 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar"
 import { AdminHeader } from "@/components/admin/AdminHeader"
 import { AdminNotificationProvider } from "@/contexts/AdminNotificationContext"
 import { createClient } from "@/lib/supabase/client"
+import type { SupabaseClient } from "@supabase/supabase-js"
+
+type AuthState = 'loading' | 'authenticated' | 'unauthenticated'
 
 export default function AdminLayout({
     children,
@@ -15,65 +18,91 @@ export default function AdminLayout({
 }) {
     const pathname = usePathname()
     const router = useRouter()
-    const [isLoading, setIsLoading] = useState(true)
-    const [isAuthenticated, setIsAuthenticated] = useState(false)
-    const supabaseRef = useRef(createClient())
+    const [authState, setAuthState] = useState<AuthState>('loading')
+    // Single stable client instance — never recreate it
+    const supabaseRef = useRef<SupabaseClient | null>(null)
 
-    // Check if current page is login page
     const isLoginPage = pathname?.includes('/admin/login') || false
 
+    if (!supabaseRef.current) {
+        supabaseRef.current = createClient()
+    }
+
     useEffect(() => {
-        const supabase = supabaseRef.current
+        const supabase = supabaseRef.current!
+        let isMounted = true
+
         const checkAuth = async () => {
             try {
-                // Use getSession instead of getUser - it's cached and doesn't hit API
+                // getSession is cached — does NOT hit the network on every call
                 const { data: { session }, error } = await supabase.auth.getSession()
 
+                if (!isMounted) return
+
                 if (error) {
-                    // Handle rate limit errors gracefully
-                    if (error.status === 429) {
-                        console.warn('Rate limit reached, retrying in 2s...')
-                        setTimeout(checkAuth, 2000)
-                        return
+                    console.error('[AdminLayout] Auth session error:', error.message)
+                    setAuthState('unauthenticated')
+                    return
+                }
+
+                if (session?.user) {
+                    setAuthState('authenticated')
+                } else {
+                    setAuthState('unauthenticated')
+                    if (!isLoginPage) {
+                        router.replace('/admin/login')
+                        // Fallback: if Next.js router doesn't navigate within 3s, hard redirect
+                        setTimeout(() => {
+                            if (typeof window !== 'undefined' && !window.location.pathname.includes('/admin/login')) {
+                                window.location.href = '/admin/login'
+                            }
+                        }, 3000)
                     }
-                    throw error
                 }
-
-                setIsAuthenticated(!!session?.user)
-
-                // Only redirect if not authenticated AND not already on login page
-                if (!session?.user && !pathname?.includes('/admin/login')) {
-                    router.push('/admin/login')
+            } catch (err) {
+                console.error('[AdminLayout] Auth check failed:', err)
+                if (isMounted) {
+                    setAuthState('unauthenticated')
+                    if (!isLoginPage) {
+                        router.replace('/admin/login')
+                        setTimeout(() => {
+                            if (typeof window !== 'undefined' && !window.location.pathname.includes('/admin/login')) {
+                                window.location.href = '/admin/login'
+                            }
+                        }, 3000)
+                    }
                 }
-            } catch (error) {
-                console.error('Auth check error:', error)
-            } finally {
-                setIsLoading(false)
             }
         }
 
         checkAuth()
 
+        // Listen for auth state changes (login/logout events)
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setIsAuthenticated(!!session?.user)
-            // Only redirect if not authenticated AND not already on login page
-            if (!session?.user && !pathname?.includes('/admin/login')) {
-                router.push('/admin/login')
+            if (!isMounted) return
+            if (session?.user) {
+                setAuthState('authenticated')
+            } else {
+                setAuthState('unauthenticated')
+                if (!isLoginPage) {
+                    router.replace('/admin/login')
+                    setTimeout(() => {
+                        if (typeof window !== 'undefined' && !window.location.pathname.includes('/admin/login')) {
+                            window.location.href = '/admin/login'
+                        }
+                    }, 3000)
+                }
             }
         })
 
-        return () => subscription.unsubscribe()
-    }, [router, pathname])
+        return () => {
+            isMounted = false
+            subscription.unsubscribe()
+        }
+        // Only re-run when the page changes (login vs non-login)
+    }, [isLoginPage])
 
-    // While checking auth, show nothing or a small loader for non-login pages
-    if (isLoading && !isLoginPage) {
-        return (
-            <div className="min-h-screen w-full flex items-center justify-center bg-[#fafafa]">
-                <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-            </div>
-        )
-    }
-
+    // ── Login page: always render without auth check ──────────────────────────
     if (isLoginPage) {
         return (
             <div className="min-h-screen w-full bg-[#fafafa] text-gray-900 font-body admin-font-reset">
@@ -82,9 +111,31 @@ export default function AdminLayout({
         )
     }
 
-    // If not authenticated and not on login page, don't render sidebar yet (handled by early return/redirect)
-    if (!isAuthenticated) return null
+    // ── Loading state: show spinner ────────────────────────────────────────────
+    if (authState === 'loading') {
+        return (
+            <div className="min-h-screen w-full flex items-center justify-center bg-[#fafafa]">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                    <p className="text-sm text-gray-400 font-body">Verifying session…</p>
+                </div>
+            </div>
+        )
+    }
 
+    // ── Not authenticated: show redirecting state (redirect is already triggered) ──
+    if (authState === 'unauthenticated') {
+        return (
+            <div className="min-h-screen w-full flex items-center justify-center bg-[#fafafa]">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                    <p className="text-sm text-gray-400 font-body">Redirecting to login…</p>
+                </div>
+            </div>
+        )
+    }
+
+    // ── Authenticated: render full admin shell ─────────────────────────────────
     return (
         <AdminNotificationProvider>
             <SidebarProvider>

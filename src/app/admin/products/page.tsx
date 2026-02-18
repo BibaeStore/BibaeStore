@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Plus, Pencil, Trash2, Box, ImageIcon, Loader2, Eye, Tag, ChevronLeft, ChevronRight, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -14,6 +14,7 @@ import { uploadProductImage, createProductAction, updateProductAction, deletePro
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import {
     Table,
     TableBody,
@@ -58,6 +59,11 @@ export default function ProductsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [viewProduct, setViewProduct] = useState<Product | null>(null)
+    // Single stable client instance — never recreate it
+    const supabaseRef = useRef<SupabaseClient | null>(null)
+    if (!supabaseRef.current) {
+        supabaseRef.current = createClient()
+    }
     const [deleteId, setDeleteId] = useState<string | null>(null)
     const [currentPage, setCurrentPage] = useState(1)
 
@@ -108,7 +114,7 @@ export default function ProductsPage() {
         return filteredProducts.slice(start, start + PRODUCTS_PER_PAGE)
     }, [filteredProducts, currentPage])
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
             setIsLoading(true)
             const [productsData, categoriesData] = await Promise.all([
@@ -118,44 +124,18 @@ export default function ProductsPage() {
             setProducts(productsData)
             setCategories(categoriesData)
         } catch (error) {
-            console.error(error)
-            toast.error("Failed to load data")
+            console.error('[Products] fetchData error:', error)
+            toast.error("Failed to load products. Please refresh the page.")
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [])
 
     useEffect(() => {
         fetchData()
-
-        // Set up Realtime subscription with debouncing
-        const supabase = createClient()
-        let refetchTimeout: NodeJS.Timeout | null = null
-
-        const channel = supabase
-            .channel('admin-products-updates')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'products' },
-                () => {
-                    // Debounce refetch to avoid excessive API calls
-                    if (refetchTimeout) clearTimeout(refetchTimeout)
-                    refetchTimeout = setTimeout(() => {
-                        fetchData()
-                    }, 1000) // Wait 1s after last change
-                }
-            )
-            .subscribe((status, err) => {
-                if (err) {
-                    console.error('[Products] Realtime subscription error:', err)
-                }
-            })
-
-        return () => {
-            if (refetchTimeout) clearTimeout(refetchTimeout)
-            supabase.removeChannel(channel)
-        }
-    }, [])
+        // No realtime subscription here — the admin notification context
+        // handles realtime. Products refresh on user actions (create/edit/delete).
+    }, [fetchData])
 
     const handleCreate = () => {
         setEditingProduct(null)
@@ -210,7 +190,7 @@ export default function ProductsPage() {
     const handleSubmit = async (data: ProductFormValues, newFiles: File[], existingImages: string[]) => {
         try {
             // Validate session before hitting server actions
-            const { data: { session } } = await createClient().auth.getSession()
+            const { data: { session } } = await supabaseRef.current!.auth.getSession()
             if (!session) {
                 toast.error("Session expired. Please refresh the page and log in again.")
                 return
@@ -393,7 +373,7 @@ export default function ProductsPage() {
                                             <SelectItem value="all">All Status</SelectItem>
                                             <SelectItem value="active">Active</SelectItem>
                                             <SelectItem value="draft">Draft</SelectItem>
-                                            <SelectItem value="archived">Archived</SelectItem>
+                                            <SelectItem value="inactive">Inactive</SelectItem>
                                         </SelectContent>
                                     </Select>
 
@@ -579,8 +559,8 @@ export default function ProductsPage() {
                                                     <p className="text-gray-500 text-xs font-mono mt-1">{product.sku}</p>
                                                 </div>
                                                 <Badge variant="secondary" className={`flex-shrink-0 ${product.status === 'active' ? "bg-green-100 text-green-700 hover:bg-green-100" :
-                                                        product.status === 'draft' ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-100" :
-                                                            "bg-red-100 text-red-700 hover:bg-red-100"
+                                                    product.status === 'draft' ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-100" :
+                                                        "bg-red-100 text-red-700 hover:bg-red-100"
                                                     }`}>
                                                     {product.status}
                                                 </Badge>

@@ -31,7 +31,8 @@ export default function Header() {
   const routeKey = pathname + "?" + searchParams.toString();
   const isAdminPath = pathname.startsWith('/admin');
   const [session, setSession] = useState<any>(null);
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
 
   useEffect(() => {
     const handleScroll = () => {

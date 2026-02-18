@@ -39,7 +39,7 @@ export function createAdminClient() {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!serviceRoleKey) {
-        // Fallback: return a regular client — will use session-based auth
+        console.warn('[createAdminClient] SUPABASE_SERVICE_ROLE_KEY is not set! Falling back to anon key — admin operations may fail due to RLS.')
         return createSupabaseClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     }
 
