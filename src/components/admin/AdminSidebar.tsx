@@ -26,7 +26,6 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useAdminNotifications } from "@/contexts/AdminNotificationContext"
 
 const logo = '/assets/icon.png'
 
@@ -47,21 +46,13 @@ export function AdminSidebar() {
     const router = useRouter()
     const supabase = createClient()
     const [hoveredItem, setHoveredItem] = React.useState<string | null>(null)
-    const { newOrderCount, resetCount } = useAdminNotifications()
-
-    // Reset count when visiting orders page
-    React.useEffect(() => {
-        if (pathname?.startsWith('/admin/orders')) {
-            resetCount()
-        }
-    }, [pathname, resetCount])
 
     const handleLogout = async () => {
         try {
+            await supabase.removeAllChannels()
             const { error } = await supabase.auth.signOut()
             if (error) throw error
-            router.push('/admin/login')
-            router.refresh()
+            window.location.href = '/admin/login'
         } catch (error) {
             console.error('Error logging out:', error)
         }
@@ -108,7 +99,7 @@ export function AdminSidebar() {
                     {baseMenuItems.map((item) => {
                         const isActive = item.href === '/admin' ? pathname === '/admin' : (pathname === item.href || pathname.startsWith(item.href + '/'))
                         const isHovered = hoveredItem === item.title
-                        const badge = item.badgeKey === 'orders' && newOrderCount > 0 ? newOrderCount.toString() : undefined
+                        const badge = undefined
 
                         return (
                             <SidebarMenuItem key={item.title}>
@@ -154,7 +145,6 @@ export function AdminSidebar() {
                 <div className="flex items-center gap-3 p-2 rounded-xl mb-2 relative z-10 transition-colors hover:bg-white group-data-[collapsible=icon]:justify-center">
                     <div className="relative shrink-0">
                         <Avatar className="w-9 h-9 border border-white shadow-sm">
-                            <AvatarImage src="/admin-avatar.jpg" />
                             <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">BS</AvatarFallback>
                         </Avatar>
                         <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" />

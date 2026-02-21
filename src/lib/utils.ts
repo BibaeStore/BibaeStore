@@ -12,3 +12,10 @@ export function formatDate(date: string | number | Date) {
     year: "numeric",
   })
 }
+
+export function isRedirectError(error: unknown): boolean {
+  if (error instanceof Error && error.message === 'NEXT_REDIRECT') return true;
+  if (typeof error !== 'object' || error === null || !('digest' in error)) return false;
+  const digest = (error as any).digest;
+  return typeof digest === 'string' && digest.startsWith('NEXT_REDIRECT');
+}

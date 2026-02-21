@@ -11,6 +11,9 @@ import { ProductForm } from './ProductForm'
 import { getProductsAction, getCategoriesForProductsAction, uploadProductImage, createProductAction, updateProductAction, deleteProductAction } from './actions'
 import { toast } from 'sonner'
 import Image from 'next/image'
+import { createClient } from '@/lib/supabase/client'
+import { useIsDesktop } from '@/hooks/use-media-query'
+import { compressImage } from '@/lib/image-compression'
 import {
     Table,
     TableBody,
@@ -49,6 +52,7 @@ import { Input } from "@/components/ui/input"
 const PRODUCTS_PER_PAGE = 20
 
 export default function ProductsPage() {
+    const isDesktop = useIsDesktop()
     const [products, setProducts] = useState<Product[]>([])
     const [categories, setCategories] = useState<Category[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -108,22 +112,15 @@ export default function ProductsPage() {
     const fetchData = useCallback(async () => {
         try {
             setIsLoading(true)
+            const supabase = createClient()
 
-            // Race against a 10s timeout to prevent infinite loading loop 
-            const timeoutPromise = new Promise<{ error: string }>((_, reject) =>
-                setTimeout(() => reject(new Error("Request timed out. Please check your connection.")), 10000)
-            )
-
-            const dataPromise = Promise.all([
-                getProductsAction(),
-                getCategoriesForProductsAction()
+            const [productsResult, categoriesResult] = await Promise.all([
+                supabase.from('products').select('*, category:categories(name)').order('created_at', { ascending: false }),
+                supabase.from('categories').select('*').order('name')
             ])
 
-            // @ts-ignore - complex union type with timeout
-            const [productsResult, categoriesResult] = await Promise.race([dataPromise, timeoutPromise])
-
-            if (productsResult.error) throw new Error(productsResult.error)
-            if (categoriesResult.error) throw new Error(categoriesResult.error)
+            if (productsResult.error) throw new Error(productsResult.error.message)
+            if (categoriesResult.error) throw new Error(categoriesResult.error.message)
 
             setProducts(productsResult.data as unknown as Product[])
             setCategories(categoriesResult.data as unknown as Category[])
@@ -193,15 +190,18 @@ export default function ProductsPage() {
 
     const handleSubmit = async (data: ProductFormValues, newFiles: File[], existingImages: string[]) => {
         try {
-            // Step 1: Upload new images via server action (one at a time)
-            const imageUrls = [...existingImages]
-            for (const file of newFiles) {
+            // Step 1: Compress & upload new images in PARALLEL
+            const uploadPromises = newFiles.map(async (file) => {
+                // Compress image before upload (saves bandwidth & storage)
+                const compressed = await compressImage(file)
                 const fd = new FormData()
-                fd.append('file', file)
+                fd.append('file', compressed)
                 const uploadResult = await uploadProductImage(fd)
                 if (uploadResult.error) throw new Error(uploadResult.error)
-                imageUrls.push(uploadResult.url!)
-            }
+                return uploadResult.url!
+            })
+            const uploadedUrls = await Promise.all(uploadPromises)
+            const imageUrls = [...existingImages, ...uploadedUrls]
 
             // Step 2: Build product data (all serializable, no File objects)
             const productData = {
@@ -226,13 +226,13 @@ export default function ProductsPage() {
 
             // Step 3: Create or update via server action
             if (editingProduct) {
-                const result = await updateProductAction(editingProduct.id, productData)
-                if (result.error) throw Object.assign(new Error(result.error), { code: result.code })
+                const result = await updateProductAction(editingProduct.id, productData as any)
+                if (result.error) throw new Error(result.error)
                 setProducts(prev => prev.map(p => p.id === editingProduct.id ? (result.data as unknown as Product) : p))
                 toast.success("Product updated successfully")
             } else {
-                const result = await createProductAction(productData)
-                if (result.error) throw Object.assign(new Error(result.error), { code: result.code })
+                const result = await createProductAction(productData as any)
+                if (result.error) throw new Error(result.error)
                 setProducts(prev => [(result.data as unknown as Product), ...prev])
                 setCurrentPage(1)
                 toast.success("Product created successfully")
@@ -422,8 +422,8 @@ export default function ProductsPage() {
                         </CardHeader>
                     </Card>
 
-                    {/* Desktop Table */}
-                    <Card className="hidden md:block bg-white border-gray-200 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                    {/* Desktop Table — only rendered on md+ screens */}
+                    {isDesktop !== false && <Card className="bg-white border-gray-200 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                         <CardContent className="px-0 pb-0">
                             <Table>
                                 <TableHeader className="bg-gray-50/50 border-b border-gray-200">
@@ -439,7 +439,7 @@ export default function ProductsPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {paginatedProducts.map((product) => (
+                                    {paginatedProducts.map((product, index) => (
                                         <TableRow key={product.id} className="border-b border-gray-200 hover:bg-gray-50/50 transition-colors group">
                                             <TableCell className="py-4 pl-8">
                                                 <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 overflow-hidden relative">
@@ -449,6 +449,7 @@ export default function ProductsPage() {
                                                             alt={product.name}
                                                             fill
                                                             className="object-cover"
+                                                            priority={index < 4}
                                                         />
                                                     ) : (
                                                         <div className="w-full h-full flex items-center justify-center text-gray-300">
@@ -526,11 +527,11 @@ export default function ProductsPage() {
                                 </div>
                             )}
                         </CardContent>
-                    </Card>
+                    </Card>}
 
-                    {/* Mobile Cards */}
-                    <div className="grid grid-cols-1 gap-4 md:hidden">
-                        {paginatedProducts.map((product) => (
+                    {/* Mobile Cards — only rendered on small screens */}
+                    {isDesktop === false && <div className="grid grid-cols-1 gap-4">
+                        {paginatedProducts.map((product, index) => (
                             <Card key={product.id} className="bg-white border-gray-200 overflow-hidden shadow-sm">
                                 <CardContent className="p-4 space-y-4">
                                     <div className="flex items-start gap-4">
@@ -542,6 +543,7 @@ export default function ProductsPage() {
                                                     fill
                                                     className="object-cover hover:scale-105 transition-transform duration-500"
                                                     sizes="(max-width: 768px) 96px, 96px"
+                                                    priority={index < 4}
                                                 />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50">
@@ -623,7 +625,7 @@ export default function ProductsPage() {
                                 </Button>
                             </div>
                         )}
-                    </div>
+                    </div>}
                 </div>
             )}
 

@@ -29,9 +29,13 @@ export function AdminNotificationProvider({ children }: { children: React.ReactN
     const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const retryCountRef = useRef(0)
     const isMountedRef = useRef(true)
+    const isInitializedRef = useRef(false)
 
     useEffect(() => {
         isMountedRef.current = true
+
+        if (isInitializedRef.current) return
+        isInitializedRef.current = true
 
         // Create a single client instance — never recreate it
         if (!supabaseRef.current) {

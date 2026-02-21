@@ -1,88 +1,55 @@
 'use server'
 
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/auth'
+import { isRedirectError } from '@/lib/utils'
 import { revalidatePath } from 'next/cache'
-import { SupabaseClient } from '@supabase/supabase-js'
+import {
+    getCustomersService,
+    updateCustomerService,
+    deleteCustomerService
+} from '@/lib/admin/customers'
 
-async function verifyAdminUser(supabase: SupabaseClient): Promise<{ error?: string }> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { error: 'Not authenticated' }
-    const adminEmail = process.env.ADMIN_EMAIL
-    if (adminEmail && user.email !== adminEmail) return { error: 'Not authorized' }
-    return {}
-}
-
-// ─── Read Customers ──────────────────────────────────────────────────────────
+// ─── Thin Server Actions ──────────────────────────────────────────────────
 
 export async function getCustomersAction(): Promise<{ data: any[]; error?: string }> {
-    const sessionClient = await createClient()
-    const authCheck = await verifyAdminUser(sessionClient)
-    if (authCheck.error) return { data: [], error: authCheck.error }
+    try {
+        await requireAdmin()
 
-    const adminClient = createAdminClient()
-    const { data, error } = await adminClient
-        .from('clients')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-    if (error) {
-        console.error('[getCustomersAction] Supabase error:', error)
-        return { data: [], error: error.message }
+        const data = await getCustomersService()
+        return { data }
+    } catch (error) {
+        if (isRedirectError(error)) throw error;
+        return { data: [], error: error instanceof Error ? error.message : "Fetch failed" }
     }
-
-    return { data: data || [] }
 }
-
-// ─── Update Customer ─────────────────────────────────────────────────────────
 
 export async function updateCustomerAction(
     id: string,
     updateData: { full_name?: string; phone_number?: string }
 ): Promise<{ data?: any; error?: string }> {
-    const sessionClient = await createClient()
-    const authCheck = await verifyAdminUser(sessionClient)
-    if (authCheck.error) return { error: authCheck.error }
+    try {
+        await requireAdmin()
 
-    const adminClient = createAdminClient()
-    const { data, error } = await adminClient
-        .from('clients')
-        .update({
-            ...updateData,
-            updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single()
+        const data = await updateCustomerService(id, updateData)
 
-    if (error) {
-        console.error(`[updateCustomerAction] error for ${id}:`, error)
-        return { error: error.message }
+        revalidatePath('/admin/customers')
+        return { data }
+    } catch (error) {
+        return { error: error instanceof Error ? error.message : "Update failed" }
     }
-
-    revalidatePath('/admin/customers')
-    return { data }
 }
-
-// ─── Delete Customer ─────────────────────────────────────────────────────────
 
 export async function deleteCustomerAction(
     id: string
 ): Promise<{ error?: string }> {
-    const sessionClient = await createClient()
-    const authCheck = await verifyAdminUser(sessionClient)
-    if (authCheck.error) return { error: authCheck.error }
+    try {
+        await requireAdmin()
 
-    const adminClient = createAdminClient()
-    const { error } = await adminClient
-        .from('clients')
-        .delete()
-        .eq('id', id)
+        await deleteCustomerService(id)
 
-    if (error) {
-        console.error(`[deleteCustomerAction] error for ${id}:`, error)
-        return { error: error.message }
+        revalidatePath('/admin/customers')
+        return {}
+    } catch (error) {
+        return { error: error instanceof Error ? error.message : "Deletion failed" }
     }
-
-    revalidatePath('/admin/customers')
-    return {}
 }

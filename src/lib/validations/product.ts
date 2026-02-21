@@ -23,6 +23,7 @@ export const productSchema = z.object({
     description: z.string().optional(),
     price: z.coerce.number().min(0, "Price must be positive."),
     sale_price: z.coerce.number().optional().nullable(),
+    cost_price: z.coerce.number().optional().nullable(),
     stock: z.coerce.number().int().min(0, "Stock cannot be negative."),
     status: z.enum(['active', 'inactive', 'draft']).default('draft'),
     is_featured: z.boolean().default(false),

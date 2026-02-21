@@ -82,7 +82,7 @@ import Image from 'next/image'
 import { formatPrice } from '@/lib/products'
 import { createClient } from '@/lib/supabase/client'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { useAdminNotifications } from '@/contexts/AdminNotificationContext'
+
 
 // ─── Status filter definitions ───
 const statuses = [
@@ -193,7 +193,6 @@ export default function OrdersPage() {
 
     // Realtime highlight state
     const [highlightedOrderIds, setHighlightedOrderIds] = useState<Set<string>>(new Set())
-    const { resetCount } = useAdminNotifications()
 
     // Single stable client instance for realtime — never recreate it
     const supabaseRef = useRef<SupabaseClient | null>(null)
@@ -209,10 +208,6 @@ export default function OrdersPage() {
         fetchOrders()
     }, [])
 
-    // ─── Reset notification count while viewing orders ───
-    useEffect(() => {
-        resetCount()
-    }, [resetCount])
 
     // Keep ref in sync so realtime callbacks use latest selectedOrder without recreating channel
     useEffect(() => {
@@ -252,9 +247,6 @@ export default function OrdersPage() {
                 table: 'orders'
             }, (payload) => {
                 const newOrderId = payload.new.id as string
-
-                // Reset notification count since user is viewing orders
-                resetCount()
 
                 // Wait for order_items to be inserted, then fetch full order
                 setTimeout(async () => {
@@ -329,9 +321,13 @@ export default function OrdersPage() {
     const fetchOrders = async () => {
         try {
             setLoading(true)
-            const result = await getOrdersAction()
-            if (result.error) throw new Error(result.error)
-            setOrders(result.data)
+            const supabase = createClient()
+            const { data, error } = await supabase
+                .from('orders')
+                .select('*, items:order_items(*, product:products(name, images))')
+                .order('created_at', { ascending: false })
+            if (error) throw new Error(error.message)
+            setOrders(data || [])
         } catch (error: any) {
             console.error('Failed to fetch orders:', error?.message)
             toast.error(error?.message || 'Failed to load orders')

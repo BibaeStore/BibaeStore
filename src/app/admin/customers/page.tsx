@@ -33,8 +33,9 @@ import {
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Client as ClientType } from '@/types/client'
-import { getCustomersAction, updateCustomerAction, deleteCustomerAction } from './actions'
+import { updateCustomerAction, deleteCustomerAction } from './actions'
 import { format } from 'date-fns'
+import { createClient } from '@/lib/supabase/client'
 import {
     Dialog,
     DialogContent,
@@ -77,9 +78,10 @@ export default function CustomersPage() {
 
     const fetchCustomers = async () => {
         try {
-            const result = await getCustomersAction()
-            if (result.error) throw new Error(result.error)
-            setCustomers(result.data as ClientType[])
+            const supabase = createClient()
+            const { data, error } = await supabase.from('clients').select('*').order('created_at', { ascending: false })
+            if (error) throw new Error(error.message)
+            setCustomers(data as ClientType[])
         } catch (error) {
             console.error('Failed to fetch customers:', error)
         } finally {

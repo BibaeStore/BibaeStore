@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Product } from "@/types/product"
-import { ALL_SIZES, ProductVariants } from "@/types/product"
+import { ALL_SIZES, ADULT_SIZES, KIDS_SIZES, ProductVariants } from "@/types/product"
 import { Category } from "@/types/category"
 import { productSchema, ProductFormValues } from "@/lib/validations/product"
 
@@ -59,7 +59,7 @@ export function ProductForm({
     const [existingImages, setExistingImages] = useState<string[]>(initialData?.images || [])
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    // Size/stock management state — initialize from initialData if editing
+    const [sizeType, setSizeType] = useState<"adult" | "kids">("adult")
     const [sizeStocks, setSizeStocks] = useState<Record<string, { stock: number; enabled: boolean }>>(() => {
         const initial: Record<string, { stock: number; enabled: boolean }> = {}
         ALL_SIZES.forEach(size => {
@@ -71,6 +71,17 @@ export function ProductForm({
         })
         return initial
     })
+
+    // Detect initial size type
+    useEffect(() => {
+        if (initialData?.variants?.sizes) {
+            const hasKidsSizes = KIDS_SIZES.some(size => initialData.variants?.sizes?.[size]?.enabled)
+            if (hasKidsSizes) setSizeType("kids")
+            else setSizeType("adult")
+        } else {
+            // Default based on category, but for now default to what is selected
+        }
+    }, [initialData])
 
     // Size guide state — initialize from initialData if editing
     const [sizeGuideEnabled, setSizeGuideEnabled] = useState(!!initialData?.size_guide?.headers?.length)
@@ -446,8 +457,32 @@ export function ProductForm({
                                 </FormDescription>
                             </div>
 
+                            <div className="flex items-center gap-4 mb-4">
+                                <FormLabel className="text-gray-700 text-sm font-semibold">Size Type:</FormLabel>
+                                <div className="flex gap-2">
+                                    <Button
+                                        type="button"
+                                        variant={sizeType === 'adult' ? 'default' : 'outline'}
+                                        size="sm"
+                                        onClick={() => setSizeType('adult')}
+                                        className={sizeType === 'adult' ? 'bg-primary text-primary-foreground' : ''}
+                                    >
+                                        Adult Sizes
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant={sizeType === 'kids' ? 'default' : 'outline'}
+                                        size="sm"
+                                        onClick={() => setSizeType('kids')}
+                                        className={sizeType === 'kids' ? 'bg-primary text-primary-foreground' : ''}
+                                    >
+                                        Kids / Baby Sizes
+                                    </Button>
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                {ALL_SIZES.map((size) => (
+                                {(sizeType === 'adult' ? ADULT_SIZES : KIDS_SIZES).map((size) => (
                                     <div key={size} className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${sizeStocks[size]?.enabled ? 'bg-white border-primary/30 shadow-sm' : 'bg-gray-50 border-gray-200'}`}>
                                         <Checkbox
                                             checked={sizeStocks[size]?.enabled || false}

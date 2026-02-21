@@ -19,8 +19,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { formatPrice } from '@/lib/products'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import { useAdminNotifications } from '@/contexts/AdminNotificationContext'
-import { getDashboardDataAction } from './actions'
+import { createClient } from '@/lib/supabase/client'
 
 interface DashboardStats {
     totalRevenue: number
@@ -45,19 +44,71 @@ export default function AdminDashboard() {
         todayRevenue: 0
     })
     const [statusCounts, setStatusCounts] = useState<Record<string, number>>({})
-    const { newOrderCount, resetCount, lastNewOrderId } = useAdminNotifications()
-    const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     const fetchData = useCallback(async () => {
         setError(null)
+        setIsLoading(true)
 
         try {
-            const result = await getDashboardDataAction()
-            if (result.error) throw new Error(result.error)
+            const supabase = createClient()
 
-            setOrders(result.orders)
-            setStats(result.stats)
-            setStatusCounts(result.statusCounts)
+            // Fetch recent orders (last 5)
+            const { data: ordersData, error: ordersError } = await supabase
+                .from('orders')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(5)
+
+            if (ordersError) throw new Error(ordersError.message)
+
+            // Stats queries in parallel
+            const [
+                { data: deliveredOrders },
+                { count: activeOrders },
+                { count: totalCustomers },
+                { data: allOrders },
+                { data: todayOrdersData },
+                { data: allOrderStatuses }
+            ] = await Promise.all([
+                supabase.from('orders').select('total_amount').eq('status', 'delivered'),
+                supabase.from('orders').select('*', { count: 'exact', head: true }).not('status', 'in', '(delivered,cancelled)'),
+                supabase.from('clients').select('*', { count: 'exact', head: true }),
+                supabase.from('orders').select('total_amount').neq('status', 'cancelled'),
+                supabase.from('orders').select('total_amount').gte('created_at', (() => {
+                    const d = new Date()
+                    d.setHours(0, 0, 0, 0)
+                    return d.toISOString()
+                })()),
+                supabase.from('orders').select('status')
+            ])
+
+            const totalRevenue = (deliveredOrders || []).reduce(
+                (sum: number, o: any) => sum + Number(o.total_amount), 0
+            )
+            const avgOrderValue = allOrders && allOrders.length > 0
+                ? allOrders.reduce((sum: number, o: any) => sum + Number(o.total_amount), 0) / allOrders.length
+                : 0
+            const todayOrders = todayOrdersData?.length || 0
+            const todayRevenue = (todayOrdersData || []).reduce(
+                (sum: number, o: any) => sum + Number(o.total_amount), 0
+            )
+
+            // Compute status counts from ALL orders
+            const statusCounts: Record<string, number> = {}
+            for (const o of (allOrderStatuses || [])) {
+                statusCounts[o.status] = (statusCounts[o.status] || 0) + 1
+            }
+
+            setOrders(ordersData || [])
+            setStats({
+                totalRevenue,
+                activeOrders: activeOrders || 0,
+                totalCustomers: totalCustomers || 0,
+                avgOrderValue,
+                todayOrders,
+                todayRevenue
+            })
+            setStatusCounts(statusCounts)
         } catch (err: any) {
             console.error('[Dashboard] fetchData error:', err)
             setError(err?.message || 'Failed to load dashboard data')
@@ -70,18 +121,6 @@ export default function AdminDashboard() {
         fetchData()
     }, [fetchData])
 
-    // Refresh when a new order arrives via realtime notification (debounced)
-    useEffect(() => {
-        if (lastNewOrderId) {
-            if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current)
-            refreshTimeoutRef.current = setTimeout(() => {
-                fetchData()
-            }, 2000)
-        }
-        return () => {
-            if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current)
-        }
-    }, [lastNewOrderId, fetchData])
 
     const statsCards = [
         {
@@ -126,16 +165,7 @@ export default function AdminDashboard() {
                     <p className="text-gray-500 font-body text-sm uppercase tracking-[0.1em]">Bibaé Boutique Intelligence Overview</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {newOrderCount > 0 && (
-                        <Button
-                            variant="outline"
-                            className="h-11 border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-2xl px-6 text-xs uppercase tracking-widest transition-all shadow-sm relative"
-                            onClick={() => { resetCount(); router.push('/admin/orders'); }}
-                        >
-                            <Bell className="w-4 h-4 mr-2 animate-bounce" />
-                            {newOrderCount} New {newOrderCount === 1 ? 'Order' : 'Orders'}
-                        </Button>
-                    )}
+
                     <Button
                         variant="outline"
                         className="h-11 border-gray-200 bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-2xl px-6 text-xs uppercase tracking-widest transition-all shadow-sm"
@@ -252,20 +282,20 @@ export default function AdminDashboard() {
                                                 <td className="py-5 font-bold text-gray-900">{formatPrice(order.total_amount)}</td>
                                                 <td className="py-5">
                                                     <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${order.payment_method === 'online'
-                                                            ? 'bg-blue-50 text-blue-600'
-                                                            : 'bg-gray-100 text-gray-600'
+                                                        ? 'bg-blue-50 text-blue-600'
+                                                        : 'bg-gray-100 text-gray-600'
                                                         }`}>
                                                         {order.payment_method === 'online' ? 'Bank' : 'COD'}
                                                     </span>
                                                 </td>
                                                 <td className="py-5 text-right">
                                                     <span className={`inline-flex px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-[0.1em] ${order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
-                                                            order.status === 'processing' ? 'bg-primary/10 text-primary' :
-                                                                order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
-                                                                    order.status === 'under_review' ? 'bg-amber-100 text-amber-600' :
-                                                                        order.status === 'pending' ? 'bg-orange-100 text-orange-600' :
-                                                                            order.status === 'cancelled' ? 'bg-red-100 text-red-600' :
-                                                                                'bg-gray-100 text-gray-500'
+                                                        order.status === 'processing' ? 'bg-primary/10 text-primary' :
+                                                            order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                                                                order.status === 'under_review' ? 'bg-amber-100 text-amber-600' :
+                                                                    order.status === 'pending' ? 'bg-orange-100 text-orange-600' :
+                                                                        order.status === 'cancelled' ? 'bg-red-100 text-red-600' :
+                                                                            'bg-gray-100 text-gray-500'
                                                         }`}>
                                                         {order.status === 'under_review' ? 'Review' : order.status}
                                                     </span>

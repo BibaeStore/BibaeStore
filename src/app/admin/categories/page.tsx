@@ -10,6 +10,9 @@ import { CategoryForm } from './CategoryForm'
 import { getCategoriesAction, createCategoryAction, updateCategoryAction, deleteCategoryAction, uploadCategoryImageAction } from './actions'
 import { toast } from 'sonner'
 import Image from 'next/image'
+import { useIsDesktop } from '@/hooks/use-media-query'
+import { compressImage } from '@/lib/image-compression'
+import { createClient } from '@/lib/supabase/client'
 import {
     Table,
     TableBody,
@@ -38,6 +41,7 @@ import {
 } from "@/components/ui/dialog"
 
 export default function CategoriesPage() {
+    const isDesktop = useIsDesktop()
     const [categories, setCategories] = useState<Category[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -48,12 +52,13 @@ export default function CategoriesPage() {
     const fetchCategories = async () => {
         try {
             setIsLoading(true)
-            const result = await getCategoriesAction()
-            if (result.error) throw new Error(result.error)
-            setCategories(result.data as Category[])
-        } catch (error) {
+            const supabase = createClient()
+            const { data, error } = await supabase.from('categories').select('*').order('name', { ascending: true })
+            if (error) throw new Error(error.message)
+            setCategories(data as Category[])
+        } catch (error: any) {
             console.error(error)
-            toast.error("Failed to load categories")
+            toast.error(error?.message || "Failed to load categories")
         } finally {
             setIsLoading(false)
         }
@@ -101,10 +106,11 @@ export default function CategoriesPage() {
         try {
             let imageUrl = data.image_url || null
 
-            // Upload image via server action if a file was provided
+            // Compress & upload image via server action if a file was provided
             if (file) {
+                const compressed = await compressImage(file)
                 const fd = new FormData()
-                fd.append('file', file)
+                fd.append('file', compressed)
                 const uploadResult = await uploadCategoryImageAction(fd)
                 if (uploadResult.error) throw new Error(uploadResult.error)
                 imageUrl = uploadResult.url!
@@ -172,8 +178,8 @@ export default function CategoriesPage() {
                 </Card>
             ) : (
                 <div className="grid grid-cols-1 gap-6">
-                    {/* Desktop View - Table */}
-                    <Card className="hidden md:block bg-white border-gray-200 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                    {/* Desktop View - Table — only rendered on md+ screens */}
+                    {isDesktop !== false && <Card className="bg-white border-gray-200 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                         <CardHeader className="px-8 pt-8 pb-4">
                             <div className="space-y-1.5">
                                 <CardTitle className="font-heading text-xl text-gray-900">All Categories</CardTitle>
@@ -269,87 +275,87 @@ export default function CategoriesPage() {
                                 </TableBody>
                             </Table>
                         </CardContent>
-                    </Card>
+                    </Card>}
+
+                    {/* Mobile View - Cards — only rendered on small screens */}
+                    {isDesktop === false && <div className="grid grid-cols-1 gap-4">
+                        {categories.map((category) => {
+                            const parent = categories.find(c => c.id === category.parent_id)
+                            return (
+                                <Card key={category.id} className="bg-white border-gray-200 overflow-hidden shadow-sm">
+                                    <CardContent className="p-4 space-y-4">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-16 h-16 rounded-xl bg-gray-50 border border-gray-200 overflow-hidden relative flex-shrink-0">
+                                                {category.image_url ? (
+                                                    <Image
+                                                        src={category.image_url}
+                                                        alt={category.name}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                                        <ImageIcon className="w-6 h-6" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="text-gray-900 font-medium truncate">{category.name}</h4>
+                                                <div className="flex flex-wrap gap-2 mt-2">
+                                                    <Badge variant="secondary" className={!category.parent_id ? "bg-primary/10 text-primary" : "bg-gray-100 text-gray-600"}>
+                                                        {!category.parent_id ? "Main" : "Sub"}
+                                                    </Badge>
+                                                    <Badge variant="secondary" className={category.status === 'active' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
+                                                        {category.status || 'Active'}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 text-sm border-t border-gray-200 pt-4">
+                                            <div>
+                                                <p className="text-gray-400 text-xs uppercase tracking-wider font-bold mb-1">Order</p>
+                                                <p className="text-gray-600">{category.sort_order || 0}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-gray-400 text-xs uppercase tracking-wider font-bold mb-1">Parent</p>
+                                                <p className="text-gray-600 truncate">{parent ? parent.name : "-"}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-end gap-2 border-t border-gray-200 pt-4">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 w-8 text-gray-400 hover:text-gray-900 hover:bg-gray-100"
+                                                onClick={() => handleView(category)}
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 w-8 text-gray-400 hover:text-gray-900 hover:bg-gray-100"
+                                                onClick={() => handleEdit(category)}
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 w-8 text-gray-400 hover:text-destructive hover:bg-destructive/10"
+                                                onClick={() => handleDelete(category.id)}
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )
+                        })}
+                    </div>}
                 </div>
             )}
-
-            {/* Mobile View - Cards */}
-            <div className="grid grid-cols-1 gap-4 md:hidden">
-                {categories.map((category) => {
-                    const parent = categories.find(c => c.id === category.parent_id)
-                    return (
-                        <Card key={category.id} className="bg-white border-gray-200 overflow-hidden shadow-sm">
-                            <CardContent className="p-4 space-y-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-16 h-16 rounded-xl bg-gray-50 border border-gray-200 overflow-hidden relative flex-shrink-0">
-                                        {category.image_url ? (
-                                            <Image
-                                                src={category.image_url}
-                                                alt={category.name}
-                                                fill
-                                                className="object-cover"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                                <ImageIcon className="w-6 h-6" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h4 className="text-gray-900 font-medium truncate">{category.name}</h4>
-                                        <div className="flex flex-wrap gap-2 mt-2">
-                                            <Badge variant="secondary" className={!category.parent_id ? "bg-primary/10 text-primary" : "bg-gray-100 text-gray-600"}>
-                                                {!category.parent_id ? "Main" : "Sub"}
-                                            </Badge>
-                                            <Badge variant="secondary" className={category.status === 'active' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
-                                                {category.status || 'Active'}
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4 text-sm border-t border-gray-200 pt-4">
-                                    <div>
-                                        <p className="text-gray-400 text-xs uppercase tracking-wider font-bold mb-1">Order</p>
-                                        <p className="text-gray-600">{category.sort_order || 0}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-gray-400 text-xs uppercase tracking-wider font-bold mb-1">Parent</p>
-                                        <p className="text-gray-600 truncate">{parent ? parent.name : "-"}</p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center justify-end gap-2 border-t border-gray-200 pt-4">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 w-8 text-gray-400 hover:text-gray-900 hover:bg-gray-100"
-                                        onClick={() => handleView(category)}
-                                    >
-                                        <Eye className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 w-8 text-gray-400 hover:text-gray-900 hover:bg-gray-100"
-                                        onClick={() => handleEdit(category)}
-                                    >
-                                        <Pencil className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 w-8 text-gray-400 hover:text-destructive hover:bg-destructive/10"
-                                        onClick={() => handleDelete(category.id)}
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )
-                })}
-            </div>
 
             <CategoryForm
                 open={isModalOpen}

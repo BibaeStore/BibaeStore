@@ -37,14 +37,18 @@ export default function AdminLoginPage() {
             }
 
             if (data.user) {
-                const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'bibaestore@gmail.com'
-                if (data.user.email === adminEmail) {
+                const validAdminEmails = [
+                    'bibaestore@gmail.com',
+                    process.env.NEXT_PUBLIC_ADMIN_EMAIL
+                ]
+
+                if (validAdminEmails.includes(data.user.email)) {
                     toast.success('Admin access granted!')
-                    // Force cookie sync before navigating so middleware sees the session
-                    router.refresh()
-                    router.push('/admin')
+                    // Fully hard redirect to admin to ensure auth layout runs cleanly with populated cookies.
+                    window.location.href = '/admin'
                 } else {
                     toast.error('Unauthorized access. Admin only.')
+                    await supabase.removeAllChannels()
                     await supabase.auth.signOut()
                     setIsLoading(false)
                 }
