@@ -35,7 +35,7 @@ export async function getNavCategoriesAction(): Promise<NavCategory[]> {
                         id: sub.id,
                         name: sub.name,
                         slug: subSlug,
-                        href: `/shop/category/${parentSlug}/${subSlug}`,
+                        href: `/shop/category/${parentSlug}/${subSlug}/`,
                     }
                 }),
         }

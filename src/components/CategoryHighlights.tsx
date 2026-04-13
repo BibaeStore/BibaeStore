@@ -7,9 +7,9 @@ import { motion } from "framer-motion";
 import { getNavCategoriesAction } from "@/app/actions/categories";
 
 const fallbackCats = [
-  { name: "Ladies", image: '/assets/category-ladies.jpg', href: "/shop/category/ladies" },
-  { name: "Kids", image: '/assets/category-kids.jpg', href: "/shop/category/kids" },
-  { name: "Accessories", image: '/assets/category-accessories.jpeg', href: "/shop/category/accessories" },
+  { name: "Ladies", image: '/assets/category-ladies.jpg', href: "/shop/category/ladies/" },
+  { name: "Kids", image: '/assets/category-kids.jpg', href: "/shop/category/kids/" },
+  { name: "Accessories", image: '/assets/category-accessories.jpeg', href: "/shop/category/accessories/" },
 ];
 
 // Map category names to fallback images (for categories without image_url)
@@ -29,7 +29,7 @@ export default function CategoryHighlights() {
         setCats(navCats.map((c) => ({
           name: c.name,
           image: fallbackImages[c.name] || '/assets/placeholder.jpg',
-          href: `/shop/category/${c.slug}`,
+          href: `/shop/category/${c.slug}/`,
         })));
       }
     }).catch(() => { });

@@ -119,6 +119,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             })(window, document, "clarity", "script", "vifnmu1rv4");
           `}
         </Script>
+        <Script
+          src="https://analytics.ahrefs.com/analytics.js"
+          data-key="CyuaV61WFAlxsva4awSxVA"
+          strategy="afterInteractive"
+        />
         {/* Trustpilot Widget Bootstrap */}
         <Script
           src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js"

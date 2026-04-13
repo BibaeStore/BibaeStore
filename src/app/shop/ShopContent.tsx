@@ -105,14 +105,14 @@ export default function ShopContent({ initialProducts, initialTitle, isCategoryP
     name: selectedCategory ? `${selectedCategory} Collection` : 'Shop All Products | Habiba Minhas',
     description: `Discover our exclusive ${selectedCategory?.toLowerCase() || ''} collection. Handcrafted premium boutique fashion with fast delivery in Pakistan.`,
     url: selectedCategory
-      ? `https://habibaminhas.com/shop/category/${selectedCategory.toLowerCase().replace(/\s+/g, '-')}`
-      : 'https://habibaminhas.com/shop',
+      ? `https://habibaminhas.com/shop/category/${selectedCategory.toLowerCase().replace(/\s+/g, '-')}/`
+      : 'https://habibaminhas.com/shop/',
     mainEntity: {
       '@type': 'ItemList',
       itemListElement: filtered.map((product, index) => ({
         '@type': 'ListItem',
         position: index + 1,
-        url: `https://habibaminhas.com/shop/${product.slug || product.id}`,
+        url: `https://habibaminhas.com/shop/${product.slug || product.id}/`,
         name: product.name,
       })),
     },

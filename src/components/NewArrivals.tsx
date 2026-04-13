@@ -54,7 +54,7 @@ export default function NewArrivals({ products }: NewArrivalsProps) {
           className="text-center mt-12"
         >
           <Link
-            href="/shop"
+            href="/shop/"
             className="inline-block bg-primary text-primary-foreground px-10 py-3.5 text-sm font-body font-medium tracking-widest uppercase hover:bg-gold-dark transition-colors duration-300"
           >
             View All New Arrivals

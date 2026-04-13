@@ -15,7 +15,7 @@ import { ChevronDown } from "lucide-react";
 
 const staticLinks = [
   { label: "Home", href: "/" },
-  { label: "Shop", href: "/shop" },
+  { label: "Shop", href: "/shop/" },
 ];
 
 const trailingLinks: { label: string; href: string }[] = [];
@@ -143,7 +143,7 @@ export default function Header() {
                 }}
               >
                 <Link
-                  href={`/shop/category/${cat.slug}`}
+                  href={`/shop/category/${cat.slug}/`}
                   className={`text-sm font-body tracking-wider uppercase transition-colors duration-300 relative flex items-center gap-1 after:absolute after:bottom-[-2px] after:left-0 after:w-full after:h-[1px] after:bg-primary after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 after:origin-left ${pathname === `/shop/category/${cat.slug}` ? "text-primary after:scale-x-100" : `text-foreground/70 ${hoverColorClass}`}`}
                 >
                   {cat.name}
@@ -186,10 +186,10 @@ export default function Header() {
 
           {/* Icons */}
           <div className="flex items-center gap-2">
-            <Link href="/shop" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm">
+            <Link href="/shop/" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm">
               <Search className="w-5 h-5" />
             </Link>
-            <Link href="/wishlist" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block relative">
+            <Link href="/wishlist/" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block relative">
               <Heart className="w-5 h-5" />
               {isMounted && wishlistItems.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
@@ -197,10 +197,10 @@ export default function Header() {
                 </span>
               )}
             </Link>
-            <Link href={session ? "/profile" : "/login"} className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block">
+            <Link href={session ? "/profile/" : "/login/"} className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block">
               <User className={`w-5 h-5 ${session ? "text-primary" : ""}`} />
             </Link>
-            <Link href="/track" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block">
+            <Link href="/track/" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block">
               <PackageSearch className="w-5 h-5" />
             </Link>
             <div className="relative" ref={cartRef}>
@@ -243,7 +243,7 @@ export default function Header() {
                       <div className="p-8 text-center">
                         <ShoppingBag className="w-10 h-10 text-gray-200 mx-auto mb-3" />
                         <p className="text-sm text-gray-500">Your cart is empty</p>
-                        <Link href="/shop" onClick={() => setCartOpen(false)} className="text-xs text-primary font-medium hover:underline mt-2 inline-block">
+                        <Link href="/shop/" onClick={() => setCartOpen(false)} className="text-xs text-primary font-medium hover:underline mt-2 inline-block">
                           Continue Shopping
                         </Link>
                       </div>
@@ -296,7 +296,7 @@ export default function Header() {
                             <span className="text-base font-bold text-gray-900">{formatPrice(totalPrice)}</span>
                           </div>
                           <Link
-                            href="/cart"
+                            href="/cart/"
                             onClick={() => setCartOpen(false)}
                             className="block w-full bg-gray-900 text-white text-center py-3 text-xs font-bold uppercase tracking-widest hover:bg-gray-800 transition-colors rounded-xl"
                           >
@@ -325,7 +325,7 @@ export default function Header() {
             {navCategories.map((cat) => (
               <div key={cat.id} className="border-b border-border/50">
                 <div className="flex items-center justify-between">
-                  <Link href={`/shop/category/${cat.slug}`} className="py-3 px-2 text-sm font-body tracking-wider uppercase text-foreground/80 hover:text-primary transition-colors flex-1">
+                  <Link href={`/shop/category/${cat.slug}/`} className="py-3 px-2 text-sm font-body tracking-wider uppercase text-foreground/80 hover:text-primary transition-colors flex-1">
                     {cat.name}
                   </Link>
                   {cat.subcategories.length > 0 && (
@@ -348,7 +348,7 @@ export default function Header() {
                 )}
               </div>
             ))}
-            <Link href="/track" className="py-3 px-2 text-sm font-body tracking-wider uppercase text-foreground/80 hover:text-primary transition-colors border-b border-border/50 flex items-center gap-2">
+            <Link href="/track/" className="py-3 px-2 text-sm font-body tracking-wider uppercase text-foreground/80 hover:text-primary transition-colors border-b border-border/50 flex items-center gap-2">
               <PackageSearch className="w-4 h-4" />
               Track Order
             </Link>

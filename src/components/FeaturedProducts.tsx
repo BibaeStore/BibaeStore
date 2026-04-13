@@ -54,7 +54,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
           className="text-center mt-12"
         >
           <Link
-            href="/shop"
+            href="/shop/"
             className="inline-block border border-gray-900 bg-white text-gray-900 px-10 py-3.5 text-sm font-body font-medium tracking-widest uppercase hover:bg-gray-900 hover:text-white transition-all duration-300 shadow-button hover:shadow-button-hover hover:-translate-y-0.5"
           >
             View All Products

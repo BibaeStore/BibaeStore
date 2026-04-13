@@ -109,7 +109,7 @@ export default function CheckoutPage() {
   // Redirect if cart is empty (but not after order placement)
   useEffect(() => {
     if (items.length === 0 && !isSubmitting && !orderPlaced) {
-      router.push("/cart");
+      router.push("/cart/");
     }
   }, [items.length, isSubmitting, orderPlaced, router]);
 

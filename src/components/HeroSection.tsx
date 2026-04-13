@@ -60,14 +60,14 @@ export default function HeroSection() {
             className="flex flex-col sm:flex-row gap-4"
           >
             <Link
-              href="/shop"
+              href="/shop/"
               className="group bg-primary border border-primary text-primary-foreground px-10 py-4 text-sm font-body font-medium tracking-widest uppercase hover:bg-gold-dark hover:border-gold-dark transition-all duration-300 flex items-center justify-center gap-2 shadow-button hover:shadow-button-hover hover:-translate-y-0.5 rounded-sm"
             >
               Shop Now
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
-              href="/shop/category/ladies"
+              href="/shop/category/ladies/"
               className="border border-white/40 text-white px-10 py-4 text-sm font-body font-medium tracking-widest uppercase hover:bg-white/10 transition-all duration-300 text-center shadow-button hover:shadow-button-hover hover:-translate-y-0.5 rounded-sm"
             >
               Explore

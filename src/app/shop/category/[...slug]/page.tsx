@@ -73,7 +73,7 @@ async function resolveCategory(slugSegments: string[]): Promise<ResolvedCategory
                 .single();
 
             if (parent) {
-                return { redirect: `/shop/category/${parent.slug}/${slug}` } as ResolvedRedirect;
+                return { redirect: `/shop/category/${parent.slug}/${slug}/` } as ResolvedRedirect;
             }
         }
 
@@ -148,7 +148,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     // Build breadcrumb items for JSON-LD
     const breadcrumbItems = [
         { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://habibaminhas.com' },
-        { '@type': 'ListItem', position: 2, name: 'Shop', item: 'https://habibaminhas.com/shop' },
+        { '@type': 'ListItem', position: 2, name: 'Shop', item: 'https://habibaminhas.com/shop/' },
     ];
 
     if (parentCategory) {
@@ -156,7 +156,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             '@type': 'ListItem',
             position: 3,
             name: parentCategory.name,
-            item: `https://habibaminhas.com/shop/category/${parentCategory.slug}`,
+            item: `https://habibaminhas.com/shop/category/${parentCategory.slug}/`,
         });
         breadcrumbItems.push({
             '@type': 'ListItem',
@@ -190,7 +190,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                         item: {
                             '@type': 'Product',
                             name: p.name,
-                            url: `https://habibaminhas.com/shop/${p.slug || p.id}`,
+                            url: `https://habibaminhas.com/shop/${p.slug || p.id}/`,
                             image: p.images?.[0],
                             offers: {
                                 '@type': 'Offer',

@@ -29,7 +29,7 @@ export default function Cart() {
 
   const handleCheckout = () => {
     setIsNavigating(true);
-    router.push("/checkout");
+    router.push("/checkout/");
   };
 
   if (items.length === 0) {
@@ -46,7 +46,7 @@ export default function Cart() {
             Looks like you haven't added anything yet. Explore our collection of handcrafted dresses and exclusive accessories.
           </h2>
           <Link
-            href="/shop"
+            href="/shop/"
             className="inline-flex items-center gap-2 bg-foreground text-background px-10 py-4 text-sm font-body font-medium tracking-widest uppercase hover:bg-foreground/90 transition-colors"
           >
             Start Shopping <ArrowRight className="w-4 h-4" />
@@ -91,11 +91,11 @@ export default function Cart() {
                 className="grid grid-cols-1 md:grid-cols-[2fr,1fr,1fr,auto] gap-4 items-center py-6 border-b border-border"
               >
                 <div className="flex gap-4">
-                  <Link href={`/product/${item.product.id}`} className="w-20 h-24 bg-muted overflow-hidden flex-shrink-0">
+                  <Link href={`/shop/${item.product.slug || item.product.id}/`} className="w-20 h-24 bg-muted overflow-hidden flex-shrink-0">
                     <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />
                   </Link>
                   <div className="flex flex-col justify-center">
-                    <Link href={`/product/${item.product.id}`} className="font-heading text-lg hover:text-primary transition-colors leading-tight">
+                    <Link href={`/shop/${item.product.slug || item.product.id}/`} className="font-heading text-lg hover:text-primary transition-colors leading-tight">
                       {item.product.name}
                     </Link>
                     <p className="text-xs font-body text-muted-foreground mt-1">
@@ -170,7 +170,7 @@ export default function Cart() {
                   </>
                 )}
               </motion.button>
-              <Link href="/shop" className="block text-center mt-4 text-sm font-body text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/shop/" className="block text-center mt-4 text-sm font-body text-muted-foreground hover:text-foreground transition-colors">
                 Continue Shopping
               </Link>
               <div className="mt-6 pt-4 border-t border-border flex items-center gap-2 text-[10px] text-muted-foreground font-body">

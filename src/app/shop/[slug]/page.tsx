@@ -209,7 +209,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 },
                 offers: {
                     '@type': 'Offer',
-                    url: `https://habibaminhas.com/shop/${product.slug}`,
+                    url: `https://habibaminhas.com/shop/${product.slug}/`,
                     priceCurrency: 'PKR',
                     price: product.sale_price || product.price,
                     priceValidUntil: '2027-01-01',
@@ -253,13 +253,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                         '@type': 'ListItem',
                         position: 2,
                         name: 'Shop',
-                        item: 'https://habibaminhas.com/shop',
+                        item: 'https://habibaminhas.com/shop/',
                     },
                     ...(product.category ? (() => {
                         const cat = product.category;
                         const catPath = parentCategoryInfo
-                            ? `/shop/category/${parentCategoryInfo.slug}/${cat.slug}`
-                            : `/shop/category/${cat.slug}`;
+                            ? `/shop/category/${parentCategoryInfo.slug}/${cat.slug}/`
+                            : `/shop/category/${cat.slug}/`;
                         const items = [];
                         let pos = 3;
                         if (parentCategoryInfo) {
@@ -267,7 +267,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                                 '@type': 'ListItem',
                                 position: pos++,
                                 name: parentCategoryInfo.name,
-                                item: `https://habibaminhas.com/shop/category/${parentCategoryInfo.slug}`,
+                                item: `https://habibaminhas.com/shop/category/${parentCategoryInfo.slug}/`,
                             });
                         }
                         items.push({
@@ -284,7 +284,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                             ? (parentCategoryInfo ? 5 : 4)
                             : 3,
                         name: product.name,
-                        item: `https://habibaminhas.com/shop/${product.slug}`,
+                        item: `https://habibaminhas.com/shop/${product.slug}/`,
                     },
                 ],
             }
@@ -305,19 +305,19 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                     <nav className="flex items-center text-sm text-gray-500 gap-2">
                         <Link href="/" className="hover:text-primary transition-colors">Home</Link>
                         <ChevronRight className="w-4 h-4" />
-                        <Link href="/shop" className="hover:text-primary transition-colors">Shop</Link>
+                        <Link href="/shop/" className="hover:text-primary transition-colors">Shop</Link>
                         <ChevronRight className="w-4 h-4" />
                         {product.category && (() => {
                             const cat = product.category;
                             const catPath = parentCategoryInfo
-                                ? `/shop/category/${parentCategoryInfo.slug}/${cat.slug}`
-                                : `/shop/category/${cat.slug}`;
+                                ? `/shop/category/${parentCategoryInfo.slug}/${cat.slug}/`
+                                : `/shop/category/${cat.slug}/`;
                             return (
                                 <>
                                     {parentCategoryInfo && (
                                         <>
                                             <Link
-                                                href={`/shop/category/${parentCategoryInfo.slug}`}
+                                                href={`/shop/category/${parentCategoryInfo.slug}/`}
                                                 className="hover:text-primary transition-colors"
                                             >
                                                 {parentCategoryInfo.name}

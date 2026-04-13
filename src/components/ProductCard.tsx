@@ -47,7 +47,7 @@ export default function ProductCard({ product, index = 0, priority = false }: Pr
     : 0;
 
   const isSoldOut = product.stock !== undefined && product.stock <= 0;
-  const href = product.slug ? `/shop/${product.slug}` : `/shop/${product.id}`;
+  const href = product.slug ? `/shop/${product.slug}/` : `/shop/${product.id}/`;
 
   const hasVariants =
     (product.variants?.sizes && Object.keys(product.variants.sizes).length > 1) ||
