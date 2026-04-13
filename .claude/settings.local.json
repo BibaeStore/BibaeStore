@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__supabase__list_tables",
+      "mcp__supabase__list_storage_buckets",
+      "mcp__supabase__list_migrations",
+      "mcp__supabase__execute_sql",
+      "Bash(npx next build)",
+      "mcp__supabase__get_publishable_keys",
+      "mcp__supabase__get_project_url",
+      "Bash(npm ls:*)",
+      "mcp__supabase__apply_migration",
+      "Bash(npx tsc:*)",
+      "mcp__supabase__get_logs",
+      "mcp__supabase__get_storage_config",
+      "Bash(git commit:*)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(git -C /c/Users/Latitude 7420/Downloads/Habiba/BibaeStore log --oneline -10)",
+      "Bash(du -sh:*)",
+      "WebFetch(domain:supabase.com)",
+      "WebFetch(domain:api.anthropic.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(python3:*)",
+      "Bash(node -e \"\nconst fs = require\\(''fs''\\);\nconst path = require\\(''os''\\).homedir\\(\\) + ''/.claude.json'';\nconst config = JSON.parse\\(fs.readFileSync\\(path, ''utf8''\\)\\);\nconst projectKey = ''C:/Users/Latitude 7420/Downloads/Habiba/BibaeStore'';\nif \\(config.projects && config.projects[projectKey]\\) {\n    config.projects[projectKey].hasTrustDialogAccepted = true;\n    fs.writeFileSync\\(path, JSON.stringify\\(config, null, 2\\)\\);\n    console.log\\(''Done! hasTrustDialogAccepted set to true''\\);\n} else {\n    console.log\\(''Project key not found''\\);\n}\n\")",
+      "Bash(node:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(npm run build:*)",
+      "Bash(git status:*)",
+      "Bash(tail:*)",
+      "mcp__supabase__get_advisors"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
+}
