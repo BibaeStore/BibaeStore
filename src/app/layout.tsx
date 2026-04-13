@@ -64,6 +64,12 @@ export const metadata: Metadata = {
     apple: '/assets/icon.png',
   },
   manifest: '/manifest.json',
+  verification: {
+    google: 'W-KHy_6FCa02fzk6IOpF0XTePI10l3bJh9f2lyI6sVQ',
+    other: {
+      'msvalidate.01': 'FC185BBAD92362483C84F966F358A41C',
+    },
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -116,7 +122,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
                 t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
                 y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-            })(window, document, "clarity", "script", "vifnmu1rv4");
+            })(window, document, "clarity", "script", "waxofnoq5n");
           `}
         </Script>
         <Script
