@@ -12,9 +12,9 @@ export default function TrackOrderBanner() {
   const handleTrack = () => {
     const trimmed = trackingNumber.trim()
     if (trimmed) {
-      router.push(`/track?number=${encodeURIComponent(trimmed)}`)
+      router.push(`/track/?number=${encodeURIComponent(trimmed)}`)
     } else {
-      router.push('/track')
+      router.push('/track/')
     }
   }
 

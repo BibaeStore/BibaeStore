@@ -56,7 +56,7 @@ export default async function BlogIndex() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {blogPosts.map((post: any) => (
                             <article key={post.slug} className="group bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300">
-                                <Link href={`/blog/${post.slug}`} className="block relative aspect-[4/3] overflow-hidden">
+                                <Link href={`/blog/${post.slug}/`} className="block relative aspect-[4/3] overflow-hidden">
                                     {post.cover_image ? (
                                         <Image
                                             src={post.cover_image}
@@ -77,14 +77,14 @@ export default async function BlogIndex() {
                                         <span className="flex items-center gap-1"><User className="w-3 h-3" /> {post.author || 'Habiba Minhas Team'}</span>
                                     </div>
                                     <h2 className="text-xl font-heading font-bold mb-3 text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
-                                        <Link href={`/blog/${post.slug}`}>
+                                        <Link href={`/blog/${post.slug}/`}>
                                             {post.title}
                                         </Link>
                                     </h2>
                                     <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed">
                                         {post.excerpt}
                                     </p>
-                                    <Link href={`/blog/${post.slug}`} className="inline-flex items-center text-sm font-semibold text-primary hover:gap-2 transition-all">
+                                    <Link href={`/blog/${post.slug}/`} className="inline-flex items-center text-sm font-semibold text-primary hover:gap-2 transition-all">
                                         Read Article <ArrowRight className="w-4 h-4 ml-1" />
                                     </Link>
                                 </div>

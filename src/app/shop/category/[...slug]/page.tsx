@@ -147,7 +147,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
     // Build breadcrumb items for JSON-LD
     const breadcrumbItems = [
-        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://habibaminhas.com' },
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://habibaminhas.com/' },
         { '@type': 'ListItem', position: 2, name: 'Shop', item: 'https://habibaminhas.com/shop/' },
     ];
 
@@ -220,6 +220,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
             />
 
+            {/* Hidden H1 for SEO Raw HTML discoverability since ShopContent is client-side */}
+            <h1 className="sr-only">{displayTitle} Collection - Habiba Minhas</h1>
+            
             <ShopContent initialProducts={products || []} initialTitle={displayTitle} isCategoryPage />
 
             {/* SEO Rich Text Section for MOFU Ranking */}

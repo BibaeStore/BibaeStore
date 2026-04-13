@@ -52,7 +52,7 @@ const LOCAL_POSTS = [
                     <span style="font-weight: 900; color: #111; font-size: 1.15rem;">PKR 14,500</span>
                     <span style="text-decoration: line-through; color: #9CA3AF; font-size: 0.9rem;">PKR 18,000</span>
                 </div>
-                <a href="/shop?category=velvet" style="display: block; width: 100%; background-color: #111; color: white; padding: 14px 0; border-radius: 8px; font-weight: bold; text-decoration: none; text-transform: uppercase; font-size: 0.9rem; transition: opacity 0.2s;">Shop This Full Look →</a>
+                <a href="/shop/" style="display: block; width: 100%; background-color: #111; color: white; padding: 14px 0; border-radius: 8px; font-weight: bold; text-decoration: none; text-transform: uppercase; font-size: 0.9rem; transition: opacity 0.2s;">Shop This Full Look →</a>
                 <p style="font-size: 0.75rem; color: #E11D48; margin-top: 0.75rem; font-weight: bold;">⚡ Fasting Selling. Only 4 Left.</p>
             </div>
         </div>
@@ -70,7 +70,7 @@ const LOCAL_POSTS = [
 
         <!-- Consistent Primary CTA -->
         <div style="margin: 2.5rem 0; text-align: center;">
-            <a href="/shop?category=shawls" style="background-color: #111; color: white; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block; text-transform: uppercase;">Discover Winter Shawls</a>
+            <a href="/shop/" style="background-color: #111; color: white; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block; text-transform: uppercase;">Discover Winter Shawls</a>
         </div>
 
         <h2 id="day-khaddar" style="font-size: 1.8rem; font-weight: 800; color: #111; margin-top: 3rem; margin-bottom: 1rem;">3. Formal Khaddar for Daytime Events</h2>
@@ -82,7 +82,7 @@ const LOCAL_POSTS = [
             <img src="https://images.unsplash.com/photo-1601550992336-7c0b05b5f884?q=80&w=400&auto=format&fit=crop" style="width: 100%; height: 300px; object-fit: cover;" alt="Embroidered Khaddar Setup" />
             <div style="padding: 1.5rem; text-align: center;">
                 <h3 style="font-size: 1.15rem; font-weight: bold; color: #111; margin-bottom: 1rem; margin-top: 0;">2-Piece Embroidered Khaddar</h3>
-                <a href="/shop" style="display: block; width: 100%; background-color: #111; color: white; padding: 12px 0; border-radius: 8px; font-weight: bold; text-decoration: none; text-transform: uppercase; font-size: 0.9rem;">Add to Cart - PKR 6,500</a>
+                <a href="/shop/" style="display: block; width: 100%; background-color: #111; color: white; padding: 12px 0; border-radius: 8px; font-weight: bold; text-decoration: none; text-transform: uppercase; font-size: 0.9rem;">Add to Cart - PKR 6,500</a>
             </div>
         </div>
 
@@ -226,7 +226,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
 
             {/* Sticky Mobile CTA Bottom Bar (High Urgency) */}
             <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 z-50 text-center shadow-[0_-4px_10px_0px_rgba(0,0,0,0.1)]">
-                <Link href="/shop?category=winter-collection" className="w-full flex items-center justify-center gap-2 bg-primary text-white font-black py-4 rounded-xl uppercase tracking-widest text-sm shadow-md transition-opacity hover:opacity-90">
+                <Link href="/shop/" className="w-full flex items-center justify-center gap-2 bg-primary text-white font-black py-4 rounded-xl uppercase tracking-widest text-sm shadow-md transition-opacity hover:opacity-90">
                     Explore Winter Collection
                 </Link>
             </div>
@@ -239,7 +239,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                     <nav className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 mb-8 w-full overflow-hidden whitespace-nowrap">
                         <Link href="/" className="hover:text-primary transition-colors">Home</Link>
                         <span>/</span>
-                        <Link href="/blog" className="hover:text-primary transition-colors">Journal</Link>
+                        <Link href="/blog/" className="hover:text-primary transition-colors">Journal</Link>
                         <span>/</span>
                         <span className="text-primary truncate max-w-[120px] sm:max-w-xs">{post.title}</span>
                     </nav>
@@ -413,7 +413,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {RELATED_POSTS.map(rp => (
-                            <Link href={`/blog/${rp.slug}`} key={rp.slug} className="group block bg-white rounded-3xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                            <Link href={`/blog/${rp.slug}/`} key={rp.slug} className="group block bg-white rounded-3xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
                                 <div className="h-64 w-full relative bg-gray-200">
                                     <Image src={rp.image} alt={rp.title} fill className="object-cover group-hover:scale-105 transition-transform duration-700" unoptimized/>
                                 </div>

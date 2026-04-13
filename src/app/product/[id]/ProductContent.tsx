@@ -183,15 +183,16 @@ export default function ProductContent({ product, relatedProducts, initialReview
               </motion.div>
               <div className="flex gap-3 overflow-x-auto pb-2 mt-3">
                 {(product.images || []).map((img: string, i: number) => (
-                  <button
+                   <button
                     key={i}
                     onClick={() => setActiveImage(img)}
+                    aria-label={`View product image ${i + 1}`}
                     className={`relative w-16 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${activeImage === img ? "border-primary shadow-sm" : "border-transparent hover:border-gray-300"
                       }`}
                   >
                     <Image
                       src={img}
-                      alt={`${product.name} view ${i + 1}`}
+                      alt={`${product.name} thumbnail ${i + 1}`}
                       fill
                       className="object-cover"
                     />
@@ -359,7 +360,7 @@ export default function ProductContent({ product, relatedProducts, initialReview
                   <><ShoppingBag className="w-4 h-4" /> Add to Cart</>
                 )}
               </motion.button>
-              <button className="border border-border p-4 hover:border-primary hover:text-primary transition-colors hover:shadow-sm">
+              <button aria-label="Add to wishlist" className="border border-border p-4 hover:border-primary hover:text-primary transition-colors hover:shadow-sm">
                 <Heart className="w-5 h-5" />
               </button>
             </div>

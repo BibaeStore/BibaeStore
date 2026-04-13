@@ -116,7 +116,7 @@ export default function AboutPage() {
                         Experience the difference of premium quality and dedicated service.
                     </p>
                     <Link
-                        href="/shop"
+                        href="/shop/"
                         className="inline-block bg-white text-primary px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors shadow-lg"
                     >
                         Start Shopping

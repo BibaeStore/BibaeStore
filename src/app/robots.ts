@@ -11,9 +11,17 @@ export default function robots(): MetadataRoute.Robots {
         '/checkout/',
         '/profile/',
         '/login/',
-        '/register/',
+        '/signup/',
+        '/auth/',
         '/api/',
+        '/debug-db/',
+        '/debug/',
+        '/coupons/',
+        '/actions/',
+        '/wishlist/',
+        '/account/',
         '/*?search=',
+        '/*?_rsc=', // Block Next.js internal data fetching
     ];
 
     return {

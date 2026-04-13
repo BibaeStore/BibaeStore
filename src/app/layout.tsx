@@ -7,6 +7,7 @@ import TopLoadingBar from '@/components/TopLoadingBar'
 import PageTransition from '@/components/PageTransition'
 import Script from 'next/script'
 import RecentSalesPopup from '@/components/RecentSalesPopup'
+import { getNavCategoriesAction } from '@/app/actions/categories'
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://habibaminhas.com/'),
@@ -72,7 +73,8 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const categories = await getNavCategoriesAction()
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -102,6 +104,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head />
       <body className="bg-background antialiased" suppressHydrationWarning>
         {/* Google Analytics Tag */}
         <Script
@@ -141,7 +144,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <Providers>
           <TopLoadingBar />
-          <ClientLayout>
+          <ClientLayout initialCategories={categories}>
             <PageTransition>
               {children}
             </PageTransition>

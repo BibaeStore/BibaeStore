@@ -8,6 +8,7 @@ import TrackOrderBanner from "@/components/TrackOrderBanner";
 import Newsletter from "@/components/Newsletter";
 import FAQSection from "@/components/FAQSection";
 import { getProducts } from "@/lib/server-queries";
+import { getNavCategoriesAction } from "@/app/actions/categories";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -23,7 +24,7 @@ export const revalidate = 300
 
 export default async function Index() {
   const products = await getProducts();
-
+  const categories = await getNavCategoriesAction();
   const featuredProducts = products.filter((p) => p.is_featured).slice(0, 8);
   const newArrivals = products.slice(0, 8);
 
@@ -31,7 +32,7 @@ export default async function Index() {
     <main>
       <HeroSection />
       <TrustBadges />
-      <CategoryHighlights />
+      <CategoryHighlights initialCategories={categories} />
       <FeaturedProducts products={featuredProducts} />
       <NewArrivals products={newArrivals} />
       <Testimonials />

@@ -20,8 +20,12 @@ export default async function Shop() {
   const products = await getProducts();
 
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading Store...</div>}>
-      <ShopContent initialProducts={products} />
-    </Suspense>
+    <main>
+      {/* Hidden H1 for SEO Raw HTML discoverability since ShopContent is client-side */}
+      <h1 className="sr-only">Shop Our Premium Collection - Habiba Minhas</h1>
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading Store...</div>}>
+        <ShopContent initialProducts={products} />
+      </Suspense>
+    </main>
   );
 }

@@ -10,5 +10,11 @@ export const metadata = {
 export default async function ReviewsPage() {
     const { data: reviews } = await getApprovedStoreReviewsAction();
 
-    return <ReviewsContent initialReviews={reviews} />;
+    return (
+        <main>
+            {/* Hidden H1 for SEO Raw HTML discoverability since ReviewsContent is client-side */}
+            <h1 className="sr-only">Customer Reviews & Testimonials - Habiba Minhas</h1>
+            <ReviewsContent initialReviews={reviews} />
+        </main>
+    );
 }

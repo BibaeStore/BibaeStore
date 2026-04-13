@@ -247,7 +247,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                         '@type': 'ListItem',
                         position: 1,
                         name: 'Home',
-                        item: 'https://habibaminhas.com',
+                        item: 'https://habibaminhas.com/',
                     },
                     {
                         '@type': 'ListItem',

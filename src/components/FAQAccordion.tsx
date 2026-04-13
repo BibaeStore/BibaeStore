@@ -41,21 +41,24 @@ export default function FAQAccordion({ items }: FAQAccordionProps) {
                                 {isOpen ? <Minus className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
                             </span>
                         </button>
-                        <AnimatePresence initial={false} mode="wait">
-                            {isOpen && (
-                                <motion.div
-                                    key="content"
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: "auto", opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={{ duration: 0.3, ease: "easeInOut" }}
-                                >
-                                    <div className="p-5 pt-0 text-gray-600 font-body leading-relaxed text-sm md:text-base border-t border-transparent">
-                                        {item.answer}
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                        
+                        {/* 
+                            For SEO: All content is rendered in the initial HTML. 
+                            We use motion.div for animation but the content is always present.
+                        */}
+                        <motion.div
+                            initial={false}
+                            animate={{ 
+                                height: isOpen ? "auto" : 0,
+                                opacity: isOpen ? 1 : 0 
+                            }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            className="overflow-hidden"
+                        >
+                            <div className="p-5 pt-0 text-gray-600 font-body leading-relaxed text-sm md:text-base border-t border-transparent">
+                                {item.answer}
+                            </div>
+                        </motion.div>
                     </div>
                 );
             })}

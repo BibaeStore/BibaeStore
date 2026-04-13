@@ -20,13 +20,13 @@ const staticLinks = [
 
 const trailingLinks: { label: string; href: string }[] = [];
 
-export default function Header() {
+export default function Header({ initialCategories = [] }: { initialCategories?: NavCategory[] }) {
   const { items: cartItems, totalItems, totalPrice, updateQuantity, removeItem } = useCart();
   const { items: wishlistItems } = useWishlist();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const [navCategories, setNavCategories] = useState<NavCategory[]>([]);
+  const [navCategories, setNavCategories] = useState<NavCategory[]>(initialCategories);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>(null);
   const cartRef = useRef<HTMLDivElement>(null);
@@ -62,7 +62,7 @@ export default function Header() {
     return () => subscription.unsubscribe();
   }, [supabase]);
 
-  // Fetch dynamic categories
+  // Fetch dynamic categories to keep them fresh
   useEffect(() => {
     getNavCategoriesAction().then(setNavCategories).catch(() => {});
   }, []);
@@ -144,7 +144,7 @@ export default function Header() {
               >
                 <Link
                   href={`/shop/category/${cat.slug}/`}
-                  className={`text-sm font-body tracking-wider uppercase transition-colors duration-300 relative flex items-center gap-1 after:absolute after:bottom-[-2px] after:left-0 after:w-full after:h-[1px] after:bg-primary after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 after:origin-left ${pathname === `/shop/category/${cat.slug}` ? "text-primary after:scale-x-100" : `text-foreground/70 ${hoverColorClass}`}`}
+                  className={`text-sm font-body tracking-wider uppercase transition-colors duration-300 relative flex items-center gap-1 after:absolute after:bottom-[-2px] after:left-0 after:w-full after:h-[1px] after:bg-primary after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 after:origin-left ${pathname === `/shop/category/${cat.slug}/` ? "text-primary after:scale-x-100" : `text-foreground/70 ${hoverColorClass}`}`}
                 >
                   {cat.name}
                   {cat.subcategories.length > 0 && <ChevronDown className="w-3 h-3" />}
@@ -186,10 +186,10 @@ export default function Header() {
 
           {/* Icons */}
           <div className="flex items-center gap-2">
-            <Link href="/shop/" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm">
+            <Link href="/shop/" aria-label="Search Products" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm">
               <Search className="w-5 h-5" />
             </Link>
-            <Link href="/wishlist/" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block relative">
+            <Link href="/wishlist/" aria-label="View Wishlist" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block relative">
               <Heart className="w-5 h-5" />
               {isMounted && wishlistItems.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
@@ -197,15 +197,16 @@ export default function Header() {
                 </span>
               )}
             </Link>
-            <Link href={session ? "/profile/" : "/login/"} className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block">
+            <Link href={session ? "/profile/" : "/login/"} aria-label={session ? "Go to Profile" : "Login or Signup"} className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block">
               <User className={`w-5 h-5 ${session ? "text-primary" : ""}`} />
             </Link>
-            <Link href="/track/" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block">
+            <Link href="/track/" aria-label="Track Your Order" className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm hidden md:block">
               <PackageSearch className="w-5 h-5" />
             </Link>
             <div className="relative" ref={cartRef}>
               <button
                 onClick={() => setCartOpen(!cartOpen)}
+                aria-label={cartOpen ? "Close Cart" : "Open Shopping Cart"}
                 className="p-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 border border-transparent hover:border-gray-200 rounded-full transition-all duration-300 hover:shadow-sm relative"
               >
                 <ShoppingBag className="w-5 h-5" />
@@ -331,6 +332,7 @@ export default function Header() {
                   {cat.subcategories.length > 0 && (
                     <button
                       onClick={() => setExpandedMobileCategory(expandedMobileCategory === cat.id ? null : cat.id)}
+                      aria-label={expandedMobileCategory === cat.id ? "Collapse category" : "Expand category"}
                       className="p-2 text-foreground/50 hover:text-primary transition-colors"
                     >
                       <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expandedMobileCategory === cat.id ? 'rotate-180' : ''}`} />

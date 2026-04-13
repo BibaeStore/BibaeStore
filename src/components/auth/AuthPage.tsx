@@ -123,7 +123,8 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                 if (data.user) {
                     toast.success('Welcome back!')
                     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'habibaminhas@gmail.com'
-                    if (data.user.email === adminEmail) {
+                    const isBibaAdmin = data.user.email === adminEmail || data.user.email === 'bibaestore@gmail.com'
+                    if (isBibaAdmin) {
                         router.refresh()
                         router.push('/admin')
                     } else {
@@ -210,9 +211,9 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                             exit={{ opacity: 0, y: -20 }}
                             transition={{ duration: 0.3 }}
                         >
-                            <div className="text-3xl font-heading font-bold text-gray-900 mb-4">
+                            <h2 className="text-3xl font-heading font-bold text-gray-900 mb-4">
                                 {isSignUp ? "Already One of Us?" : "New Here?"}
-                            </div>
+                            </h2>
                             <p className="text-gray-600 font-body leading-relaxed mb-8">
                                 {isSignUp
                                     ? "Access your dashboard, manage orders, and checkout your favorite items effortlessly."

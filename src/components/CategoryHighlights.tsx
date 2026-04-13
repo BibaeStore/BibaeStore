@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { getNavCategoriesAction } from "@/app/actions/categories";
+import { getNavCategoriesAction, NavCategory } from "@/app/actions/categories";
 
 const fallbackCats = [
   { name: "Ladies", image: '/assets/category-ladies.jpg', href: "/shop/category/ladies/" },
@@ -20,8 +20,17 @@ const fallbackImages: Record<string, string> = {
   "Accessories": '/assets/category-accessories.jpeg',
 };
 
-export default function CategoryHighlights() {
-  const [cats, setCats] = useState(fallbackCats);
+export default function CategoryHighlights({ initialCategories = [] }: { initialCategories?: NavCategory[] }) {
+  const [cats, setCats] = useState(() => {
+    if (initialCategories.length > 0) {
+      return initialCategories.map((c: any) => ({
+        name: c.name,
+        image: fallbackImages[c.name] || '/assets/placeholder.jpg',
+        href: `/shop/category/${c.slug}/`,
+      }));
+    }
+    return fallbackCats;
+  });
 
   useEffect(() => {
     getNavCategoriesAction().then((navCats) => {

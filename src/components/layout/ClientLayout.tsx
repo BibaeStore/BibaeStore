@@ -4,20 +4,25 @@ import React from 'react'
 import { usePathname } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { NavCategory } from '@/app/actions/categories'
 
 const WHATSAPP_NUMBER = '923348438007'
 const WHATSAPP_MESSAGE = 'Hi Habiba Minhas! I have a question.'
 
-export default function ClientLayout({ children }: { children: React.ReactNode }) {
+export default function ClientLayout({ 
+    children, 
+    initialCategories = [] 
+}: { 
+    children: React.ReactNode,
+    initialCategories?: NavCategory[]
+}) {
     const pathname = usePathname()
     const isExcluded = pathname === '/login' || pathname === '/signup' || pathname?.startsWith('/admin')
 
     return (
         <>
             {!isExcluded && (
-                <React.Suspense fallback={<div className="h-20 bg-background" />}>
-                    <Header />
-                </React.Suspense>
+                <Header initialCategories={initialCategories} />
             )}
             {children}
             {!isExcluded && <Footer />}

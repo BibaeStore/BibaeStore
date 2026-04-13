@@ -37,6 +37,7 @@ export async function requireAdmin() {
     // Once the database is migrated, you can remove this fallback securely.
     const isLegacyAdmin = (
         user.email === 'habibaminhas@gmail.com' ||
+        user.email === 'bibaestore@gmail.com' ||
         user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL
     )
 

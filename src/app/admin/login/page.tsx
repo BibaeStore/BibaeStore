@@ -39,6 +39,7 @@ export default function AdminLoginPage() {
             if (data.user) {
                 const validAdminEmails = [
                     'habibaminhas@gmail.com',
+                    'bibaestore@gmail.com',
                     process.env.NEXT_PUBLIC_ADMIN_EMAIL
                 ]
 
