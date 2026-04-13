@@ -5,7 +5,7 @@ export const metadata = {
     title: 'Wholesale Inquiries',
     description: 'Wholesale and bulk order information for Habiba Minhas products.',
     alternates: {
-        canonical: '/wholesale',
+        canonical: '/wholesale/',
     },
 };
 

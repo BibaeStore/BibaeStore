@@ -5,7 +5,7 @@ export const metadata = {
     title: 'Refund & Return Policy',
     description: 'Our policies regarding refunds and returns for products purchased at Habiba Minhas.',
     alternates: {
-        canonical: '/refund-return-policy',
+        canonical: '/refund-return-policy/',
     },
 };
 
@@ -17,7 +17,7 @@ export default function RefundPolicyPage() {
                 <p className="text-center text-gray-500 mb-12">We want you to love what you ordered.</p>
 
                 <div className="prose prose-lg max-w-none prose-headings:font-heading prose-headings:text-primary prose-a:text-primary">
-                    <h3>1. Return Eligibility</h3>
+                    <h2>1. Return Eligibility</h2>
                     <p>
                         You have 14 calendar days to return an item from the date you received it. To be eligible for a return:
                     </p>
@@ -28,7 +28,7 @@ export default function RefundPolicyPage() {
                         <li>Clearance items are final sale and cannot be returned.</li>
                     </ul>
 
-                    <h3>2. Refunds</h3>
+                    <h2>2. Refunds</h2>
                     <p>
                         Once we receive your item, we will inspect it and notify you that we have received your returned item. We will immediately notify you on the status of your refund after inspecting the item.
                     </p>
@@ -36,22 +36,22 @@ export default function RefundPolicyPage() {
                         If your return is approved, we will initiate a refund to your original method of payment (or via bank transfer for COD orders). You will receive the credit within a certain amount of days, depending on your card issuer's policies.
                     </p>
 
-                    <h3>3. Exchanges</h3>
+                    <h2>3. Exchanges</h2>
                     <p>
                         If you need to exchange an item for a different size or color, please return your original item for a refund and place a new order. This ensures you get the new item quickly and avoids inventory issues.
                     </p>
 
-                    <h3>4. Shipping Costs</h3>
+                    <h2>4. Shipping Costs</h2>
                     <p>
                         You will be responsible for paying for your own shipping costs for returning your item. Shipping costs are non-refundable. If you receive a refund, the cost of return shipping will be deducted from your refund if we provide a return label.
                     </p>
 
-                    <h3>5. Damaged Items</h3>
+                    <h2>5. Damaged Items</h2>
                     <p>
                         If you received a damaged product, please notify us immediately for assistance. Contact us at <a href="mailto:support@habibaminhas.com">support@habibaminhas.com</a> with a photo of the damage.
                     </p>
 
-                    <h3>6. Contact Us</h3>
+                    <h2>6. Contact Us</h2>
                     <p>
                         If you have any questions on how to return your item to us, contact us at:
                     </p>

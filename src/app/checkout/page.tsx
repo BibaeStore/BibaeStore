@@ -188,7 +188,7 @@ export default function CheckoutPage() {
       setOrderPlaced(true);
       clearCart();
       if (isGuest) {
-        localStorage.removeItem('bibae_cart');
+        localStorage.removeItem('habiba_cart');
       }
 
       // Send order confirmation email — non-blocking but with proper error logging
@@ -352,7 +352,7 @@ export default function CheckoutPage() {
               animate={{ opacity: 1, y: 0 }}
               className="bg-background border border-border p-6 sticky top-24"
             >
-              <h3 className="font-heading text-xl mb-4">Order Summary</h3>
+              <h2 className="font-heading text-xl mb-4">Order Summary</h2>
               <div className="space-y-4 mb-6">
                 {items.map((item) => (
                   <div key={`${item.product.id}-${item.size}-${item.color}`} className="flex gap-3">

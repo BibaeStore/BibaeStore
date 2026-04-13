@@ -49,7 +49,7 @@ async function resolveCategory(slugSegments: string[]): Promise<ResolvedCategory
         return {
             category: child,
             parentCategory: parent,
-            canonicalPath: `/shop/category/${parentSlug}/${childSlug}`,
+            canonicalPath: `/shop/category/${parentSlug}/${childSlug}/`,
         };
     }
 
@@ -80,7 +80,7 @@ async function resolveCategory(slugSegments: string[]): Promise<ResolvedCategory
         return {
             category,
             parentCategory: null,
-            canonicalPath: `/shop/category/${slug}`,
+            canonicalPath: `/shop/category/${slug}/`,
         };
     }
 

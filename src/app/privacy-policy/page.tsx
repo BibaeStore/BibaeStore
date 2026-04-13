@@ -4,7 +4,7 @@ export const metadata = {
     title: 'Privacy Policy',
     description: 'Our commitment to protecting your privacy and personal data.',
     alternates: {
-        canonical: '/privacy-policy',
+        canonical: '/privacy-policy/',
     },
 };
 
@@ -20,12 +20,12 @@ export default function PrivacyPolicyPage() {
                         At Habiba Minhas, accessible from habibaminhas.com, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by Habiba Minhas and how we use it.
                     </p>
 
-                    <h3>1. Information We Collect</h3>
+                    <h2>1. Information We Collect</h2>
                     <p>
                         We collect information you provide directly to us on our website, such as when you create an account, place an order, subscribe to our newsletter, or contact us. This may include your name, email address, postal address, phone number, and payment information.
                     </p>
 
-                    <h3>2. How We Use Your Information</h3>
+                    <h2>2. How We Use Your Information</h2>
                     <p>We use the information we collect in various ways, including to:</p>
                     <ul>
                         <li>Provide, operate, and maintain our website</li>
@@ -37,22 +37,22 @@ export default function PrivacyPolicyPage() {
                         <li>Find and prevent fraud</li>
                     </ul>
 
-                    <h3>3. Cookies and Web Beacons</h3>
+                    <h2>3. Cookies and Web Beacons</h2>
                     <p>
                         Like any other website, Habiba Minhas uses 'cookies'. These cookies are used to store information including visitors &apos; preferences, and the pages on the website that the visitor accessed or visited. The information is used to optimize the users &apos; experience by customizing our web page content based on visitors &apos; browser type and/or other information.
                     </p>
 
-                    <h3>4. Third Party Privacy Policies</h3>
+                    <h2>4. Third Party Privacy Policies</h2>
                     <p>
                         Habiba Minhas&apos;s Privacy Policy does not apply to other advertisers or websites. Thus, we are advising you to consult the respective Privacy Policies of these third-party ad servers for more detailed information. It may include their practices and instructions about how to opt-out of certain options.
                     </p>
 
-                    <h3>5. Data Security</h3>
+                    <h2>5. Data Security</h2>
                     <p>
                         We have implemented measures designed to secure your personal information from accidental loss and from unauthorized access, use, alteration, and disclosure. However, please be aware that no method of transmission over the Internet, or method of electronic storage is 100% secure and we cannot guarantee its absolute security.
                     </p>
 
-                    <h3>6. Contact Us</h3>
+                    <h2>6. Contact Us</h2>
                     <p>
                         If you have any questions about our Privacy Policy, please contact us via email at <strong>support@habibaminhas.com</strong>.
                     </p>

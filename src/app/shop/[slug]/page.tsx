@@ -98,7 +98,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         title: product.name,
         description: product.description || `Buy ${product.name} online at Habiba Minhas.`,
         alternates: {
-            canonical: `/shop/${product.slug || product.id}`,
+            canonical: `/shop/${product.slug || product.id}/`,
         },
         openGraph: {
             images: product.images?.[0] ? [product.images[0]] : [],
@@ -422,14 +422,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                             <div className="flex items-start gap-3">
                                 <Truck className="w-5 h-5 text-primary mt-1" />
                                 <div>
-                                    <h4 className="font-semibold text-sm mb-1">Fast Delivery</h4>
+                                    <div className="font-semibold text-sm mb-1">Fast Delivery</div>
                                     <p className="text-xs text-gray-500">Shipping within 3-5 days across Pakistan.</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
                                 <ShieldCheck className="w-5 h-5 text-primary mt-1" />
                                 <div>
-                                    <h4 className="font-semibold text-sm mb-1">Authentic Product</h4>
+                                    <div className="font-semibold text-sm mb-1">Authentic Product</div>
                                     <p className="text-xs text-gray-500">100% original & handcrafted quality.</p>
                                 </div>
                             </div>

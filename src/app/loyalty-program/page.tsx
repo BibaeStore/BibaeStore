@@ -6,7 +6,7 @@ export const metadata = {
     title: 'Rewards & Loyalty Program',
     description: 'Join the Habiba Minhas Rewards program and earn points on every purchase.',
     alternates: {
-        canonical: '/loyalty-program',
+        canonical: '/loyalty-program/',
     },
 };
 

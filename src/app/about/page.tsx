@@ -6,7 +6,7 @@ export const metadata = {
     title: 'About Us',
     description: 'Learn more about Habiba Minhas, our story, mission, and commitment to quality fashion and baby products in Pakistan.',
     alternates: {
-        canonical: '/about',
+        canonical: '/about/',
     },
 };
 

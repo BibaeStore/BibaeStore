@@ -5,7 +5,7 @@ export const metadata = {
     title: 'Affiliate Program',
     description: 'Join the Habiba Minhas Affiliate Program and earn commissions.',
     alternates: {
-        canonical: '/affiliate-program',
+        canonical: '/affiliate-program/',
     },
 };
 
@@ -37,7 +37,7 @@ export default function AffiliatePage() {
                 </div>
 
                 <div className="max-w-xl mx-auto">
-                    <h3 className="text-2xl font-bold mb-4">How to Apply</h3>
+                    <h2 className="text-2xl font-bold mb-4">How to Apply</h2>
                     <p className="text-gray-600 mb-8">
                         We are currently accepting applications manually. Please email us your details, website/social media links, and marketing strategy.
                     </p>

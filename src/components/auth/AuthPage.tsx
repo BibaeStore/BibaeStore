@@ -164,7 +164,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
 
     return (
         <div className="relative min-h-screen w-full flex overflow-hidden bg-gray-50">
-            <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+            <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")", backgroundRepeat: "repeat", backgroundSize: "150px"}} />
 
             {/* BRANDING PANEL */}
             <motion.div
@@ -210,9 +210,9 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                             exit={{ opacity: 0, y: -20 }}
                             transition={{ duration: 0.3 }}
                         >
-                            <h2 className="text-3xl font-heading font-bold text-gray-900 mb-4">
+                            <div className="text-3xl font-heading font-bold text-gray-900 mb-4">
                                 {isSignUp ? "Already One of Us?" : "New Here?"}
-                            </h2>
+                            </div>
                             <p className="text-gray-600 font-body leading-relaxed mb-8">
                                 {isSignUp
                                     ? "Access your dashboard, manage orders, and checkout your favorite items effortlessly."

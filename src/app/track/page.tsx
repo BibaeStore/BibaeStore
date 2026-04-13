@@ -508,6 +508,27 @@ function TrackingContent() {
                         </motion.div>
                     )}
                 </div>
+
+                {/* Tracking Guide / Info */}
+                <div className="max-w-2xl mx-auto pb-20">
+                    <div className="bg-white border border-border p-8 rounded-2xl shadow-sm">
+                        <h2 className="font-heading text-xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h2>
+                        <div className="space-y-6">
+                            <div>
+                                <h3 className="font-bold text-sm text-gray-900 mb-2">When will I get my tracking number?</h3>
+                                <p className="text-sm text-gray-500 leading-relaxed">Tracking numbers are usually emailed within 24-48 hours after your order is confirmed. If you haven't received it, please check your spam folder.</p>
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-sm text-gray-900 mb-2">Why is there no update on my status?</h3>
+                                <p className="text-sm text-gray-500 leading-relaxed">It can take up to 24 hours for the courier to update scanning information once the parcel is dispatched. Please check back later.</p>
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-sm text-gray-900 mb-2">What if my order is delayed?</h3>
+                                <p className="text-sm text-gray-500 leading-relaxed">Standard delivery takes 3-5 business days. If it's been longer than a week, contact us on WhatsApp with your tracking ID.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     )

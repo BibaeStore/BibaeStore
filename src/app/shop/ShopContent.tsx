@@ -221,7 +221,7 @@ export default function ShopContent({ initialProducts, initialTitle, isCategoryP
               exit={{ height: 0, opacity: 0 }}
               className="mb-8 pb-6 border-b border-border overflow-hidden"
             >
-              <h4 className="font-heading text-lg mb-4">Categories</h4>
+              <h2 className="font-heading text-lg mb-4">Categories</h2>
               <div className="space-y-4">
                 <button
                   onClick={() => setSelectedCategory("")}

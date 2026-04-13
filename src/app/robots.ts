@@ -7,11 +7,11 @@ export default function robots(): MetadataRoute.Robots {
     const privatePages = [
         '/admin/',
         '/private/',
-        '/cart',
-        '/checkout',
-        '/profile',
-        '/login',
-        '/register',
+        '/cart/',
+        '/checkout/',
+        '/profile/',
+        '/login/',
+        '/register/',
         '/api/',
         '/*?search=',
     ];

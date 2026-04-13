@@ -175,7 +175,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         title: post.meta_title,
         description: post.meta_description,
         keywords: post.keywords?.join(', '),
-        alternates: { canonical: `/blog/${slug}` },
+        alternates: { canonical: `/blog/${slug}/` },
         openGraph: { images: post.cover_image ? [post.cover_image] : [] }
     };
 }
@@ -290,10 +290,10 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
 
                     {/* Highly Visual Table of Contents */}
                     <nav className="bg-white border-2 border-gray-100 p-8 rounded-[2rem] mb-12 shadow-md hover:shadow-lg transition-shadow">
-                        <h3 className="font-heading font-black text-2xl mb-6 text-gray-900 flex items-center gap-3">
+                        <h2 className="font-heading font-black text-2xl mb-6 text-gray-900 flex items-center gap-3">
                             <span className="bg-gray-100 text-gray-900 p-3 rounded-xl"><HelpCircle className="w-6 h-6"/></span>
                             Quick Jump Guide
-                        </h3>
+                        </h2>
                         <ul className="space-y-5 text-base text-gray-700 font-bold">
                             <li className="flex items-center gap-4"><span className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">1</span><a href="#velvet-dresses" className="hover:text-primary transition-colors underline decoration-gray-200 underline-offset-8">Premium Velvet Ethnic Wear</a></li>
                             <li className="flex items-center gap-4"><span className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">2</span><a href="#heavy-shawls" className="hover:text-primary transition-colors underline decoration-gray-200 underline-offset-8">Embroidered Shawls</a></li>
@@ -327,7 +327,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                     <div className="mt-16 bg-gray-900 rounded-[2rem] p-10 text-center relative overflow-hidden shadow-2xl">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[80px] rounded-full"></div>
                         <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full"></div>
-                        <h3 className="font-heading font-black text-3xl text-white mb-3 relative z-10">Get 10% Off Your Next Look</h3>
+                        <h2 className="font-heading font-black text-3xl text-white mb-3 relative z-10">Get 10% Off Your Next Look</h2>
                         <p className="text-gray-300 text-lg mb-8 max-w-md mx-auto relative z-10">Join 15,000+ fashion lovers. Get exclusive style guides and VIP secret sales delivered to your inbox.</p>
                         <form className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto relative z-10">
                             <input type="email" placeholder="Enter your email address" className="flex-1 px-6 py-4 rounded-xl text-gray-900 border-none outline-none focus:ring-2 focus:ring-primary shadow-inner font-medium" />
@@ -343,7 +343,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                             <Image src={post.author.image} alt={post.author.name} fill className="rounded-full object-cover shadow-lg border-4 border-gray-50" unoptimized/>
                         </div>
                         <div>
-                            <h4 className="font-heading font-black text-3xl text-gray-900">{post.author.name}</h4>
+                            <h3 className="font-heading font-black text-3xl text-gray-900">{post.author.name}</h3>
                             <p className="text-xs uppercase tracking-widest text-[#E11D48] font-black mb-4 mt-1">{post.author.role}</p>
                             <p className="text-gray-600 text-[1.05rem] leading-relaxed">{post.author.bio}</p>
                         </div>
@@ -365,9 +365,9 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                         <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white font-black tracking-widest uppercase text-[10px] px-6 py-2 rounded-full whitespace-nowrap shadow-md">
                             Selling Fast
                         </div>
-                        <h3 className="font-heading font-black text-2xl text-gray-900 mb-8 mt-2 text-center">
+                        <h2 className="font-heading font-black text-2xl text-gray-900 mb-8 mt-2 text-center">
                             Limited Winter Collection
-                        </h3>
+                        </h2>
                         
                         <div className="space-y-6 mb-8">
                             <a href="/shop" className="flex gap-4 items-center group cursor-pointer border-b border-gray-100 pb-6">
@@ -375,7 +375,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
                                     <Image src="https://images.unsplash.com/photo-1595777457583-95e059f581ce?q=80&w=200&fit=crop" fill className="object-cover group-hover:scale-110 transition-transform duration-500" alt="Velvet suit" unoptimized/>
                                 </div>
                                 <div className="flex-1">
-                                    <h4 className="text-base font-black text-gray-900 leading-snug group-hover:text-primary transition-colors">Royal Maroon Formal Set</h4>
+                                    <h3 className="text-base font-black text-gray-900 leading-snug group-hover:text-primary transition-colors">Royal Maroon Formal Set</h3>
                                     <div className="flex items-center gap-2 mt-2">
                                         <p className="text-base font-black text-gray-900">Rs 14,500</p>
                                     </div>

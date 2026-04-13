@@ -64,7 +64,7 @@ export function ShippingLabel({ order }: ShippingLabelProps) {
                 {/* Header */}
                 <div className="text-center border-b-2 border-black pb-3 mb-3">
                     <h1 className="text-2xl font-black tracking-widest">
-                        BIBAE STORE
+                        HABIBA MINHAS
                     </h1>
                     <p className="text-xs tracking-wide mt-0.5">habibaminhas.com</p>
                 </div>

@@ -9,7 +9,7 @@ import Script from 'next/script'
 import RecentSalesPopup from '@/components/RecentSalesPopup'
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://habibaminhas.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://habibaminhas.com/'),
   title: {
     default: 'Elegant Ethnic Wear & Handcrafted Accessories | Habiba Minhas',
     template: '%s | Habiba Minhas'
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_PK',
-    url: 'https://habibaminhas.com',
+    url: 'https://habibaminhas.com/',
     siteName: 'Habiba Minhas',
     title: 'Elegant Ethnic Wear & Handcrafted Accessories | Habiba Minhas',
     description: 'Elevate your style with Habiba Minhas’s handcrafted collections. Luxury boutique wear delivered to your doorstep.',
@@ -71,7 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Habiba Minhas',
-    url: 'https://habibaminhas.com',
+    url: 'https://habibaminhas.com/',
     logo: 'https://habibaminhas.com/assets/logo.png',
     sameAs: [
       'https://www.facebook.com/profile.php?id=61574335512818',

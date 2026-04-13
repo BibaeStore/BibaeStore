@@ -9,22 +9,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // 1. Static Routes (Foundation & Programs)
     const routes = [
         '',
-        '/shop',
-        '/blog',
-        '/about',
-        '/contact',
-        '/privacy-policy',
-        '/terms',
-        '/shipping-policy',
-        '/refund-return-policy',
-        '/wholesale',
-        '/affiliate-program',
-        '/loyalty-program',
+        '/shop/',
+        '/blog/',
+        '/about/',
+        '/contact/',
+        '/privacy-policy/',
+        '/terms/',
+        '/shipping-policy/',
+        '/refund-return-policy/',
+        '/wholesale/',
+        '/affiliate-program/',
+        '/loyalty-program/',
     ].map((route) => ({
         url: `${baseUrl}${route}`,
         lastModified: new Date(),
         changeFrequency: 'daily' as const,
-        priority: route === '' ? 1 : route.includes('shop') || route.includes('blog') ? 0.9 : 0.7,
+        priority: route === '/' ? 1 : route.includes('shop') || route.includes('blog') ? 0.9 : 0.7,
     }));
 
     // 2. Products (from DB) - The money pages
@@ -36,7 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             .eq('status', 'active'); // Only active products
 
         productRoutes = (products || []).map((product) => ({
-            url: `${baseUrl}/shop/${product.slug || product.id}`,
+            url: `${baseUrl}/shop/${product.slug || product.id}/`,
             lastModified: new Date(product.updated_at || new Date()),
             changeFrequency: 'weekly' as const,
             priority: 0.9,
@@ -54,7 +54,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             .eq('status', 'published');
 
         blogRoutes = (posts || []).map((post) => ({
-            url: `${baseUrl}/blog/${post.slug}`,
+            url: `${baseUrl}/blog/${post.slug}/`,
             lastModified: new Date(post.updated_at || new Date()),
             changeFrequency: 'weekly' as const,
             priority: 0.7,
@@ -76,10 +76,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             if (cat.parent_id) {
                 const parent = allCats.find(p => p.id === cat.parent_id);
                 path = parent
-                    ? `/shop/category/${parent.slug}/${cat.slug}`
-                    : `/shop/category/${cat.slug}`;
+                    ? `/shop/category/${parent.slug}/${cat.slug}/`
+                    : `/shop/category/${cat.slug}/`;
             } else {
-                path = `/shop/category/${cat.slug}`;
+                path = `/shop/category/${cat.slug}/`;
             }
             return {
                 url: `${baseUrl}${path}`,

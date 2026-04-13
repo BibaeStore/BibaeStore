@@ -42,9 +42,9 @@ export default function Cart() {
         >
           <ShoppingBag className="w-20 h-20 text-muted-foreground/20 mx-auto mb-6" strokeWidth={1} />
           <h1 className="font-heading text-4xl font-light mb-3">Your Cart is Empty</h1>
-          <p className="text-muted-foreground font-body text-sm mb-10 max-w-sm mx-auto">
-            Looks like you haven't added anything yet. Explore our collections to find something you love.
-          </p>
+          <h2 className="text-muted-foreground font-body text-sm mb-10 max-w-sm mx-auto">
+            Looks like you haven't added anything yet. Explore our collection of handcrafted dresses and exclusive accessories.
+          </h2>
           <Link
             href="/shop"
             className="inline-flex items-center gap-2 bg-foreground text-background px-10 py-4 text-sm font-body font-medium tracking-widest uppercase hover:bg-foreground/90 transition-colors"
@@ -75,6 +75,7 @@ export default function Cart() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Items */}
           <div className="lg:col-span-2 space-y-0">
+            <h2 className="sr-only">Items in your cart</h2>
             <div className="hidden md:grid grid-cols-[2fr,1fr,1fr,auto] gap-4 pb-4 border-b border-border text-xs font-body text-muted-foreground tracking-wider uppercase">
               <span>Product</span>
               <span className="text-center">Quantity</span>
@@ -134,7 +135,7 @@ export default function Cart() {
           {/* Summary */}
           <div>
             <div className="bg-muted/50 p-8 sticky top-28 border border-border">
-              <h3 className="font-heading text-2xl mb-6">Order Summary</h3>
+              <h2 className="font-heading text-2xl mb-6">Order Summary</h2>
               <div className="space-y-4 mb-6 text-sm font-body">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>

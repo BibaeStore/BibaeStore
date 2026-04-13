@@ -1,11 +1,12 @@
 import React from 'react';
 import { Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
+import MapEmbed from '@/components/MapEmbed';
 
 export const metadata = {
     title: 'Contact Us',
     description: 'Get in touch with Habiba Minhas. We are here to assist you with your orders, inquiries, and feedback.',
     alternates: {
-        canonical: '/contact',
+        canonical: '/contact/',
     },
 };
 
@@ -69,18 +70,7 @@ export default function ContactPage() {
                             </div>
                         </div>
 
-                        {/* Map Placeholder or additional info */}
-                        <div className="w-full h-64 bg-gray-100 rounded-2xl overflow-hidden relative">
-                            <iframe
-                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d13278.1!2d73.0478!3d33.5973!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x38df948a7b0673d7%3A0x984357e1632d93b6!2sSaddar%2C%20Rawalpindi%2C%20Punjab%2C%20Pakistan!5e0!3m2!1sen!2s!4v1712500000000!5m2!1sen!2s"
-                                width="100%"
-                                height="100%"
-                                style={{ border: 0 }}
-                                allowFullScreen
-                                loading="lazy"
-                                referrerPolicy="no-referrer-when-downgrade"
-                            ></iframe>
-                        </div>
+                        <MapEmbed />
                     </div>
 
                     {/* Contact Form */}

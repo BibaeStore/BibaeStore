@@ -19,7 +19,7 @@ interface ReviewsContentProps {
 
 export default function ReviewsContent({ initialReviews }: ReviewsContentProps) {
     const [reviews] = useState<StoreReview[]>(initialReviews)
-    const [reviewOption, setReviewOption] = useState<'choose' | 'trustpilot' | 'bibae'>('choose')
+    const [reviewOption, setReviewOption] = useState<'choose' | 'trustpilot' | 'habiba'>('choose')
     const [name, setName] = useState('')
     const [email, setEmail] = useState('')
     const [rating, setRating] = useState(0)
@@ -27,10 +27,12 @@ export default function ReviewsContent({ initialReviews }: ReviewsContentProps) 
     const [comment, setComment] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitted, setSubmitted] = useState(false)
+    const [mounted, setMounted] = useState(false)
     const trustpilotRef = useRef<HTMLDivElement>(null)
 
-    // Initialize Trustpilot widget after mount
+    // Initialize Trustpilot widget after mount (client-only)
     useEffect(() => {
+        setMounted(true)
         if (trustpilotRef.current && typeof window !== 'undefined' && (window as any).Trustpilot) {
             (window as any).Trustpilot.loadFromElement(trustpilotRef.current, true)
         }
@@ -113,23 +115,25 @@ export default function ReviewsContent({ initialReviews }: ReviewsContentProps) 
             </div>
 
             <div className="container mx-auto px-4 py-12 md:py-16">
-                {/* Trustpilot Widget */}
+                {/* Trustpilot Widget — client-only to avoid robots.txt blocking */}
                 <div className="mb-16">
                     <div className="text-center mb-6">
                         <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Also verified on</p>
                     </div>
-                    <div
-                        ref={trustpilotRef}
-                        className="trustpilot-widget"
-                        data-locale="en-US"
-                        data-template-id="56278e9abfbbba0bdcd568bc"
-                        data-businessunit-id="699cada2007f422695581af9"
-                        data-style-height="52px"
-                        data-style-width="100%"
-                        data-token="36253e1e-cde8-4405-b6bb-9b2aa80fd115"
-                    >
-                        <a href="https://www.trustpilot.com/review/habibaminhas.com" target="_blank" rel="noopener noreferrer">Trustpilot</a>
-                    </div>
+                    {mounted && (
+                        <div
+                            ref={trustpilotRef}
+                            className="trustpilot-widget"
+                            data-locale="en-US"
+                            data-template-id="56278e9abfbbba0bdcd568bc"
+                            data-businessunit-id="699cada2007f422695581af9"
+                            data-style-height="52px"
+                            data-style-width="100%"
+                            data-token="36253e1e-cde8-4405-b6bb-9b2aa80fd115"
+                        >
+                            <a href="https://www.trustpilot.com/review/habibaminhas.com" target="_blank" rel="noopener noreferrer">Trustpilot</a>
+                        </div>
+                    )}
                 </div>
 
                 {/* Leave a Review Section */}
@@ -165,7 +169,7 @@ export default function ReviewsContent({ initialReviews }: ReviewsContentProps) 
 
                             {/* Internal Review Option */}
                             <button
-                                onClick={() => setReviewOption('bibae')}
+                                onClick={() => setReviewOption('habiba')}
                                 className="group p-6 border-2 border-gray-200 rounded-xl hover:border-primary transition-all duration-300 text-left"
                             >
                                 <div className="flex items-center gap-3 mb-3">
@@ -185,7 +189,7 @@ export default function ReviewsContent({ initialReviews }: ReviewsContentProps) 
                     )}
 
                     {/* Internal Review Form */}
-                    {reviewOption === 'bibae' && !submitted && (
+                    {reviewOption === 'habiba' && !submitted && (
                         <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 md:p-8">
                             <button
                                 onClick={() => setReviewOption('choose')}

@@ -37,7 +37,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 function getLocalCartItems(): CartItem[] {
   if (typeof window === 'undefined') return [];
-  const localData = localStorage.getItem('bibae_cart');
+  const localData = localStorage.getItem('habiba_cart');
   if (!localData) return [];
   try {
     return JSON.parse(localData);
@@ -168,7 +168,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems(merged);
       } else if (event === 'SIGNED_OUT') {
         setItems([]);
-        localStorage.removeItem('bibae_cart');
+        localStorage.removeItem('habiba_cart');
       }
     });
 
@@ -178,7 +178,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // 2. Always persist to localStorage (even for logged-in users — only place storing size/color)
   useEffect(() => {
     if (!isLoading) {
-      localStorage.setItem('bibae_cart', JSON.stringify(items));
+      localStorage.setItem('habiba_cart', JSON.stringify(items));
     }
   }, [items, isLoading]);
 
@@ -283,7 +283,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         console.error("Failed to clear DB cart:", error);
       }
     } else {
-      localStorage.removeItem('bibae_cart');
+      localStorage.removeItem('habiba_cart');
     }
   };
 
