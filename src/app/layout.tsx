@@ -10,7 +10,7 @@ import RecentSalesPopup from '@/components/RecentSalesPopup'
 import { getNavCategoriesAction } from '@/app/actions/categories'
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://habibaminhas.com/'),
+  metadataBase: new URL('https://habibaminhas.com'),
   title: {
     default: 'Elegant Ethnic Wear & Handcrafted Accessories | Habiba Minhas',
     template: '%s | Habiba Minhas'
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_PK',
-    url: 'https://habibaminhas.com/',
+    url: 'https://habibaminhas.com',
     siteName: 'Habiba Minhas',
     title: 'Elegant Ethnic Wear & Handcrafted Accessories | Habiba Minhas',
     description: 'Elevate your style with Habiba Minhas’s handcrafted collections. Luxury boutique wear delivered to your doorstep.',
