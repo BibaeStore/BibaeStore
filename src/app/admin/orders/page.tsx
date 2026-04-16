@@ -648,7 +648,7 @@ export default function OrdersPage() {
                     <!-- Header with Logo -->
                     <div style="background:#1a1a1a;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
                         <div>
-                            <img src="/Habiba Minhas logo.jpeg" alt="Habiba Minhas" style="height:28px;filter:brightness(0) invert(1);" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
+                            <img src="/habiba-minhas-logo.jpeg" alt="Habiba Minhas" style="height:28px;filter:brightness(0) invert(1);" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
                             <div style="display:none;color:#fff;font-size:16px;font-weight:800;letter-spacing:3px;">HABIBA MINHAS</div>
                         </div>
                         <div style="background:${paymentBg};color:#fff;padding:4px 14px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:2px;">

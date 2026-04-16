@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
-const logo = '/Habiba Minhas logo.jpeg'
+const logo = '/habiba-minhas-logo.jpeg'
 
 const GoogleIcon = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

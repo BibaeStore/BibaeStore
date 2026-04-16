@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
-const logo = '/Habiba Minhas logo.jpeg'
+const logo = '/habiba-minhas-logo.jpeg'
 
 export default function AdminLoginPage() {
     const router = useRouter()
