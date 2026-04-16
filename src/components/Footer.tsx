@@ -16,7 +16,7 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div>
-            <Image src="/habiba-minhas-logo.jpeg" alt="Habiba Minhas" width={160} height={48} className="h-12 w-auto mb-5" />
+            <img src="/habiba-minhas-logo.jpeg" alt="Habiba Minhas" width={160} height={48} className="h-12 w-auto mb-5" />
             <p className="text-gray-500 text-sm leading-relaxed font-body mb-6">
               Premium fashion & baby products. Elegance redefined for the modern family. Handcrafted with love in Pakistan.
             </p>

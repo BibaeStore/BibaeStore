@@ -116,7 +116,7 @@ export default function Header({ initialCategories = [] }: { initialCategories?:
 
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <Image src="/habiba-minhas-logo.jpeg" alt="Habiba Minhas" width={160} height={56} priority className={`transition-all duration-300 ${logoClass}`} />
+            <img src="/habiba-minhas-logo.jpeg" alt="Habiba Minhas" width={160} height={56} className={`transition-all duration-300 ${logoClass}`} />
           </Link>
 
           {/* Desktop Nav */}
