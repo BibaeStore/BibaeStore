@@ -65,3 +65,27 @@ export async function getProductReviews(productId: string) {
     }
     return data || []
 }
+
+export async function getRelatedBlogs(category: string) {
+    const supabase = await createClient()
+    
+    // Simplistic keyword matching for local market
+    let query = supabase.from('blog_posts').select('*').limit(3)
+    
+    if (category.toLowerCase().includes('velvet')) {
+        query = query.ilike('title', '%velvet%')
+    } else if (category.toLowerCase().includes('kids') || category.toLowerCase().includes('baby')) {
+        query = query.ilike('category', '%baby%')
+    } else {
+        query = query.order('published_at', { ascending: false })
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+        console.error('Error fetching related blogs:', error)
+        return []
+    }
+    return data || []
+}
+

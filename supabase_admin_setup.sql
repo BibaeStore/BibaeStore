@@ -43,5 +43,5 @@ CREATE TRIGGER on_auth_user_created
 INSERT INTO public.profiles (id, role, full_name)
 SELECT id, 'admin', 'Store Admin'
 FROM auth.users
-WHERE email = 'bibaestore@gmail.com'
+WHERE email = 'habibaminhas@gmail.com'
 ON CONFLICT (id) DO UPDATE SET role = 'admin';

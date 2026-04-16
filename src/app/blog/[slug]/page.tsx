@@ -166,6 +166,137 @@ const RELATED_POSTS = [
     { title: "How to Style a Shawl Like a Celebrity in 2026", slug: "shawl-styling-guide", image: "https://images.unsplash.com/photo-1584916201218-f4242ceb4809?q=80&w=400&fit=crop" },
 ]
 
+// ─── EXTRA BLOG POSTS (fixes 404s for related post links) ───────────────────
+
+LOCAL_POSTS.push(
+    {
+        title: '5 Winter Outfit Mistakes Pakistani Women Must Avoid',
+        slug: 'winter-outfit-mistakes',
+        excerpt: 'Are you unknowingly making these 5 fashion mistakes at winter weddings? Find out how to fix them and look absolutely stunning this season.',
+        content: `
+        <div style="background: #FFFBFB; border-left: 5px solid #111; padding: 1.5rem; margin-bottom: 2rem; border-radius: 4px;">
+            <p style="font-size: 1.25rem; color: #4B5563; font-weight: 500; font-style: italic; line-height: 1.6; margin: 0;">
+                You spent hours getting ready, but something still feels <strong style="color: #111;">off</strong>.<br/>
+                Chances are, you made one of <strong>these 5 classic mistakes.</strong>
+            </p>
+        </div>
+
+        <p style="line-height: 1.8; margin-bottom: 1.5rem;">Winter weddings are magical — the fairy lights, the music, the gorgeous food. But they are also where most women unknowingly commit fashion crimes that ruin an otherwise perfect look.</p>
+        <p style="line-height: 1.8; margin-bottom: 2.5rem;">Whether it's a mismatch of fabrics or the wrong shade of lipstick for a cold December night, these mistakes are more common than you think. Here are the top 5 you need to avoid.</p>
+
+        <h2 id="mistake-1" style="font-size: 1.8rem; font-weight: 800; color: #111; margin-top: 3rem; margin-bottom: 1rem;">1. Wearing Chiffon Without Layering</h2>
+        <p style="line-height: 1.8; margin-bottom: 2rem;">Chiffon is breathtaking — but in winter, it's practically invisible armour against the cold. If you insist on chiffon, layer a thermal inner underneath and pair it with a heavy <a href="/shop?category=shawls" style="color:#E11D48; font-weight:bold; text-decoration:underline;">velvet shawl</a> on top.</p>
+
+        <h2 id="mistake-2" style="font-size: 1.8rem; font-weight: 800; color: #111; margin-top: 3rem; margin-bottom: 1rem;">2. Wearing Light Pastel Colors at Night Events</h2>
+        <p style="line-height: 1.8; margin-bottom: 2rem;">Baby pinks and sky blues disappear under wedding hall lighting at night. Opt for jewel tones — emerald, plum, deep maroon — that photograph beautifully and radiate warmth and elegance.</p>
+
+        <h2 id="mistake-3" style="font-size: 1.8rem; font-weight: 800; color: #111; margin-top: 3rem; margin-bottom: 1rem;">3. Throwing On an Ugly Sweater Over Your Dress</h2>
+        <p style="line-height: 1.8; margin-bottom: 2rem;">This is the number one crime at Pakistani winter weddings. A random cardigan destroys your embroidery and silhouette completely. Instead, switch to a <a href="/shop?category=velvet" style="color:#E11D48; font-weight:bold; text-decoration:underline;">velvet dress</a> or a structured cape that is both warm AND beautiful.</p>
+
+        <h2 id="mistake-4" style="font-size: 1.8rem; font-weight: 800; color: #111; margin-top: 3rem; margin-bottom: 1rem;">4. Wearing Open-Toe Sandals in December</h2>
+        <p style="line-height: 1.8; margin-bottom: 2rem;">Open heels and cold marble floors are not friends. Switch to embellished Khussas, closed velvet pumps, or block heels. Your feet will thank you — and so will your overall look.</p>
+
+        <h2 id="mistake-5" style="font-size: 1.8rem; font-weight: 800; color: #111; margin-top: 3rem; margin-bottom: 1rem;">5. Ignoring Jewellery Layering</h2>
+        <p style="line-height: 1.8; margin-bottom: 2rem;">In summer, minimal jewellery looks chic. In winter, it looks unfinished. Layer your earrings with a statement necklace or a maang tikka. The extra pieces add warmth to your look without adding actual fabric.</p>
+
+        <h2 id="faq" style="font-size: 2rem; font-weight: 800; color: #111; margin-top: 4rem; margin-bottom: 1.5rem; border-bottom: 2px solid #E5E7EB; padding-bottom: 0.5rem;">Frequently Asked Questions</h2>
+        <div style="margin-bottom: 3rem;">
+            <details style="margin-bottom: 1rem; border: 1px solid #E5E7EB; border-radius: 12px; background: white; overflow: hidden;">
+                <summary style="font-weight: 800; font-size: 1.1rem; color: #111; padding: 1.2rem; background: #F9FAFB; cursor: pointer;">Can I wear a lawn suit to a winter wedding?</summary>
+                <div style="padding: 1.2rem; color: #4B5563; line-height: 1.6; border-top: 1px solid #E5E7EB;">It is not recommended. Lawn provides zero warmth. If you must, pair it with thermal undergarments and a very thick embroidered shawl.</div>
+            </details>
+            <details style="margin-bottom: 1rem; border: 1px solid #E5E7EB; border-radius: 12px; background: white; overflow: hidden;">
+                <summary style="font-weight: 800; font-size: 1.1rem; color: #111; padding: 1.2rem; background: #F9FAFB; cursor: pointer;">What is the best fabric to stay warm at a wedding?</summary>
+                <div style="padding: 1.2rem; color: #4B5563; line-height: 1.6; border-top: 1px solid #E5E7EB;">Velvet is the undisputed queen of winter wedding fabrics. It's warm, luxurious-looking, and comes in beautiful deep colors. Pashmina and raw silk are great alternatives.</div>
+            </details>
+        </div>
+        `,
+        cover_image: 'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?q=80&w=1200&auto=format&fit=crop',
+        author: {
+            name: "Aisha Malik",
+            role: "Fashion Editor at Habiba Minhas",
+            image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop",
+            bio: "Aisha helps Pakistani women discover their elegance through high-quality, handcrafted ethnic fashion."
+        },
+        meta_title: '5 Winter Outfit Mistakes Pakistani Women Must Avoid',
+        meta_description: 'Are you unknowingly making these common winter fashion mistakes? Discover 5 things to avoid and look stunning at every winter wedding in Pakistan.',
+        keywords: ['winter outfit mistakes', 'pakistani wedding fashion', 'velvet wear', 'winter wedding tips', 'Pakistani ethnic wear'],
+        category: 'Style Guides',
+        reading_time: '5 Min Read',
+        status: 'published',
+        published_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+    },
+    {
+        title: 'Best Colors for Winter Weddings in Pakistan: A Complete Guide',
+        slug: 'best-winter-wedding-colors',
+        excerpt: 'Not sure which colors work best for winter weddings in Pakistan? This complete color guide breaks down the best shades for day and night events.',
+        content: `
+        <div style="background: #FFFBFB; border-left: 5px solid #111; padding: 1.5rem; margin-bottom: 2rem; border-radius: 4px;">
+            <p style="font-size: 1.25rem; color: #4B5563; font-weight: 500; font-style: italic; line-height: 1.6; margin: 0;">
+                Color is more than fashion — it is <strong style="color:#111;">emotion, warmth, and presence.</strong><br/>
+                Choose the right one and the whole room will notice you.
+            </p>
+        </div>
+
+        <p style="line-height: 1.8; margin-bottom: 1.5rem;">One of the biggest decisions when dressing for a winter wedding is: <strong>what color do I wear?</strong> Get it right and you look confident, polished, and camera-ready. Get it wrong and you fade into the background — or worse, look out of season.</p>
+
+        <h2 id="night-colors" style="font-size: 1.8rem; font-weight: 800; color: #111; margin-top: 3rem; margin-bottom: 1rem;">Best Colors for Night Events (Barat & Walima)</h2>
+        <p style="line-height: 1.8; margin-bottom: 1rem;">Night functions demand rich, saturated tones that pop under hall lighting and in photographs.</p>
+        <ul style="margin-bottom: 2.5rem; padding-left: 1.5rem; line-height: 2; font-weight: 500;">
+            <li><strong>Deep Maroon</strong> — classic, powerful, universally flattering</li>
+            <li><strong>Emerald Green</strong> — fresh yet deep, especially on velvet</li>
+            <li><strong>Navy Blue</strong> — sophisticated and rare at Pakistani weddings (stand out!)</li>
+            <li><strong>Plum / Deep Purple</strong> — mysterious and highly photogenic</li>
+            <li><strong>Classic Black</strong> — bold and modern, pair with gold jewellery</li>
+        </ul>
+
+        <h2 id="day-colors" style="font-size: 1.8rem; font-weight: 800; color: #111; margin-top: 3rem; margin-bottom: 1rem;">Best Colors for Daytime Events (Nikah & Mehndi)</h2>
+        <p style="line-height: 1.8; margin-bottom: 1rem;">Daytime winter events happen under natural sunlight, so slightly warmer, lighter tones work beautifully.</p>
+        <ul style="margin-bottom: 2.5rem; padding-left: 1.5rem; line-height: 2; font-weight: 500;">
+            <li><strong>Mustard Yellow</strong> — warm, bright, and deeply cultural</li>
+            <li><strong>Rust / Burnt Orange</strong> — earthy and bold under daylight</li>
+            <li><strong>Olive Green</strong> — understated and elegant</li>
+            <li><strong>Dusty Rose</strong> — soft but richer than baby pink</li>
+        </ul>
+
+        <h2 id="colors-to-avoid" style="font-size: 1.8rem; font-weight: 800; color: #111; margin-top: 3rem; margin-bottom: 1rem;">Colors to Avoid in Winter</h2>
+        <ul style="margin-bottom: 2.5rem; padding-left: 1.5rem; line-height: 2; font-weight: 500; color: #6B7280;">
+            <li>❌ <strong>White</strong> — reserved for the bride in many Pakistani traditions</li>
+            <li>❌ <strong>Baby Pink / Sky Blue</strong> — too washed out under artificial lighting</li>
+            <li>❌ <strong>Neon Colors</strong> — clash with the warm, intimate ambience of winter events</li>
+        </ul>
+
+        <h2 id="faq" style="font-size: 2rem; font-weight: 800; color: #111; margin-top: 4rem; margin-bottom: 1.5rem; border-bottom: 2px solid #E5E7EB; padding-bottom: 0.5rem;">Frequently Asked Questions</h2>
+        <div style="margin-bottom: 3rem;">
+            <details style="margin-bottom: 1rem; border: 1px solid #E5E7EB; border-radius: 12px; background: white; overflow: hidden;">
+                <summary style="font-weight: 800; font-size: 1.1rem; color: #111; padding: 1.2rem; background: #F9FAFB; cursor: pointer;">Can I wear white to a Pakistani wedding?</summary>
+                <div style="padding: 1.2rem; color: #4B5563; line-height: 1.6; border-top: 1px solid #E5E7EB;">It is traditionally avoided in Pakistan as white is associated with mourning in South Asian cultures. Stick to rich, warm tones to respect this tradition.</div>
+            </details>
+            <details style="margin-bottom: 1rem; border: 1px solid #E5E7EB; border-radius: 12px; background: white; overflow: hidden;">
+                <summary style="font-weight: 800; font-size: 1.1rem; color: #111; padding: 1.2rem; background: #F9FAFB; cursor: pointer;">What color is most popular at Pakistani winter weddings?</summary>
+                <div style="padding: 1.2rem; color: #4B5563; line-height: 1.6; border-top: 1px solid #E5E7EB;">Deep maroon and emerald green consistently dominate Pakistani winter wedding fashion. They look stunning in photos and pair beautifully with gold jewellery.</div>
+            </details>
+        </div>
+        `,
+        cover_image: 'https://images.unsplash.com/photo-1601550992336-7c0b05b5f884?q=80&w=1200&auto=format&fit=crop',
+        author: {
+            name: "Aisha Malik",
+            role: "Fashion Editor at Habiba Minhas",
+            image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop",
+            bio: "Aisha helps Pakistani women discover their elegance through high-quality, handcrafted ethnic fashion."
+        },
+        meta_title: 'Best Colors for Winter Weddings in Pakistan: A Complete Color Guide',
+        meta_description: 'Discover the best colors to wear to a winter wedding in Pakistan. From maroon to emerald green, find the perfect shade for day and night events.',
+        keywords: ['winter wedding colors', 'pakistani fashion colors', 'velvet colors', 'wedding guest colors pakistan', 'winter color palette'],
+        category: 'Style Guides',
+        reading_time: '4 Min Read',
+        status: 'published',
+        published_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+    }
+);
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params;
     const post = LOCAL_POSTS.find(p => p.slug === slug);
@@ -189,12 +320,30 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
     const articleSchema = {
         '@context': 'https://schema.org',
         '@type': 'Article',
+        '@id': `https://habibaminhas.com/blog/${post.slug}/#article`,
         headline: post.title,
         image: post.cover_image,
         datePublished: post.published_at,
-        author: { '@type': 'Person', name: post.author.name },
-        publisher: { '@type': 'Organization', name: 'Habiba Minhas', logo: { '@type': 'ImageObject', url: 'https://habibaminhas.com/assets/logo.png' } },
+        dateModified: post.updated_at,
+        author: {
+            '@type': 'Person',
+            '@id': 'https://habibaminhas.com/#founder', // Linking to the founder entity
+            name: post.author.name === 'Habiba Minhas' ? 'Habiba Minhas' : post.author.name,
+        },
+        publisher: {
+            '@type': 'Organization',
+            '@id': 'https://habibaminhas.com/#organization', // Linking to the organization entity
+            name: 'Habiba Minhas',
+            logo: {
+                '@type': 'ImageObject',
+                url: 'https://habibaminhas.com/logo.png',
+            },
+        },
         description: post.meta_description,
+        mainEntityOfPage: {
+            '@type': 'WebPage',
+            '@id': `https://habibaminhas.com/blog/${post.slug}/`,
+        },
     };
 
     const faqSchema = {

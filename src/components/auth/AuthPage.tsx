@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
-const logo = '/assets/logo.png'
+const logo = '/Habiba Minhas logo.jpeg'
 
 const GoogleIcon = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -123,8 +123,8 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                 if (data.user) {
                     toast.success('Welcome back!')
                     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'habibaminhas@gmail.com'
-                    const isBibaAdmin = data.user.email === adminEmail || data.user.email === 'bibaestore@gmail.com'
-                    if (isBibaAdmin) {
+                    const isHabibaAdmin = data.user.email === adminEmail || data.user.email === 'habibaminhas@gmail.com'
+                    if (isHabibaAdmin) {
                         router.refresh()
                         router.push('/admin')
                     } else {

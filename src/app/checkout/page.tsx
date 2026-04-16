@@ -493,7 +493,7 @@ function ContactForm({
             <input
               {...register("phone")}
               type="tel"
-              placeholder="+92 334 8438007"
+              placeholder="+92 312 0295812"
               className="w-full pl-10 pr-4 py-3 border border-border bg-transparent focus:outline-none focus:border-primary transition-colors"
             />
           </div>
@@ -810,7 +810,7 @@ function PaymentForm({
       name: 'JazzCash',
       color: '#bf202f',
       accountName: 'Habiba Minhas',
-      accountNumber: '03348438007',
+      accountNumber: '03120295812',
       badge: null,
       badgeColor: ''
     },
@@ -819,7 +819,7 @@ function PaymentForm({
       name: 'Easypaisa',
       color: '#3AAA35',
       accountName: 'Habiba Minhas',
-      accountNumber: '03348438007',
+      accountNumber: '03120295812',
       badge: null,
       badgeColor: ''
     },

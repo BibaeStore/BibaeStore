@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS public.blog_posts (
     excerpt TEXT,
     content TEXT, -- Rich text content (HTML/MarkDown)
     cover_image TEXT,
-    author TEXT DEFAULT 'Bibae Team',
+    author TEXT DEFAULT 'Habiba Minhas Team',
     published_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     status TEXT DEFAULT 'published' CHECK (status IN ('draft', 'published', 'archived')),
     

@@ -332,7 +332,7 @@ export default function TrackingContent() {
                                         <p className="text-sm text-red-600 font-body font-medium">
                                             Please contact us on{' '}
                                             <a
-                                                href="https://wa.me/923348438007"
+                                                href="https://wa.me/923120295812"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="underline font-bold"
@@ -445,7 +445,7 @@ export default function TrackingContent() {
                             <p className="text-xs text-muted-foreground font-body">
                                 Need help?{' '}
                                 <a
-                                    href="https://wa.me/923348438007"
+                                    href="https://wa.me/923120295812"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-primary hover:underline font-medium"

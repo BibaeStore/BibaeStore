@@ -77,10 +77,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const categories = await getNavCategoriesAction()
   const organizationSchema = {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
+    '@type': ['Organization', 'Brand'],
     name: 'Habiba Minhas',
+    alternateName: 'Habiba Minhas Boutique',
     url: 'https://habibaminhas.com/',
-    logo: 'https://habibaminhas.com/assets/logo.png',
+    logo: 'https://habibaminhas.com/Habiba%20Minhas%20logo.jpeg',
+    description: 'Premium elegant ethnic wear, handcrafted clothing, and exclusive accessories delivered across Pakistan.',
+    founder: {
+      '@type': 'Person',
+      name: 'Habiba Minhas'
+    },
     sameAs: [
       'https://www.facebook.com/profile.php?id=61574335512818',
       'https://instagram.com/habibaminhas',
@@ -88,7 +94,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     ],
     contactPoint: {
       '@type': 'ContactPoint',
-      telephone: '+92-334-8438007',
+      telephone: '+92-312-0295812',
       contactType: 'customer service',
       areaServed: 'PK',
       availableLanguage: ['English', 'Urdu']
@@ -104,7 +110,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
+      <head>
+        <link rel="alternate" type="application/rss+xml" title="Habiba Minhas Product Feed" href="/api/feed" />
+      </head>
       <body className="bg-background antialiased" suppressHydrationWarning>
         {/* Google Analytics Tag */}
         <Script

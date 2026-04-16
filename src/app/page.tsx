@@ -28,8 +28,66 @@ export default async function Index() {
   const featuredProducts = products.filter((p) => p.is_featured).slice(0, 8);
   const newArrivals = products.slice(0, 8);
 
+  const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Habiba Minhas',
+    url: 'https://habibaminhas.com',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: 'https://habibaminhas.com/shop?search={search_term_string}',
+      'query-input': 'required name=search_term_string'
+    }
+  };
+
+  const localBusinessSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Store',
+    name: 'Habiba Minhas',
+    image: 'https://habibaminhas.com/Habiba%20Minhas%20logo.jpeg',
+    '@id': 'https://habibaminhas.com/',
+    url: 'https://habibaminhas.com/',
+    telephone: '+923120295812',
+    priceRange: '₨₨',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'Karachi, Pakistan',
+      addressLocality: 'Karachi',
+      addressRegion: 'Sindh',
+      postalCode: '75533',
+      addressCountry: 'PK'
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: 24.8607,
+      longitude: 67.0011
+    },
+    openingHoursSpecification: {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday'
+      ],
+      opens: '09:00',
+      closes: '20:00'
+    }
+  };
+
   return (
     <main>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
+      />
+
       <HeroSection />
       <TrustBadges />
       <CategoryHighlights initialCategories={categories} />

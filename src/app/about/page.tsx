@@ -11,8 +11,59 @@ export const metadata = {
 };
 
 export default function AboutPage() {
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@graph': [
+            {
+                '@type': 'Organization',
+                '@id': 'https://habibaminhas.com/#organization',
+                name: 'Habiba Minhas',
+                url: 'https://habibaminhas.com',
+                logo: 'https://habibaminhas.com/logo.png',
+                sameAs: [
+                    "https://www.instagram.com/habibaminhas/",
+                    "https://www.facebook.com/profile.php?id=61574335512818",
+                    "https://www.youtube.com/channel/UCSx82xy6YKkSgQI1wYuJX1w",
+                    "https://pin.it/58BvOrS7F",
+                    "https://x.com/habibaminhas",
+                    "https://www.reddit.com/user/Other-Highlight5681/",
+                    "https://www.quora.com/profile/Habiba%20Minhas-Store",
+                    "https://www.linkedin.com/company/habiba-minhas/",
+                    "https://www.tiktok.com/@habibaminhas"
+                ],
+                contactPoint: {
+                    '@type': 'ContactPoint',
+                    telephone: '+92 312 0295812',
+                    contactType: 'customer service',
+                    areaServed: 'PK',
+                    availableLanguage: ['English', 'Urdu']
+                }
+            },
+            {
+                '@type': 'Person',
+                '@id': 'https://habibaminhas.com/#founder',
+                name: 'Habiba Minhas',
+                jobTitle: 'Founder & Creative Director',
+                description: 'Fashion designer and entrepreneur dedicated to premium handcrafted elegance.',
+                affiliation: { '@id': 'https://habibaminhas.com/#organization' },
+                image: 'https://habibaminhas.com/founder.jpg',
+                sameAs: [
+                    "https://www.instagram.com/habibaminhas/",
+                    "https://x.com/habibaminhas",
+                    "https://www.linkedin.com/company/habiba-minhas/"
+                ]
+            }
+        ]
+    };
+
+
     return (
         <div className="bg-white text-gray-900 font-body">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+
             {/* Hero Section */}
             <section className="relative w-full h-[400px] flex items-center justify-center bg-gray-100 overflow-hidden">
                 <div className="absolute inset-0 bg-black/40 z-10"></div>

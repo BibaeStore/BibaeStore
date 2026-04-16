@@ -14,7 +14,7 @@ interface ProductActionsProps {
     parentCategorySlug?: string;
 }
 
-const WHATSAPP_NUMBER = '923348438007';
+const WHATSAPP_NUMBER = '923120295812';
 
 export default function ProductActions({ product, categorySlug, parentCategorySlug }: ProductActionsProps) {
     const router = useRouter();

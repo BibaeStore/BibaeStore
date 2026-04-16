@@ -36,7 +36,7 @@ export default function ProductGallery({ images, name, salePrice }: ProductGalle
                     >
                         <Image
                             src={selectedImage}
-                            alt={name}
+                            alt={`${name} - Premium Boutique Wear by Habiba Minhas`}
                             fill
                             className="object-cover"
                             priority

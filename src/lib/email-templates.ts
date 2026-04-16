@@ -4,7 +4,7 @@
 
 const BRAND_GOLD = '#C5A059';
 const BRAND_BLACK = '#1a1a1a';
-const WHATSAPP_LINK = 'https://wa.me/923348438007';
+const WHATSAPP_LINK = 'https://wa.me/923120295812';
 const WEBSITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://habibaminhas.com';
 
 // --------------------------------------------------
@@ -79,7 +79,7 @@ function baseLayout(bodyContent: string): string {
 <body>
   <div class="wrapper">
     <div class="header">
-      <h1 class="brand">BIBAÉ</h1>
+      <h1 class="brand">HABIBA MINHAS</h1>
       <p class="brand-sub">Est. 2026</p>
     </div>
     ${bodyContent}
@@ -89,7 +89,7 @@ function baseLayout(bodyContent: string): string {
         <a href="${WHATSAPP_LINK}">WhatsApp</a>
         <a href="${WEBSITE_URL}/terms">Privacy</a>
       </div>
-      <p style="letter-spacing: 1px; margin-bottom: 20px;">&copy; ${new Date().getFullYear()} BIBAÉ STORE. LUXURY COLLECTIONS.</p>
+      <p style="letter-spacing: 1px; margin-bottom: 20px;">&copy; ${new Date().getFullYear()} HABIBA MINHAS. LUXURY COLLECTIONS.</p>
       <div style="border-top: 1px solid #f5f5f5; padding-top: 20px;">
         <p>This is an automated notification from Habiba Minhas.</p>
         <p>Please do not reply directly to this email addresses.</p>

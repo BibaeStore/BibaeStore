@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
-const logo = '/assets/logo.png'
+const logo = '/Habiba Minhas logo.jpeg'
 
 export default function AdminLoginPage() {
     const router = useRouter()
@@ -39,7 +39,6 @@ export default function AdminLoginPage() {
             if (data.user) {
                 const validAdminEmails = [
                     'habibaminhas@gmail.com',
-                    'bibaestore@gmail.com',
                     process.env.NEXT_PUBLIC_ADMIN_EMAIL
                 ]
 

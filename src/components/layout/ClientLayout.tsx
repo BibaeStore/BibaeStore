@@ -6,7 +6,7 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { NavCategory } from '@/app/actions/categories'
 
-const WHATSAPP_NUMBER = '923348438007'
+const WHATSAPP_NUMBER = '923120295812'
 const WHATSAPP_MESSAGE = 'Hi Habiba Minhas! I have a question.'
 
 export default function ClientLayout({ 

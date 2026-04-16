@@ -9,28 +9,18 @@ export default async function AdminLayout({
 }: {
     children: React.ReactNode
 }) {
-    // Escape hatch for the login page without requiring invasive folder restructuring.
-    // This allows /admin/login to render without triggering the redirect loop.
-    const reqHeaders = await headers()
-    const pathname = reqHeaders.get("x-invoke-path") || reqHeaders.get("x-middleware-invoke-path") || reqHeaders.get("referer") || ""
-
-    if (pathname.includes('/admin/login')) {
+    // 1. Server-side session validation.
+    try {
+        await requireAdmin()
+    } catch (error: any) {
+        // If unauthenticated or no admin role, render the plain layout wrapper.
+        // Middleware already protects /admin sub-routes, so reaching here unauthenticated
+        // means the user is legitimately on /admin/login.
         return (
             <div className="min-h-screen w-full bg-[#fafafa] text-gray-900 font-body admin-font-reset">
                 {children}
             </div>
         )
-    }
-
-    // 1. Server-side session validation.
-    try {
-        await requireAdmin()
-    } catch (error: any) {
-        if (error.message === 'UNAUTHENTICATED') {
-            const { redirect } = await import('next/navigation')
-            redirect('/admin/login')
-        }
-        throw error // Pass other errors (like no admin role) to error.tsx
     }
 
     // 2. Authenticated layout rendering

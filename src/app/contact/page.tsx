@@ -11,8 +11,47 @@ export const metadata = {
 };
 
 export default function ContactPage() {
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Store',
+        '@id': 'https://habibaminhas.com/#store',
+        name: 'Habiba Minhas',
+        image: 'https://habibaminhas.com/store-front.jpg',
+        telephone: '+92 312 0295812',
+        email: 'support@habibaminhas.com',
+        url: 'https://habibaminhas.com/contact/',
+        address: {
+            '@type': 'PostalAddress',
+            streetAddress: 'Karachi, Pakistan',
+            addressLocality: 'Karachi',
+            postalCode: '75533',
+            addressCountry: 'PK'
+        },
+        geo: {
+            '@type': 'GeoCoordinates',
+            latitude: 24.8607,
+            longitude: 67.0011
+        },
+        openingHoursSpecification: [
+            {
+                '@type': 'OpeningHoursSpecification',
+                dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+                opens: '09:00',
+                closes: '18:00'
+            }
+        ],
+        parentOrganization: {
+            '@id': 'https://habibaminhas.com/#organization'
+        }
+    };
+
     return (
         <div className="bg-white text-gray-900 font-body min-h-screen">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+
             {/* Header */}
             <div className="bg-gray-50 py-16 text-center border-b border-gray-200">
                 <div className="container mx-auto px-4">
@@ -43,7 +82,7 @@ export default function ContactPage() {
                                 </div>
                                 <div>
                                     <h3 className="font-semibold text-gray-900">Phone & WhatsApp</h3>
-                                    <p className="text-gray-600 mt-1">+92 334 8438007</p>
+                                    <p className="text-gray-600 mt-1">+92 312 0295812</p>
                                     <p className="text-xs text-gray-500 mt-1">Mon-Fri from 9am to 6pm</p>
                                 </div>
                             </div>

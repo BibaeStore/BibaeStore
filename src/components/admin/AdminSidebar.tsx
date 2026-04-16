@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-const logo = '/assets/icon.png'
+const logo = '/Habiba Minhas logo.jpeg'
 
 const baseMenuItems = [
     { title: "Dashboard", icon: LayoutDashboard, href: "/admin" },

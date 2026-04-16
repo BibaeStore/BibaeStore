@@ -16,7 +16,7 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div>
-            <Image src="/assets/logo.png" alt="Habiba Minhas" width={160} height={48} className="h-12 w-auto mb-5" />
+            <Image src="/Habiba Minhas logo.jpeg" alt="Habiba Minhas" width={160} height={48} className="h-12 w-auto mb-5" />
             <p className="text-gray-500 text-sm leading-relaxed font-body mb-6">
               Premium fashion & baby products. Elegance redefined for the modern family. Handcrafted with love in Pakistan.
             </p>
@@ -90,8 +90,8 @@ export default function Footer() {
               </li>
               <li className="flex items-start gap-3">
                 <Phone className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-                <a href="https://wa.me/923348438007" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                  +92 334 8438007
+                <a href="https://wa.me/923120295812" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                  +92 312 0295812
                 </a>
               </li>
               <li className="flex items-start gap-3">

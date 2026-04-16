@@ -5,12 +5,12 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Metadata } from 'next';
-import { ChevronRight, Star, ShoppingBag, Truck, ShieldCheck, Heart, HelpCircle, Info } from 'lucide-react';
+import { ChevronRight, Star, ShoppingBag, Truck, ShieldCheck, Heart, HelpCircle, Info, Sparkles } from 'lucide-react';
 import { formatPrice } from '@/lib/products';
 import ProductActions from '@/components/ProductActions';
 import ProductGallery from '@/components/ProductGallery';
 import ProductCard from '@/components/ProductCard';
-import { getRelatedProducts, getProductReviews } from '@/lib/server-queries';
+import { getRelatedProducts, getProductReviews, getRelatedBlogs } from '@/lib/server-queries';
 import FAQAccordion from '@/components/FAQAccordion';
 import ProductReviews from '@/components/ProductReviews';
 
@@ -166,10 +166,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         parentCategoryInfo = parentCat;
     }
 
-    // 3. Related Products & Reviews (parallel fetch)
-    const [relatedProducts, productReviews] = await Promise.all([
+    // 3. Related Products, Reviews & Blogs (parallel fetch)
+    const [relatedProducts, productReviews, relatedBlogs] = await Promise.all([
         product.category_id ? getRelatedProducts(product.category_id, product.id) : Promise.resolve([]),
         getProductReviews(product.id),
+        getRelatedBlogs(product.category?.name || '')
     ]);
 
     const faqs = [
@@ -228,6 +229,31 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                         }
                     }
                 },
+                // ─── AI SEO Enhancement: aggregateRating & review ───────────────────
+                ...(productReviews.length > 0 ? {
+                    aggregateRating: {
+                        '@type': 'AggregateRating',
+                        ratingValue: (productReviews.reduce((acc: number, r: any) => acc + r.rating, 0) / productReviews.length).toFixed(1),
+                        reviewCount: productReviews.length,
+                        bestRating: 5,
+                        worstRating: 1,
+                    },
+                    review: productReviews.slice(0, 5).map((r: any) => ({
+                        '@type': 'Review',
+                        author: {
+                            '@type': 'Person',
+                            name: r.client?.full_name || 'Anonymous Customer',
+                        },
+                        datePublished: r.created_at,
+                        reviewBody: r.comment || '',
+                        reviewRating: {
+                            '@type': 'Rating',
+                            ratingValue: r.rating,
+                            bestRating: 5,
+                            worstRating: 1,
+                        },
+                    })),
+                } : {}),
             },
             {
                 '@type': 'FAQPage',
@@ -461,6 +487,57 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                         </div>
                     </div>
                 </div>
+
+                {/* Expert Styling & Guides (Topical Authority & Semantic Linking) */}
+                {relatedBlogs.length > 0 && (
+                    <div className="mt-24 pt-16 border-t border-gray-100">
+                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                            <div>
+                                <div className="flex items-center gap-2 text-primary mb-3">
+                                    <Sparkles className="w-4 h-4" />
+                                    <p className="font-body text-xs tracking-[0.3em] uppercase">Authority Guides</p>
+                                </div>
+                                <h2 className="text-3xl font-heading font-light text-gray-900 leading-tight">Expert Styling & Buying Guides</h2>
+                            </div>
+                            <Link 
+                                href="/blog" 
+                                className="text-sm font-bold border-b-2 border-primary/20 hover:border-primary transition-colors pb-1"
+                            >
+                                View All Guides
+                            </Link>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {relatedBlogs.map((blog) => (
+                                <Link 
+                                    key={blog.id} 
+                                    href={`/blog/${blog.slug}`}
+                                    className="group block space-y-4"
+                                >
+                                    <div className="aspect-[16/9] overflow-hidden rounded-2xl bg-gray-100">
+                                        <Image
+                                            src={blog.cover_image}
+                                            alt={blog.title}
+                                            width={600}
+                                            height={340}
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <span className="text-[10px] uppercase tracking-widest text-primary font-bold px-2 py-1 bg-primary/5 rounded">
+                                            {blog.category}
+                                        </span>
+                                        <h3 className="text-lg font-heading font-semibold text-gray-900 group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                                            {blog.title}
+                                        </h3>
+                                        <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">
+                                            {blog.excerpt}
+                                        </p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Related Products (Internal Linking & Authority) */}
                 {relatedProducts.length > 0 && (

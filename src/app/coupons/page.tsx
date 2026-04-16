@@ -3,6 +3,9 @@ import { CouponCode } from './CouponsClient';
 export const metadata = {
     title: 'Promo Codes & Coupons',
     description: 'Find the latest valid discount codes and coupons for Habiba Minhas.',
+    alternates: {
+        canonical: '/coupons/',
+    },
 };
 
 export default function CouponsPage() {

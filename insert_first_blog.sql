@@ -38,7 +38,7 @@ INSERT INTO public.blog_posts (
     <p>You do not have to choose between shivering in the cold and looking under-dressed. By choosing thicker fabrics like velvet or raw silk, and adding a nice shawl to your outfit, you can easily look the best at the wedding while staying completely warm. Always remember that confidence is your best accessory—so wear whatever makes you feel comfortable and happy!</p>
     ',
     'https://images.unsplash.com/photo-1595777457583-95e059f581ce?q=80&w=1200&auto=format&fit=crop',
-    'Bibae Team',
+    'Habiba Minhas Team',
     'What to Wear on a Winter Wedding in Pakistan: 5 Simple Ideas',
     'Struggling to find the perfect winter wedding outfit? Discover 5 elegant and simple ideas to stay warm without sacrificing your style at Pakistani winter weddings.',
     ARRAY['winter wedding', 'pakistani fashion', 'velvet dresses', 'wedding guest outfits', 'khaddar'],

@@ -233,7 +233,7 @@ function CheckoutSuccessContent() {
               Continue Shopping <ArrowRight className="w-4 h-4" />
             </Link>
             <a
-              href="https://wa.me/923348438007"
+              href="https://wa.me/923120295812"
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 border border-green-500 text-green-600 py-4 text-center font-body font-medium tracking-wider uppercase hover:bg-green-50 transition-colors flex items-center justify-center gap-2"

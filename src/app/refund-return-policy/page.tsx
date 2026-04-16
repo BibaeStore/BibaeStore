@@ -57,7 +57,7 @@ export default function RefundPolicyPage() {
                     </p>
                     <p>
                         <strong>Email:</strong> support@habibaminhas.com <br />
-                        <strong>WhatsApp:</strong> +92 334 8438007
+                        <strong>WhatsApp:</strong> +92 312 0295812
                     </p>
 
                     <div className="mt-8 not-prose text-center">

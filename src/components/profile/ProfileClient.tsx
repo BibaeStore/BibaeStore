@@ -227,7 +227,7 @@ export default function ProfileClient() {
                                                         value={phone}
                                                         onChange={(e) => setPhone(e.target.value)}
                                                         className="pl-12 h-14 bg-gray-50/50 border-gray-200 rounded-2xl focus:ring-primary/20 focus:bg-white transition-all text-sm"
-                                                        placeholder="+92 334 8438007"
+                                                        placeholder="+92 312 0295812"
                                                     />
                                                 </div>
                                             </div>
