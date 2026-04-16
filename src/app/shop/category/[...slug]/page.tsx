@@ -49,7 +49,7 @@ async function resolveCategory(slugSegments: string[]): Promise<ResolvedCategory
         return {
             category: child,
             parentCategory: parent,
-            canonicalPath: `/shop/category/${parentSlug}/${childSlug}/`,
+            canonicalPath: `https://habibaminhas.com/shop/category/${parentSlug}/${childSlug}/`,
         };
     }
 
@@ -80,7 +80,7 @@ async function resolveCategory(slugSegments: string[]): Promise<ResolvedCategory
         return {
             category,
             parentCategory: null,
-            canonicalPath: `/shop/category/${slug}/`,
+            canonicalPath: `https://habibaminhas.com/shop/category/${slug}/`,
         };
     }
 
@@ -162,14 +162,14 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             '@type': 'ListItem',
             position: 4,
             name: category.name,
-            item: `https://habibaminhas.com${canonicalPath}`,
+            item: canonicalPath,
         });
     } else {
         breadcrumbItems.push({
             '@type': 'ListItem',
             position: 3,
             name: category.name,
-            item: `https://habibaminhas.com${canonicalPath}`,
+            item: canonicalPath,
         });
     }
 
@@ -180,7 +180,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                 '@type': 'CollectionPage',
                 name: category.name,
                 description: category.meta_description || category.description,
-                url: `https://habibaminhas.com${canonicalPath}`,
+                url: canonicalPath,
                 mainEntity: {
                     '@type': 'ItemList',
                     numberOfItems: products?.length || 0,
@@ -220,9 +220,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
             />
 
-            {/* Hidden H1 for SEO Raw HTML discoverability since ShopContent is client-side */}
-            <h1 className="sr-only">{displayTitle} Collection - Habiba Minhas</h1>
-            
             <ShopContent initialProducts={products || []} initialTitle={displayTitle} isCategoryPage />
 
             {/* SEO Rich Text Section for MOFU Ranking */}

@@ -4,7 +4,7 @@ export const metadata = {
     title: 'Promo Codes & Coupons',
     description: 'Find the latest valid discount codes and coupons for Habiba Minhas.',
     alternates: {
-        canonical: '/coupons/',
+        canonical: 'https://habibaminhas.com/coupons/',
     },
 };
 

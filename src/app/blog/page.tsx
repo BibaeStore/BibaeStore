@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     description: 'Insights into the 2026 boutique trends, handcrafted fashion stories, and premium styling guides from Habiba Minhas.',
     keywords: ['pakistan fashion blog', 'boutique styling guides', 'fashion trends 2026', 'handcrafted clothing stories', 'habiba minhas journal'],
     alternates: {
-        canonical: '/blog/',
+        canonical: 'https://habibaminhas.com/blog/',
     },
 };
 

@@ -4,7 +4,7 @@ export const metadata = {
     title: 'Privacy Policy',
     description: 'Our commitment to protecting your privacy and personal data.',
     alternates: {
-        canonical: '/privacy-policy/',
+        canonical: 'https://habibaminhas.com/privacy-policy/',
     },
 };
 

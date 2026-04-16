@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     title: 'Create an Account',
     description: 'Join Habiba Minhas to track your orders, save your wishlist, and get exclusive offers on premium boutique wear.',
     alternates: {
-        canonical: '/signup/',
+        canonical: 'https://habibaminhas.com/signup/',
     },
 }
 

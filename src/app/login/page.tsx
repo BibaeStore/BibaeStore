@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     title: 'Login to Your Account',
     description: 'Log in to your Habiba Minhas account to manage your orders, access your wishlist, and enjoy a personalized shopping experience.',
     alternates: {
-        canonical: '/login/',
+        canonical: 'https://habibaminhas.com/login/',
     },
 }
 

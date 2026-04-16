@@ -98,7 +98,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         title: product.name,
         description: product.description || `Buy ${product.name} online at Habiba Minhas.`,
         alternates: {
-            canonical: `/shop/${product.slug || product.id}/`,
+            canonical: `https://habibaminhas.com/shop/${product.slug || product.id}/`,
         },
         openGraph: {
             images: product.images?.[0] ? [product.images[0]] : [],

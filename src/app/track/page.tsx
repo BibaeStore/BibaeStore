@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     title: 'Track Your Order',
     description: 'Track the status of your Habiba Minhas order in real-time. Simply enter your tracking number to get updates on your premium boutique wear delivery.',
     alternates: {
-        canonical: '/track/',
+        canonical: 'https://habibaminhas.com/track/',
     },
 }
 

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: "Elegant Ethnic Wear & Handcrafted Accessories | Habiba Minhas",
   description: "Discover unique ethnic wear and artisanal accessories at Habiba Minhas. From statement jewelry to stylish apparel, find curated fashion that celebrates your style. Shop online today.",
   alternates: {
-    canonical: "/",
+    canonical: "https://habibaminhas.com/",
   },
 };
 

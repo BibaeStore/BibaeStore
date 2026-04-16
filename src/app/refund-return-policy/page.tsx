@@ -5,7 +5,7 @@ export const metadata = {
     title: 'Refund & Return Policy',
     description: 'Our policies regarding refunds and returns for products purchased at Habiba Minhas.',
     alternates: {
-        canonical: '/refund-return-policy/',
+        canonical: 'https://habibaminhas.com/refund-return-policy/',
     },
 };
 

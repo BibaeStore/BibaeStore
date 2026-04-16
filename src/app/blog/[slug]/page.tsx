@@ -306,7 +306,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         title: post.meta_title,
         description: post.meta_description,
         keywords: post.keywords?.join(', '),
-        alternates: { canonical: `/blog/${slug}/` },
+        alternates: { canonical: `https://habibaminhas.com/blog/${slug}/` },
         openGraph: { images: post.cover_image ? [post.cover_image] : [] }
     };
 }

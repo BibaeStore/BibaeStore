@@ -6,7 +6,7 @@ export const metadata = {
     title: 'Customer Reviews',
     description: 'See what our happy customers are saying about Habiba Minhas. Read verified reviews and share your own experience.',
     alternates: {
-        canonical: '/reviews/',
+        canonical: 'https://habibaminhas.com/reviews/',
     },
 };
 
@@ -15,8 +15,6 @@ export default async function ReviewsPage() {
 
     return (
         <main>
-            {/* Hidden H1 for SEO Raw HTML discoverability since ReviewsContent is client-side */}
-            <h1 className="sr-only">Customer Reviews & Testimonials - Habiba Minhas</h1>
             <ReviewsContent initialReviews={reviews} />
         </main>
     );

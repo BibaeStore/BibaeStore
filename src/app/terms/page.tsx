@@ -4,7 +4,7 @@ export const metadata = {
     title: 'Terms & Conditions',
     description: 'Terms and conditions for using Habiba Minhas.',
     alternates: {
-        canonical: '/terms/',
+        canonical: 'https://habibaminhas.com/terms/',
     },
 };
 

@@ -6,7 +6,7 @@ export const metadata = {
     title: 'Contact Us',
     description: 'Get in touch with Habiba Minhas. We are here to assist you with your orders, inquiries, and feedback.',
     alternates: {
-        canonical: '/contact/',
+        canonical: 'https://habibaminhas.com/contact/',
     },
 };
 

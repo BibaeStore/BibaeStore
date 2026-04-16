@@ -4,7 +4,7 @@ export const metadata = {
     title: 'Shipping Policy',
     description: 'Information about our shipping methods, delivery times, and costs.',
     alternates: {
-        canonical: '/shipping-policy/',
+        canonical: 'https://habibaminhas.com/shipping-policy/',
     },
 };
 

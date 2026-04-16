@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "Browse our 2026 collection of premium boutique wear. From elegant formals to chic casuals, find your perfect style at Habiba Minhas. Fast delivery in Pakistan.",
   keywords: ['online boutique shopping pakistan', 'ready to wear dresses', 'stitched lawn suits', 'kids boutique wear', 'habiba minhas collections'],
   alternates: {
-    canonical: "/shop/",
+    canonical: "https://habibaminhas.com/shop/",
   },
 };
 
@@ -21,8 +21,6 @@ export default async function Shop() {
 
   return (
     <main>
-      {/* Hidden H1 for SEO Raw HTML discoverability since ShopContent is client-side */}
-      <h1 className="sr-only">Shop Our Premium Collection - Habiba Minhas</h1>
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading Store...</div>}>
         <ShopContent initialProducts={products} />
       </Suspense>

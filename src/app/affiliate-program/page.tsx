@@ -5,7 +5,7 @@ export const metadata = {
     title: 'Affiliate Program',
     description: 'Join the Habiba Minhas Affiliate Program and earn commissions.',
     alternates: {
-        canonical: '/affiliate-program/',
+        canonical: 'https://habibaminhas.com/affiliate-program/',
     },
 };
 
